@@ -134,6 +134,25 @@
       return this.set(path, data);
     },
 
+    /* Lee una colección una sola vez: Map id → datos. */
+    async list(col) {
+      if (this.mode === 'db') {
+        try {
+          const snap = await this.db.collection(col).get();
+          const m = new Map();
+          for (const d of snap.docs) {
+            const data = d.data();
+            m.set(d.id, data);
+            this.cache.set(col + '/' + d.id, data);
+          }
+          return m;
+        } catch (e) {
+          return new Map();
+        }
+      }
+      return this._localCollection(col);
+    },
+
     async remove(path) {
       this.cache.delete(path);
       if (this.mode === 'db') await this.db.doc(path).delete();
@@ -436,6 +455,143 @@
     },
   };
 
+  /* ---------------- Navegador de la app de escritorio (en la PC del usuario) ---------------- */
+
+  const BROWSER = 'host:claude_browser';
+  const BROWSER_ERRORS = {
+    server_not_connected: 'El navegador de Claude solo funciona abriendo este panel desde la app de escritorio de Claude, en una sesión de Cowork.',
+    not_in_manifest: 'No le diste permiso a este panel para usar el navegador. Habilitalo en Permisos.',
+    cancelled: 'Se canceló el acceso del navegador a esa página.',
+    approval_required: 'El navegador necesita tu aprobación para abrir esa página.',
+    blocked_by_policy: 'Tu organización no permite usar el navegador desde esta página.',
+    consent_required: 'Falta tu permiso para usar el navegador en esta página.',
+    not_granted: 'Esta vista no puede usar el navegador.',
+    capability_disabled: 'Esta vista no puede usar el navegador.',
+  };
+
+  /*
+   * Usa el navegador integrado de la app de escritorio de Claude (en la PC del usuario) para leer páginas públicas:
+   * Biblioteca de anuncios de Meta, Mercado Libre, tiendas de la competencia.
+   * Herramientas: preview_start({url}) abre una pestaña y devuelve su tabId; navigate({url, tabId}); get_page_text({tabId}).
+   */
+  const Browser = {
+    mcp: null,
+    available: false,
+    checked: false,
+    tabs: [], // pestañas abiertas por el panel (se reusan)
+    busy: new Set(),
+    activeOnly: false, // si no pudimos leer el tabId, trabajamos sobre la pestaña activa, de a una
+
+    async init() {
+      this.mcp = Shop.mcp || (await use('mcp'));
+      this.available = false;
+      if (this.mcp) {
+        try {
+          const r = await this.mcp.listTools(BROWSER);
+          this.available = !!(r && r.servers && r.servers.some((s) => s.server === BROWSER && s.tools && s.tools.length));
+        } catch (e) {
+          this.available = false;
+        }
+      }
+      this.checked = true;
+      return this.available;
+    },
+
+    errorText(e) {
+      const code = (e && e.code) || 'upstream_error';
+      return BROWSER_ERRORS[code] || (code === 'tool_error' ? 'El navegador no pudo abrir la página: ' + ((e && e.message) || '') : 'El navegador no respondió (' + code + ').');
+    },
+
+    /* Errores que no se arreglan reintentando: cortan toda la tanda. */
+    fatal(e) {
+      return ['server_not_connected', 'not_in_manifest', 'blocked_by_policy', 'not_granted', 'capability_disabled', 'capability_removed', 'consent_required'].includes(e && e.code);
+    },
+
+    async _call(tool, input) {
+      return this.mcp.callTool(BROWSER, tool, input, { cache: false });
+    },
+
+    _texts(res) {
+      const out = [];
+      const p = res && res.payload;
+      if (typeof p === 'string') out.push(p);
+      else if (p && typeof p === 'object') {
+        for (const k of ['text', 'content', 'pageText', 'result']) if (typeof p[k] === 'string') out.push(p[k]);
+      }
+      for (const b of (res && res.content) || []) if (b && b.type === 'text' && typeof b.text === 'string') out.push(b.text);
+      return out;
+    },
+
+    _tabId(res) {
+      const p = res && res.payload;
+      if (p && typeof p === 'object') {
+        if (p.tabId != null) return p.tabId;
+        if (p.tab_id != null) return p.tab_id;
+        if (p.tab && p.tab.id != null) return p.tab.id;
+      }
+      const t = this._texts(res).join(' ');
+      const m = t.match(/tab[\s_-]*id["'\s:=]*["']?([A-Za-z0-9_-]+)/i);
+      if (!m) return null;
+      return /^\d+$/.test(m[1]) ? Number(m[1]) : m[1];
+    },
+
+    _text(res) {
+      return this._texts(res).sort((a, b) => b.length - a.length)[0] || '';
+    },
+
+    async _acquire(url) {
+      if (this.activeOnly) {
+        while (this.busy.size) await sleep(300);
+        this.busy.add('active');
+        await this._call('navigate', { url });
+        return null;
+      }
+      const free = this.tabs.find((t) => !this.busy.has(t));
+      if (free != null) {
+        this.busy.add(free);
+        try {
+          await this._call('navigate', { url, tabId: free });
+          return free;
+        } catch (e) {
+          this.busy.delete(free);
+          this.tabs = this.tabs.filter((t) => t !== free); // la pestaña pudo cerrarse: abrimos otra
+          if (this.fatal(e)) throw e;
+        }
+      }
+      const res = await this._call('preview_start', { url });
+      const id = this._tabId(res);
+      if (id == null) {
+        this.activeOnly = true;
+        this.busy.add('active');
+        return null;
+      }
+      this.tabs.push(id);
+      this.busy.add(id);
+      return id;
+    },
+
+    /*
+     * Abre `url` y devuelve el texto de la página. Espera a que `ready(text)` sea verdadero (las páginas que cargan
+     * con JavaScript tardan unos segundos), hasta `tries` lecturas.
+     */
+    async read(url, opts) {
+      const o = Object.assign({ tries: 5, firstWait: 1800, wait: 2500, ready: null, maxChars: 0 }, opts || {});
+      const tab = await this._acquire(url);
+      try {
+        let text = '';
+        for (let i = 0; i < o.tries; i++) {
+          await sleep(i === 0 ? o.firstWait : o.wait);
+          const res = await this._call('get_page_text', tab == null ? {} : { tabId: tab });
+          text = this._text(res);
+          if (!o.ready || o.ready(text)) break;
+        }
+        return o.maxChars ? text.slice(0, o.maxChars) : text;
+      } finally {
+        this.busy.delete(tab == null ? 'active' : tab);
+      }
+    },
+  };
+
   async function managePermissions() {
     const p = await use('permissions');
     if (p && p.manage) {
@@ -449,5 +605,5 @@
     return false;
   }
 
-  VC.runtime = { Store, Shop, AI, use, managePermissions, ORDERS_QUERY, TAGS_MUTATION };
+  VC.runtime = { Store, Shop, AI, Browser, use, sleep, managePermissions, ORDERS_QUERY, TAGS_MUTATION };
 })(window);

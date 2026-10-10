@@ -1,0 +1,22 @@
+/* Motor automático: aviso en la barra superior y paneles de "Automático" que comparten las herramientas */
+.auto-chip { gap: 8px; max-width: 100%; overflow-wrap: anywhere; }
+.conn .dot.pulse { background: var(--info); animation: pulse 1.2s ease-in-out infinite; }
+.conn-stop { border: 0; background: none; padding: 0 2px; color: var(--accent); font-size: 0.75rem; font-weight: 600; cursor: pointer; text-decoration: underline; }
+.tab-badge.is-new { background: var(--good); color: var(--bg); text-transform: lowercase; }
+@media (prefers-reduced-motion: reduce) { .conn .dot.pulse { animation: none; } }
+
+/* Panel "Automático" (lo usan Competencia, Productos y Guiones) */
+.auto-panel { border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); background: linear-gradient(0deg, var(--surface), var(--surface)), var(--surface); }
+.auto-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.auto-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--muted); font-size: var(--step--1); }
+.auto-toggles { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 0.875rem; }
+.auto-toggles label { display: inline-flex; align-items: center; gap: 7px; }
+.auto-toggles input[type='checkbox'] { width: 17px; height: 17px; min-height: 0; accent-color: var(--accent); }
+.auto-toggles select { min-height: 30px; padding: 2px 6px; font-size: 0.8125rem; }
+.auto-progress { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 0.875rem; }
+.auto-progress li { display: flex; gap: 8px; align-items: baseline; }
+.auto-progress .st { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); min-width: 64px; }
+.auto-progress .st.ok { color: var(--good); }
+.auto-progress .st.err { color: var(--bad); }
+.auto-off { padding: 10px 12px; border-radius: var(--r-sm); background: var(--surface-2); font-size: 0.875rem; }
+.findings { white-space: pre-wrap; font-size: 0.9rem; line-height: 1.55; max-width: 78ch; }

@@ -83,6 +83,8 @@
       '',
       'Hoy es ' + today + '. Extraé cada anuncio distinto que veas. Para cada uno:',
       '- anunciante: nombre de la página',
+      '- id: el número de "Identificador de la biblioteca" (o "Library ID"); vacío si no está',
+      '- dominio: el sitio al que lleva el anuncio si aparece (ej. "POSTURAYA.COM.AR"); vacío si no',
       '- desde: fecha en que empezó a circular, en formato AAAA-MM-DD (si dice "Comenzó a circular el…" o "Started running on…"); vacío si no está',
       '- gancho: la primera frase del texto o del video, tal cual (máximo 20 palabras)',
       '- angulo: uno de dolor | medico | estetica | gym | oficina | regalo | otro',
@@ -93,7 +95,7 @@
       '- nota: qué hace bien o qué se puede aprender, en una oración',
       'No inventes anuncios ni datos que no estén en el material. Si un anuncio aparece repetido (varias versiones), contalo una vez y decilo en la nota.',
       '',
-      'Respondé SOLO con JSON: {"anuncios":[{"anunciante":"","desde":"","gancho":"","angulo":"","oferta":"","precio":"","formato":"","cta":"","nota":""}]}',
+      'Respondé SOLO con JSON: {"anuncios":[{"anunciante":"","id":"","dominio":"","desde":"","gancho":"","angulo":"","oferta":"","precio":"","formato":"","cta":"","nota":""}]}',
     ]
       .filter((l) => l !== '')
       .join('\n');
@@ -125,6 +127,13 @@
       .filter((a) => a && (a.gancho || a.anunciante))
       .map((a) => ({
         anunciante: String(a.anunciante || '').trim(),
+        idBiblioteca: String(a.id || a.idBiblioteca || '').replace(/\D/g, ''),
+        dominio: String(a.dominio || '')
+          .trim()
+          .toLowerCase()
+          .replace(/^[a-z]+:\/\//, '')
+          .replace(/^www\./, '')
+          .split(/[/?#\s]/)[0],
         desde: parseDate(a.desde) || '',
         gancho: String(a.gancho || '').trim(),
         angulo: ANGULOS[a.angulo] ? a.angulo : 'otro',

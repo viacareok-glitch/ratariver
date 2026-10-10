@@ -451,6 +451,37 @@ details.panel[open] > summary { margin-bottom: 4px; }
   .clip { grid-template-columns: 1fr; gap: 4px; }
   .form-grid.wide { grid-template-columns: 1fr; }
 }
+/* css/auto.css */
+/* Motor automático: aviso en la barra superior y paneles de "Automático" que comparten las herramientas */
+.auto-chip { gap: 8px; max-width: 100%; overflow-wrap: anywhere; }
+.conn .dot.pulse { background: var(--info); animation: pulse 1.2s ease-in-out infinite; }
+.conn-stop { border: 0; background: none; padding: 0 2px; color: var(--accent); font-size: 0.75rem; font-weight: 600; cursor: pointer; text-decoration: underline; }
+.tab-badge.is-new { background: var(--good); color: var(--bg); text-transform: lowercase; }
+@media (prefers-reduced-motion: reduce) { .conn .dot.pulse { animation: none; } }
+
+/* Panel "Automático" (lo usan Competencia, Productos y Guiones) */
+.auto-panel { border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); background: linear-gradient(0deg, var(--surface), var(--surface)), var(--surface); }
+.auto-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.auto-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--muted); font-size: var(--step--1); }
+.auto-toggles { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 0.875rem; }
+.auto-toggles label { display: inline-flex; align-items: center; gap: 7px; }
+.auto-toggles input[type='checkbox'] { width: 17px; height: 17px; min-height: 0; accent-color: var(--accent); }
+.auto-toggles select { min-height: 30px; padding: 2px 6px; font-size: 0.8125rem; }
+.auto-progress { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 0.875rem; }
+.auto-progress li { display: flex; gap: 8px; align-items: baseline; }
+.auto-progress .st { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); min-width: 64px; }
+.auto-progress .st.ok { color: var(--good); }
+.auto-progress .st.err { color: var(--bad); }
+.auto-off { padding: 10px 12px; border-radius: var(--r-sm); background: var(--surface-2); font-size: 0.875rem; }
+.findings { white-space: pre-wrap; font-size: 0.9rem; line-height: 1.55; max-width: 78ch; }
+/* css/competencia-auto.css */
+/* competencia-auto */
+/* css/tiendas.css */
+/* tiendas */
+/* css/productos-auto.css */
+/* productos-auto */
+/* css/guiones-auto.css */
+/* guiones-auto */
 </style>
 
 <div class="app">
@@ -2254,6 +2285,8 @@ details.panel[open] > summary { margin-bottom: 4px; }
       '',
       'Hoy es ' + today + '. Extraé cada anuncio distinto que veas. Para cada uno:',
       '- anunciante: nombre de la página',
+      '- id: el número de "Identificador de la biblioteca" (o "Library ID"); vacío si no está',
+      '- dominio: el sitio al que lleva el anuncio si aparece (ej. "POSTURAYA.COM.AR"); vacío si no',
       '- desde: fecha en que empezó a circular, en formato AAAA-MM-DD (si dice "Comenzó a circular el…" o "Started running on…"); vacío si no está',
       '- gancho: la primera frase del texto o del video, tal cual (máximo 20 palabras)',
       '- angulo: uno de dolor | medico | estetica | gym | oficina | regalo | otro',
@@ -2264,7 +2297,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
       '- nota: qué hace bien o qué se puede aprender, en una oración',
       'No inventes anuncios ni datos que no estén en el material. Si un anuncio aparece repetido (varias versiones), contalo una vez y decilo en la nota.',
       '',
-      'Respondé SOLO con JSON: {"anuncios":[{"anunciante":"","desde":"","gancho":"","angulo":"","oferta":"","precio":"","formato":"","cta":"","nota":""}]}',
+      'Respondé SOLO con JSON: {"anuncios":[{"anunciante":"","id":"","dominio":"","desde":"","gancho":"","angulo":"","oferta":"","precio":"","formato":"","cta":"","nota":""}]}',
     ]
       .filter((l) => l !== '')
       .join('\n');
@@ -2296,6 +2329,13 @@ details.panel[open] > summary { margin-bottom: 4px; }
       .filter((a) => a && (a.gancho || a.anunciante))
       .map((a) => ({
         anunciante: String(a.anunciante || '').trim(),
+        idBiblioteca: String(a.id || a.idBiblioteca || '').replace(/\D/g, ''),
+        dominio: String(a.dominio || '')
+          .trim()
+          .toLowerCase()
+          .replace(/^[a-z]+:\/\//, '')
+          .replace(/^www\./, '')
+          .split(/[/?#\s]/)[0],
         desde: parseDate(a.desde) || '',
         gancho: String(a.gancho || '').trim(),
         angulo: ANGULOS[a.angulo] ? a.angulo : 'otro',
@@ -2409,6 +2449,311 @@ details.panel[open] > summary { margin-bottom: 4px; }
   const api = { REF_FECHA, CANDIDATOS, PESOS, mlUrl, trendsUrl, economics, score, margenScore, claudePrompt };
   if (isNode) module.exports = api;
   else (root.VC = root.VC || {}).products = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>
+/* lib/research.js */
+/*
+ * Lectura de páginas públicas que trae el navegador: Biblioteca de anuncios de Meta, Mercado Libre y tiendas Shopify.
+ * Solo lógica pura (sin red): detecta si la página terminó de cargar, compacta texto, lee catálogos y compara fotos.
+ */
+(function (root) {
+  'use strict';
+  const isNode = typeof module === 'object' && module.exports;
+  const U = isNode ? require('./util.js') : root.VC.util;
+
+  /* ---------- Texto ---------- */
+
+  // Colapsa espacios, saca líneas vacías y repetidas seguidas, y corta en `max` caracteres
+  function compactText(text, max) {
+    const lines = String(text || '')
+      .replace(/\r/g, '')
+      .split('\n')
+      .map((l) => l.replace(/[ \t ]+/g, ' ').trim())
+      .filter(Boolean);
+    const out = [];
+    for (const l of lines) if (out[out.length - 1] !== l) out.push(l);
+    const s = out.join('\n');
+    return max && s.length > max ? s.slice(0, max) : s;
+  }
+
+  /* ---------- Biblioteca de anuncios de Meta ---------- */
+
+  const AD_MARK = /(Identificador de la biblioteca|Identificador de biblioteca|Library ID|Comenz[oó] a circular|Started running)/i;
+
+  function adLibraryReady(text) {
+    const s = String(text || '');
+    return AD_MARK.test(s) || /(No hay anuncios|No se encontraron anuncios|No ads match|no results)/i.test(s) || needsLogin(s);
+  }
+
+  function adLibraryCount(text) {
+    const m = String(text || '').match(/(Identificador de la biblioteca|Identificador de biblioteca|Library ID)/gi);
+    return m ? m.length : 0;
+  }
+
+  function needsLogin(text) {
+    const s = String(text || '');
+    return !adLibraryCount(s) && /(Inici[aá] sesi[oó]n|Log in to|Log into Facebook|Entrar a Facebook|Iniciar sesi[oó]n en Facebook|You must log in)/i.test(s);
+  }
+
+  // Identificadores de la biblioteca que aparecen en el texto ("Identificador de la biblioteca: 1234567890")
+  function adLibraryIds(text) {
+    const ids = [];
+    const re = /(?:Identificador de la biblioteca|Identificador de biblioteca|Library ID)\s*:?\s*(\d{6,})/gi;
+    let m;
+    while ((m = re.exec(String(text || '')))) ids.push(m[1]);
+    return ids;
+  }
+
+  function adUrl(id) {
+    return id ? 'https://www.facebook.com/ads/library/?id=' + encodeURIComponent(id) : '';
+  }
+
+  function normKey(s) {
+    return U.stripAccents(String(s || ''))
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
+  }
+
+  // Clave para no guardar dos veces el mismo anuncio
+  function adKey(a) {
+    if (a && a.idBiblioteca) return 'id:' + a.idBiblioteca;
+    return 'tx:' + normKey(a && a.anunciante) + '|' + normKey(a && a.gancho).slice(0, 80);
+  }
+
+  /* ---------- Dominios y tiendas ---------- */
+
+  // "https://www.PosturaYa.com.ar/products/x?y" → "posturaya.com.ar"
+  function normalizeDomain(input) {
+    let s = String(input || '')
+      .trim()
+      .toLowerCase();
+    if (!s) return '';
+    s = s.replace(/^[a-z]+:\/\//, '').replace(/^www\./, '');
+    s = s.split(/[/?#\s]/)[0];
+    s = s.replace(/:\d+$/, '').replace(/\.$/, '');
+    if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(s)) return '';
+    return s;
+  }
+
+  // Dominios que no son tiendas (redes, marketplaces, acortadores)
+  const NO_TIENDA = /(^|\.)(facebook\.com|fb\.com|fb\.me|instagram\.com|whatsapp\.com|wa\.me|tiktok\.com|mercadolibre\.com(\.ar)?|mercadolibre\.com|meli\.la|google\.com|youtube\.com|linktr\.ee|bit\.ly|shopify\.com)$/;
+
+  function isStoreDomain(d) {
+    const n = normalizeDomain(d);
+    return !!n && !NO_TIENDA.test(n);
+  }
+
+  function productsJsonUrl(domain, page) {
+    return 'https://' + normalizeDomain(domain) + '/products.json?limit=250' + (page > 1 ? '&page=' + page : '');
+  }
+
+  function productUrl(domain, handle) {
+    return 'https://' + normalizeDomain(domain) + '/products/' + encodeURIComponent(handle);
+  }
+
+  // El texto de una página JSON trae el JSON tal cual (a veces con texto del visor del navegador alrededor)
+  function extractJson(text) {
+    const s = String(text || '');
+    const a = s.indexOf('{');
+    const b = s.lastIndexOf('}');
+    if (a < 0 || b <= a) return null;
+    try {
+      return JSON.parse(s.slice(a, b + 1));
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function shopifyReady(text) {
+    const s = String(text || '');
+    return /"products"\s*:/.test(s) || /(404|not found|no encontrad|password|contraseña|Opening soon|Abriremos pronto)/i.test(s);
+  }
+
+  /*
+   * Catálogo público de una tienda Shopify (/products.json). Shopify no publica ventas ni stock exacto:
+   * se ve precio, precio tachado, si cada variante está disponible y las fechas de creación y publicación.
+   */
+  function parseShopifyProducts(text) {
+    const data = extractJson(text);
+    if (!data || !Array.isArray(data.products)) return null;
+    return data.products.map((p) => {
+      const vs = Array.isArray(p.variants) ? p.variants : [];
+      const prices = vs.map((v) => U.parseNum(v.price)).filter((n) => n != null);
+      const compare = vs.map((v) => U.parseNum(v.compare_at_price)).filter((n) => n != null && n > 0);
+      return {
+        id: String(p.id),
+        titulo: String(p.title || ''),
+        handle: String(p.handle || ''),
+        tipo: String(p.product_type || ''),
+        creado: p.created_at || null,
+        publicado: p.published_at || null,
+        actualizado: p.updated_at || null,
+        precioMin: prices.length ? Math.min(...prices) : null,
+        precioMax: prices.length ? Math.max(...prices) : null,
+        tachado: compare.length ? Math.max(...compare) : null,
+        variantes: vs.length,
+        disponibles: vs.filter((v) => v.available !== false).length,
+        disponible: vs.some((v) => v.available !== false),
+        imagen: p.images && p.images[0] && p.images[0].src ? String(p.images[0].src) : '',
+      };
+    });
+  }
+
+  /*
+   * Compara dos fotos del catálogo de una tienda: productos nuevos, quitados, cambios de precio y de stock.
+   * prev/next: arrays de parseShopifyProducts.
+   */
+  function diffCatalog(prev, next) {
+    const a = new Map((prev || []).map((p) => [p.id, p]));
+    const b = new Map((next || []).map((p) => [p.id, p]));
+    const nuevos = [];
+    const quitados = [];
+    const precios = [];
+    const agotados = [];
+    const repuestos = [];
+    for (const [id, p] of b) {
+      const o = a.get(id);
+      if (!o) {
+        nuevos.push(p);
+        continue;
+      }
+      if (o.precioMin !== p.precioMin) precios.push({ producto: p, antes: o.precioMin, ahora: p.precioMin });
+      if (o.disponible && !p.disponible) agotados.push(p);
+      if (!o.disponible && p.disponible) repuestos.push(p);
+    }
+    for (const [id, p] of a) if (!b.has(id)) quitados.push(p);
+    return { nuevos, quitados, precios, agotados, repuestos, cambios: nuevos.length + quitados.length + precios.length + agotados.length + repuestos.length };
+  }
+
+  /* Productos de la tienda que se parecen a un corrector de postura (para comparar precio) */
+  function postureProducts(list) {
+    return (list || []).filter((p) => /postur|corrector|espald|faja|chaleco|columna|hombro/i.test(U.stripAccents(p.titulo + ' ' + p.tipo)));
+  }
+
+  function daysSince(iso, today) {
+    if (!iso) return null;
+    return U.daysBetween(U.dayKeyAR(iso), today || U.todayKeyAR());
+  }
+
+  // "123 reseñas", "(45 opiniones)", "87 reviews" → el número más grande que aparezca
+  function reviewCount(text) {
+    const re = /(\d[\d.,]*)\s*(rese[nñ]as|opiniones|reviews|valoraciones|calificaciones|comentarios)/gi;
+    let best = null;
+    let m;
+    while ((m = re.exec(String(text || '')))) {
+      const n = U.parseMoney(m[1]);
+      if (n != null && (best == null || n > best)) best = n;
+    }
+    return best;
+  }
+
+  /* ---------- Mercado Libre ---------- */
+
+  function mlReady(text) {
+    const s = String(text || '');
+    return /(\$\s?\d|resultados|No hay publicaciones|no encontramos)/i.test(s);
+  }
+
+  // "+5mil vendidos" → 5000 · "+500 vendidos" → 500 · "+10 mil vendidos" → 10000 · "+1 M vendidos" → 1000000
+  function parseVendidos(str) {
+    const m = String(str || '')
+      .toLowerCase()
+      .match(/\+?\s*(\d+(?:[.,]\d+)?)\s*(mil|k|m|mill[oó]n(?:es)?)?\s*vendid/);
+    if (!m) return null;
+    let n = Number(m[1].replace(',', '.'));
+    if (m[2] === 'mil' || m[2] === 'k') n *= 1000;
+    else if (m[2]) n *= 1000000; // "m", "millón", "millones"
+    return Math.round(n);
+  }
+
+  // Todas las menciones de "vendidos" en el texto
+  function vendidosEnTexto(text) {
+    const out = [];
+    const re = /\+?\s*\d+(?:[.,]\d+)?\s*(?:mil|k|m|mill[oó]n(?:es)?)?\s*vendid[oa]s?/gi;
+    let m;
+    while ((m = re.exec(String(text || '')))) {
+      const n = parseVendidos(m[0]);
+      if (n != null) out.push(n);
+    }
+    return out;
+  }
+
+  // "1.234 resultados" en la búsqueda de Mercado Libre
+  function mlResultCount(text) {
+    const m = String(text || '').match(/([\d.]+)\s+resultados/i);
+    return m ? U.parseMoney(m[1]) : null;
+  }
+
+  function median(nums) {
+    const a = (nums || []).filter((n) => Number.isFinite(n)).sort((x, y) => x - y);
+    if (!a.length) return null;
+    const i = Math.floor(a.length / 2);
+    return a.length % 2 ? a[i] : (a[i - 1] + a[i]) / 2;
+  }
+
+  /*
+   * Resumen de demanda a partir de las publicaciones extraídas de una búsqueda:
+   * listings: [{titulo, precio, opiniones, vendidos, masVendido}]
+   */
+  function mlSignals(listings, resultados) {
+    const L = (listings || []).filter((l) => l && (l.precio || l.titulo));
+    const vend = L.map((l) => l.vendidos).filter((n) => n != null);
+    const opin = L.map((l) => l.opiniones).filter((n) => n != null);
+    const precios = L.map((l) => l.precio).filter((n) => n > 0);
+    const masVendidos = L.filter((l) => l.masVendido).length;
+    const totalVend = U.sum(vend);
+    const totalOpin = U.sum(opin);
+    // Demanda 1–5: por vendidos visibles; si no hay, por opiniones (≈ 1 de cada 10 compradores opina)
+    const base = vend.length ? totalVend : totalOpin * 10;
+    const demanda = base >= 20000 ? 5 : base >= 5000 ? 4 : base >= 1000 ? 3 : base >= 200 ? 2 : 1;
+    // Competencia 1–5: cantidad de resultados y de publicaciones con buenas ventas
+    const competencia = resultados == null ? (L.length >= 10 ? 4 : 3) : resultados >= 5000 ? 5 : resultados >= 1500 ? 4 : resultados >= 400 ? 3 : resultados >= 100 ? 2 : 1;
+    return {
+      publicaciones: L.length,
+      resultados: resultados == null ? null : resultados,
+      vendidosVisibles: vend.length ? totalVend : null,
+      opiniones: opin.length ? totalOpin : null,
+      masVendidos,
+      precioMin: precios.length ? Math.min(...precios) : null,
+      precioMediana: median(precios),
+      precioMax: precios.length ? Math.max(...precios) : null,
+      demanda,
+      competencia,
+      vende: base >= 1000 ? 'si' : base >= 200 ? 'algo' : 'poco',
+    };
+  }
+
+  const api = {
+    compactText,
+    adLibraryReady,
+    adLibraryCount,
+    adLibraryIds,
+    needsLogin,
+    adUrl,
+    adKey,
+    normKey,
+    normalizeDomain,
+    isStoreDomain,
+    productsJsonUrl,
+    productUrl,
+    extractJson,
+    shopifyReady,
+    parseShopifyProducts,
+    diffCatalog,
+    postureProducts,
+    daysSince,
+    reviewCount,
+    mlReady,
+    parseVendidos,
+    vendidosEnTexto,
+    mlResultCount,
+    mlSignals,
+    median,
+  };
+  if (isNode) module.exports = api;
+  else (root.VC = root.VC || {}).research = api;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
 <script>
@@ -2547,6 +2892,25 @@ details.panel[open] > summary { margin-bottom: 4px; }
       const cur = this.cache.has(path) ? this.cache.get(path) : await this.get(path);
       const data = Object.assign({}, cur || {}, partial);
       return this.set(path, data);
+    },
+
+    /* Lee una colección una sola vez: Map id → datos. */
+    async list(col) {
+      if (this.mode === 'db') {
+        try {
+          const snap = await this.db.collection(col).get();
+          const m = new Map();
+          for (const d of snap.docs) {
+            const data = d.data();
+            m.set(d.id, data);
+            this.cache.set(col + '/' + d.id, data);
+          }
+          return m;
+        } catch (e) {
+          return new Map();
+        }
+      }
+      return this._localCollection(col);
     },
 
     async remove(path) {
@@ -2851,6 +3215,143 @@ details.panel[open] > summary { margin-bottom: 4px; }
     },
   };
 
+  /* ---------------- Navegador de la app de escritorio (en la PC del usuario) ---------------- */
+
+  const BROWSER = 'host:claude_browser';
+  const BROWSER_ERRORS = {
+    server_not_connected: 'El navegador de Claude solo funciona abriendo este panel desde la app de escritorio de Claude, en una sesión de Cowork.',
+    not_in_manifest: 'No le diste permiso a este panel para usar el navegador. Habilitalo en Permisos.',
+    cancelled: 'Se canceló el acceso del navegador a esa página.',
+    approval_required: 'El navegador necesita tu aprobación para abrir esa página.',
+    blocked_by_policy: 'Tu organización no permite usar el navegador desde esta página.',
+    consent_required: 'Falta tu permiso para usar el navegador en esta página.',
+    not_granted: 'Esta vista no puede usar el navegador.',
+    capability_disabled: 'Esta vista no puede usar el navegador.',
+  };
+
+  /*
+   * Usa el navegador integrado de la app de escritorio de Claude (en la PC del usuario) para leer páginas públicas:
+   * Biblioteca de anuncios de Meta, Mercado Libre, tiendas de la competencia.
+   * Herramientas: preview_start({url}) abre una pestaña y devuelve su tabId; navigate({url, tabId}); get_page_text({tabId}).
+   */
+  const Browser = {
+    mcp: null,
+    available: false,
+    checked: false,
+    tabs: [], // pestañas abiertas por el panel (se reusan)
+    busy: new Set(),
+    activeOnly: false, // si no pudimos leer el tabId, trabajamos sobre la pestaña activa, de a una
+
+    async init() {
+      this.mcp = Shop.mcp || (await use('mcp'));
+      this.available = false;
+      if (this.mcp) {
+        try {
+          const r = await this.mcp.listTools(BROWSER);
+          this.available = !!(r && r.servers && r.servers.some((s) => s.server === BROWSER && s.tools && s.tools.length));
+        } catch (e) {
+          this.available = false;
+        }
+      }
+      this.checked = true;
+      return this.available;
+    },
+
+    errorText(e) {
+      const code = (e && e.code) || 'upstream_error';
+      return BROWSER_ERRORS[code] || (code === 'tool_error' ? 'El navegador no pudo abrir la página: ' + ((e && e.message) || '') : 'El navegador no respondió (' + code + ').');
+    },
+
+    /* Errores que no se arreglan reintentando: cortan toda la tanda. */
+    fatal(e) {
+      return ['server_not_connected', 'not_in_manifest', 'blocked_by_policy', 'not_granted', 'capability_disabled', 'capability_removed', 'consent_required'].includes(e && e.code);
+    },
+
+    async _call(tool, input) {
+      return this.mcp.callTool(BROWSER, tool, input, { cache: false });
+    },
+
+    _texts(res) {
+      const out = [];
+      const p = res && res.payload;
+      if (typeof p === 'string') out.push(p);
+      else if (p && typeof p === 'object') {
+        for (const k of ['text', 'content', 'pageText', 'result']) if (typeof p[k] === 'string') out.push(p[k]);
+      }
+      for (const b of (res && res.content) || []) if (b && b.type === 'text' && typeof b.text === 'string') out.push(b.text);
+      return out;
+    },
+
+    _tabId(res) {
+      const p = res && res.payload;
+      if (p && typeof p === 'object') {
+        if (p.tabId != null) return p.tabId;
+        if (p.tab_id != null) return p.tab_id;
+        if (p.tab && p.tab.id != null) return p.tab.id;
+      }
+      const t = this._texts(res).join(' ');
+      const m = t.match(/tab[\s_-]*id["'\s:=]*["']?([A-Za-z0-9_-]+)/i);
+      if (!m) return null;
+      return /^\d+$/.test(m[1]) ? Number(m[1]) : m[1];
+    },
+
+    _text(res) {
+      return this._texts(res).sort((a, b) => b.length - a.length)[0] || '';
+    },
+
+    async _acquire(url) {
+      if (this.activeOnly) {
+        while (this.busy.size) await sleep(300);
+        this.busy.add('active');
+        await this._call('navigate', { url });
+        return null;
+      }
+      const free = this.tabs.find((t) => !this.busy.has(t));
+      if (free != null) {
+        this.busy.add(free);
+        try {
+          await this._call('navigate', { url, tabId: free });
+          return free;
+        } catch (e) {
+          this.busy.delete(free);
+          this.tabs = this.tabs.filter((t) => t !== free); // la pestaña pudo cerrarse: abrimos otra
+          if (this.fatal(e)) throw e;
+        }
+      }
+      const res = await this._call('preview_start', { url });
+      const id = this._tabId(res);
+      if (id == null) {
+        this.activeOnly = true;
+        this.busy.add('active');
+        return null;
+      }
+      this.tabs.push(id);
+      this.busy.add(id);
+      return id;
+    },
+
+    /*
+     * Abre `url` y devuelve el texto de la página. Espera a que `ready(text)` sea verdadero (las páginas que cargan
+     * con JavaScript tardan unos segundos), hasta `tries` lecturas.
+     */
+    async read(url, opts) {
+      const o = Object.assign({ tries: 5, firstWait: 1800, wait: 2500, ready: null, maxChars: 0 }, opts || {});
+      const tab = await this._acquire(url);
+      try {
+        let text = '';
+        for (let i = 0; i < o.tries; i++) {
+          await sleep(i === 0 ? o.firstWait : o.wait);
+          const res = await this._call('get_page_text', tab == null ? {} : { tabId: tab });
+          text = this._text(res);
+          if (!o.ready || o.ready(text)) break;
+        }
+        return o.maxChars ? text.slice(0, o.maxChars) : text;
+      } finally {
+        this.busy.delete(tab == null ? 'active' : tab);
+      }
+    },
+  };
+
   async function managePermissions() {
     const p = await use('permissions');
     if (p && p.manage) {
@@ -2864,7 +3365,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
     return false;
   }
 
-  VC.runtime = { Store, Shop, AI, use, managePermissions, ORDERS_QUERY, TAGS_MUTATION };
+  VC.runtime = { Store, Shop, AI, Browser, use, sleep, managePermissions, ORDERS_QUERY, TAGS_MUTATION };
 })(window);
 </script>
 <script>
@@ -3123,6 +3624,192 @@ details.panel[open] > summary { margin-bottom: 4px; }
   }
 
   VC.ui = { e, $, $$, App, DEFAULT_MSGS, DEFAULT_TIENDA, toast, copyText, chip, banner, emptyState, waButton, WA_ICON, kpi, seg, shopStatusBanner, debounce, prefGet, prefSet, readFileText, storeFail };
+})(window);
+</script>
+<script>
+/* auto.js */
+/*
+ * Motor de tareas automáticas del panel: escaneo de la competencia, revisión de tiendas, búsqueda de productos
+ * ganadores y guiones del día. Cada herramienta registra su tarea; el motor las corre de a una, cuando toca
+ * (al abrir el panel, si pasó el tiempo configurado) o cuando el usuario toca "ahora".
+ */
+(function (root) {
+  'use strict';
+  const VC = root.VC;
+  const U = VC.util;
+  const { Store, AI, Browser } = VC.runtime;
+
+  const ORDEN = ['competencia', 'tiendas', 'productos', 'guiones'];
+
+  const DEFAULTS = {
+    competencia: { auto: false, cadaHoras: 24, busquedas: VC.competitors.BUSQUEDAS.slice(), guionesTras: true },
+    tiendas: { auto: false, cadaHoras: 24, dominios: [] },
+    productos: { auto: false, cadaHoras: 168 },
+    guiones: { auto: false, cadaHoras: 24, cantidad: 3, clips: 4 },
+  };
+
+  const NOMBRES = {
+    competencia: 'escaneo de la competencia',
+    tiendas: 'revisión de tiendas',
+    productos: 'búsqueda de productos ganadores',
+    guiones: 'guiones del día',
+  };
+
+  const jobs = new Map();
+  const subs = new Set();
+  let cola = Promise.resolve();
+  const enCola = new Map(); // nombre → promesa
+  let ctl = null;
+
+  const Auto = {
+    ORDEN,
+    DEFAULTS,
+    NOMBRES,
+    cfg: JSON.parse(JSON.stringify(DEFAULTS)),
+    estado: {}, // nombre → {ultima, origen, resultado, error}
+    running: null,
+    progress: {},
+    loaded: false,
+
+    /* Registra la tarea de una herramienta. job = {needs: ['browser'|'sample'], run: async (ctx) => resultado} */
+    register(name, job) {
+      jobs.set(name, job);
+    },
+
+    on(cb) {
+      subs.add(cb);
+      return () => subs.delete(cb);
+    },
+
+    emit(evt) {
+      for (const cb of subs) {
+        try {
+          cb(evt);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    },
+
+    async load() {
+      const [cfg, estado] = await Promise.all([Store.get('config/automatico'), Store.get('auto/estado')]);
+      if (cfg) for (const k of ORDEN) this.cfg[k] = Object.assign({}, DEFAULTS[k], cfg[k] || {});
+      if (estado) this.estado = Object.assign({}, estado);
+      this.loaded = true;
+      this.emit({ type: 'cfg' });
+    },
+
+    setCfg(name, patch) {
+      this.cfg[name] = Object.assign({}, this.cfg[name], patch);
+      this._saveCfg();
+      this.emit({ type: 'cfg', job: name });
+    },
+
+    _saveCfg: VC.ui.debounce(() => Store.set('config/automatico', JSON.parse(JSON.stringify(Auto.cfg))).catch(VC.ui.storeFail), 600),
+
+    ultima(name) {
+      return (this.estado[name] && this.estado[name].ultima) || null;
+    },
+
+    due(name) {
+      const c = this.cfg[name];
+      const u = this.ultima(name);
+      return !u || U.hoursSince(u) >= (Number(c && c.cadaHoras) || 24);
+    },
+
+    /* ¿Se puede correr acá? Devuelve {ok, motivo}. */
+    can(name) {
+      const job = jobs.get(name);
+      if (!job) return { ok: false, motivo: 'La herramienta todavía no cargó.' };
+      for (const n of job.needs || []) {
+        if (n === 'browser' && !Browser.available) return { ok: false, motivo: 'Necesita el navegador de Claude: abrí este panel desde la app de escritorio de Claude (Cowork).' };
+        if (n === 'sample' && !AI.sample) return { ok: false, motivo: 'Necesita Claude: abrí este panel desde claude.ai o la app de Claude.' };
+      }
+      return { ok: true, motivo: '' };
+    },
+
+    /*
+     * Corre una tarea (de a una por vez; si hay otra corriendo, espera). origen: 'manual' | 'auto' | 'cadena'.
+     * Devuelve el resultado de la tarea, o null si falló o se canceló.
+     */
+    run(name, opts) {
+      if (enCola.has(name)) return enCola.get(name);
+      const p = (cola = cola.then(() => this._run(name, opts || {})).catch(() => null));
+      enCola.set(name, p);
+      p.finally(() => enCola.delete(name));
+      return p;
+    },
+
+    async _run(name, opts) {
+      const job = jobs.get(name);
+      const chk = this.can(name);
+      if (!job || !chk.ok) {
+        this.emit({ type: 'skip', job: name, motivo: chk.motivo });
+        return null;
+      }
+      ctl = new AbortController();
+      this.running = name;
+      this.progress[name] = 'Empezando…';
+      this.emit({ type: 'start', job: name, origen: opts.origen || 'manual' });
+      const ctx = {
+        signal: ctl.signal,
+        origen: opts.origen || 'manual',
+        motivo: opts.motivo || '',
+        progress: (text) => {
+          this.progress[name] = text;
+          this.emit({ type: 'progress', job: name, text });
+        },
+      };
+      let resultado = null;
+      let error = '';
+      try {
+        resultado = await job.run(ctx);
+      } catch (err) {
+        error = err && err.code === 'cancelled' ? 'Cancelado.' : (err && (err.userMessage || err.message)) || 'Error inesperado.';
+        if (err && err.code !== 'cancelled') console.error(err);
+      }
+      this.running = null;
+      this.progress[name] = '';
+      const cancelado = ctl.signal.aborted;
+      ctl = null;
+      this.estado[name] = {
+        ultima: cancelado ? this.ultima(name) : new Date().toISOString(),
+        origen: ctx.origen,
+        resultado: resultado ? small(resultado) : null,
+        error: cancelado ? 'Cancelado.' : error,
+      };
+      Store.set('auto/estado', JSON.parse(JSON.stringify(this.estado))).catch(() => {});
+      this.emit({ type: error || cancelado ? 'error' : 'done', job: name, resultado, error: this.estado[name].error, origen: ctx.origen });
+      if (resultado && resultado.siguiente && !cancelado) this.run(resultado.siguiente, { origen: 'cadena', motivo: resultado.motivoSiguiente || '' });
+      return error || cancelado ? null : resultado;
+    },
+
+    stop() {
+      if (ctl) ctl.abort();
+    },
+
+    /* Al abrir el panel: corre en orden las tareas activadas que ya tocan. */
+    async boot() {
+      if (!this.loaded) await this.load();
+      for (const name of ORDEN) {
+        const c = this.cfg[name];
+        if (c && c.auto && this.due(name) && this.can(name).ok) await this.run(name, { origen: 'auto' });
+      }
+    },
+  };
+
+  // Lo que se guarda del resultado en auto/estado: solo números y textos cortos
+  function small(r) {
+    const out = {};
+    for (const [k, v] of Object.entries(r || {})) {
+      if (k === 'siguiente' || k === 'motivoSiguiente') continue;
+      if (typeof v === 'number' || typeof v === 'boolean') out[k] = v;
+      else if (typeof v === 'string') out[k] = v.slice(0, 400);
+    }
+    return out;
+  }
+
+  VC.auto = Auto;
 })(window);
 </script>
 <script>
@@ -5330,6 +6017,16 @@ details.panel[open] > summary { margin-bottom: 4px; }
 })(window);
 </script>
 <script>
+/* ui/tiendas.js */
+/* Tiendas de la competencia (se completa en esta tarea) */
+(function (root) {
+  'use strict';
+  const VC = root.VC;
+  VC.tools = VC.tools || {};
+  VC.tools.tiendas = { mount() {}, render() {} };
+})(window);
+</script>
+<script>
 /* ui/competencia.js */
 /* Espía de anuncios de la competencia */
 (function (root) {
@@ -6932,7 +7629,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
 (function (root) {
   'use strict';
   const VC = root.VC;
-  const { Store, Shop, AI } = VC.runtime;
+  const { Store, Shop, AI, Browser } = VC.runtime;
   const { App, DEFAULT_MSGS, $, $$, e, prefGet, prefSet } = VC.ui;
 
   const TABS = [
@@ -6993,6 +7690,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
     }
     renderNav();
     for (const t of TABS) $('#panel-' + t.id).hidden = t.id !== id;
+    if (id === 'confirmar') updateBadges();
     if (focus) $('#tab-' + id).focus();
     if (ready && !mounted.has(id)) {
       mounted.add(id);
@@ -7014,8 +7712,30 @@ details.panel[open] > summary { margin-bottom: 4px; }
             ? ['Conectando…', 'neutral']
             : ['Shopify sin conexión', 'bad'];
     const data = Store.mode === 'db' ? ['Datos en tu cuenta', 'neutral'] : Store.mode === 'local' ? ['Datos en este navegador', 'warn'] : ['', 'neutral'];
+    const A = VC.auto;
+    const auto = A && A.running ? '<span class="conn tone-info auto-chip"><span class="dot pulse"></span>' + e('Automático: ' + A.NOMBRES[A.running] + (A.progress[A.running] ? ' · ' + A.progress[A.running] : '')) + '<button type="button" class="conn-stop" data-act="auto-stop" aria-label="Detener la tarea automática">Detener</button></span>' : '';
     $('#conn').innerHTML =
-      '<span class="conn tone-' + shop[1] + '"><span class="dot"></span>' + e(shop[0]) + '</span>' + (data[0] ? '<span class="conn tone-' + data[1] + '"><span class="dot"></span>' + e(data[0]) + '</span>' : '');
+      auto +
+      '<span class="conn tone-' +
+      shop[1] +
+      '"><span class="dot"></span>' +
+      e(shop[0]) +
+      '</span>' +
+      (Browser.available ? '<span class="conn tone-good" title="El panel puede leer páginas públicas con el navegador de Claude en tu PC"><span class="dot"></span>Navegador de tu PC</span>' : '') +
+      (data[0] ? '<span class="conn tone-' + data[1] + '"><span class="dot"></span>' + e(data[0]) + '</span>' : '');
+  }
+
+  // Pestaña donde se ven los resultados de cada tarea automática
+  const TAB_DE = { competencia: 'competencia', tiendas: 'competencia', productos: 'productos', guiones: 'guiones' };
+
+  function markNew(tab) {
+    if (tab === current) return;
+    const b = $('#badge-' + tab);
+    if (b) {
+      b.hidden = false;
+      b.textContent = 'nuevo';
+      b.classList.add('is-new');
+    }
   }
 
   function updateBadges() {
@@ -7058,9 +7778,24 @@ details.panel[open] > summary { margin-bottom: 4px; }
     ready = true;
     mounted.add(current);
     VC.tools[current].mount($('#panel-' + current));
+
+    // Tareas automáticas: necesitan saber si hay navegador (app de escritorio) y Claude
+    await Browser.init();
+    renderConn();
+    VC.auto.on((ev) => {
+      renderConn();
+      if (ev.type === 'done' && ev.resultado && ev.resultado.novedades > 0) markNew(TAB_DE[ev.job]);
+      if (ev.type === 'done' && ev.origen !== 'manual' && ev.resultado && ev.resultado.resumen) VC.ui.toast(ev.resultado.resumen, 'good');
+    });
+    await VC.auto.load();
+    VC.auto.boot().catch((err) => console.error(err));
   }
 
   document.addEventListener('click', (ev) => {
+    if (ev.target.closest('[data-act="auto-stop"]')) {
+      VC.auto.stop();
+      return;
+    }
     const tab = ev.target.closest('[data-tab]');
     if (tab) {
       select(tab.dataset.tab);

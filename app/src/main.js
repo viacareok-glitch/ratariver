@@ -2,7 +2,7 @@
 (function (root) {
   'use strict';
   const VC = root.VC;
-  const { Store, Shop, AI } = VC.runtime;
+  const { Store, Shop, AI, Browser } = VC.runtime;
   const { App, DEFAULT_MSGS, $, $$, e, prefGet, prefSet } = VC.ui;
 
   const TABS = [
@@ -63,6 +63,7 @@
     }
     renderNav();
     for (const t of TABS) $('#panel-' + t.id).hidden = t.id !== id;
+    if (id === 'confirmar') updateBadges();
     if (focus) $('#tab-' + id).focus();
     if (ready && !mounted.has(id)) {
       mounted.add(id);
@@ -84,8 +85,30 @@
             ? ['Conectando…', 'neutral']
             : ['Shopify sin conexión', 'bad'];
     const data = Store.mode === 'db' ? ['Datos en tu cuenta', 'neutral'] : Store.mode === 'local' ? ['Datos en este navegador', 'warn'] : ['', 'neutral'];
+    const A = VC.auto;
+    const auto = A && A.running ? '<span class="conn tone-info auto-chip"><span class="dot pulse"></span>' + e('Automático: ' + A.NOMBRES[A.running] + (A.progress[A.running] ? ' · ' + A.progress[A.running] : '')) + '<button type="button" class="conn-stop" data-act="auto-stop" aria-label="Detener la tarea automática">Detener</button></span>' : '';
     $('#conn').innerHTML =
-      '<span class="conn tone-' + shop[1] + '"><span class="dot"></span>' + e(shop[0]) + '</span>' + (data[0] ? '<span class="conn tone-' + data[1] + '"><span class="dot"></span>' + e(data[0]) + '</span>' : '');
+      auto +
+      '<span class="conn tone-' +
+      shop[1] +
+      '"><span class="dot"></span>' +
+      e(shop[0]) +
+      '</span>' +
+      (Browser.available ? '<span class="conn tone-good" title="El panel puede leer páginas públicas con el navegador de Claude en tu PC"><span class="dot"></span>Navegador de tu PC</span>' : '') +
+      (data[0] ? '<span class="conn tone-' + data[1] + '"><span class="dot"></span>' + e(data[0]) + '</span>' : '');
+  }
+
+  // Pestaña donde se ven los resultados de cada tarea automática
+  const TAB_DE = { competencia: 'competencia', tiendas: 'competencia', productos: 'productos', guiones: 'guiones' };
+
+  function markNew(tab) {
+    if (tab === current) return;
+    const b = $('#badge-' + tab);
+    if (b) {
+      b.hidden = false;
+      b.textContent = 'nuevo';
+      b.classList.add('is-new');
+    }
   }
 
   function updateBadges() {
@@ -128,9 +151,24 @@
     ready = true;
     mounted.add(current);
     VC.tools[current].mount($('#panel-' + current));
+
+    // Tareas automáticas: necesitan saber si hay navegador (app de escritorio) y Claude
+    await Browser.init();
+    renderConn();
+    VC.auto.on((ev) => {
+      renderConn();
+      if (ev.type === 'done' && ev.resultado && ev.resultado.novedades > 0) markNew(TAB_DE[ev.job]);
+      if (ev.type === 'done' && ev.origen !== 'manual' && ev.resultado && ev.resultado.resumen) VC.ui.toast(ev.resultado.resumen, 'good');
+    });
+    await VC.auto.load();
+    VC.auto.boot().catch((err) => console.error(err));
   }
 
   document.addEventListener('click', (ev) => {
+    if (ev.target.closest('[data-act="auto-stop"]')) {
+      VC.auto.stop();
+      return;
+    }
     const tab = ev.target.closest('[data-tab]');
     if (tab) {
       select(tab.dataset.tab);
