@@ -1,1 +1,52 @@
-/* tiendas */
+/* Tiendas de la competencia (dentro de la pestaña Competencia) */
+.tn { min-width: 0; }
+.tn-add { display: flex; flex-wrap: wrap; gap: 8px; }
+.tn-add input { flex: 1 1 220px; min-width: 0; }
+.tn-ctrl, .tn-prog { display: grid; gap: 10px; min-width: 0; }
+.tn-ctrl:empty, .tn-prog:empty, #tn-summary:empty { display: none; }
+.tn-log { min-width: 0; overflow-wrap: anywhere; }
+.tn-list { display: grid; gap: 12px; min-width: 0; }
+
+.tn-card { display: grid; gap: 10px; min-width: 0; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: var(--r-sm); }
+/* Los hijos de las grillas no se estiran por el ancho de su contenido (tablas, títulos largos) */
+.tn-card > *, .tn-corr > *, .tn-changes, .tn-hist { min-width: 0; }
+.tn-card.is-alto { border-left-color: var(--good); }
+.tn-card.is-medio { border-left-color: var(--info); }
+.tn-card-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 6px 12px; }
+.tn-name { display: grid; gap: 2px; min-width: 0; }
+.tn-dom { font-family: var(--font-display); font-size: var(--step-1); font-weight: 700; color: var(--ink); text-decoration: none; overflow-wrap: anywhere; }
+.tn-dom:hover, .tn-dom:focus-visible { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.tn-why { max-width: 72ch; }
+
+.tn-facts { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; font-size: var(--step--1); color: var(--muted); }
+.tn-facts strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+.tn-delta { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); }
+.tn-delta.is-up { color: var(--good); font-weight: 500; }
+
+.tn-corr { display: grid; gap: 6px; min-width: 0; padding: 10px 12px; background: var(--surface-2); border-radius: var(--r-sm); }
+.tn-corr-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 4px; min-width: 0; }
+.tn-corr-head a { font-weight: 600; overflow-wrap: anywhere; }
+.tn-price { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.tn-price strong { font-family: var(--font-mono); font-size: 1.0625rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+.tn-price s { color: var(--muted); font-family: var(--font-mono); font-size: var(--step--1); }
+.tn-otros { list-style: none; margin: 2px 0 0; padding: 6px 0 0; border-top: 1px solid var(--line); display: grid; gap: 3px; font-size: var(--step--1); }
+.tn-otros li { display: flex; flex-wrap: wrap; gap: 0 8px; min-width: 0; }
+.tn-otros a { overflow-wrap: anywhere; }
+
+.tn-changes > summary, .tn-hist > summary { cursor: pointer; font-size: 0.875rem; font-weight: 600; color: var(--ink); }
+.tn-changes ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 5px; font-size: 0.875rem; }
+.tn-changes li { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.tn-changes li > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.tn-changes li .chip { flex: none; }
+.tn-hist .table-wrap { margin-top: 6px; }
+.tn-hist .table { font-size: var(--step--1); }
+.tn-hist .table th, .tn-hist .table td { padding: 6px 5px; }
+.tn-hist .table thead th { letter-spacing: 0.02em; text-transform: none; font-size: 0.75rem; }
+
+.tn-actions { justify-content: flex-end; }
+.tn-quitar.is-confirm { color: var(--bad); font-weight: 600; }
+
+@media (max-width: 560px) {
+  .tn-card { padding: 12px; }
+  .tn-add .btn { flex: 1 1 auto; }
+}
