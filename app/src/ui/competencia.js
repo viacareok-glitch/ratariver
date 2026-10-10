@@ -622,7 +622,7 @@
   function fila(a) {
     const angulo = CP.ANGULOS[a.angulo] || a.angulo || '';
     // En el celular ángulo, oferta y precio van juntos en una sola línea
-    const metaCel = [angulo, a.oferta || '', a.precio ? U.money(a.precio) : ''].filter(Boolean).join(' · ');
+    const metaCel = [angulo, a.oferta || '', a.precio ? U.money(a.precio).replace(' ', '\u00a0') : ''].filter(Boolean).join(' · ');
     return (
       '<tr><th scope="row" class="cp-c-who"><span class="cp-who">' +
       e(a.anunciante || 'Sin nombre') +

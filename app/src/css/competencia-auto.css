@@ -115,6 +115,8 @@
 .cp-acts .ico { width: 15px; height: 15px; }
 .btn.cp-del { color: var(--faint); }
 .btn.cp-del:hover { color: var(--bad); text-decoration: none; }
+/* Links sueltos alineados con el texto (sin el relleno de botón) */
+.cp-saved-foot .btn.link, .btn.link.cp-fold, .cp-note .btn.link { padding-inline: 2px; }
 .cp-saved-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 .btn.cp-del-all { color: var(--muted); font-weight: 500; }
 .btn.cp-del-all:hover, .btn.cp-del-all.is-confirm { color: var(--bad); }
@@ -136,9 +138,9 @@
 .cp-form .form-grid label, .cp-form .form-grid.wide label { display: grid; gap: 4px; font-size: var(--step--1); color: var(--muted); font-weight: 500; }
 .cp-form input, .cp-form select { width: 100%; }
 
-/* ---------- Celular ---------- */
-@media (max-width: 640px) {
-  /* La tabla de anuncios pasa a tarjetas: quién y días, el gancho, y abajo los datos con las acciones */
+/* ---------- Pantallas angostas ---------- */
+@media (max-width: 1100px) {
+  /* La tabla de anuncios pasa a tarjetas (en tablet y celular no entra): quién y días, el gancho, y abajo los datos con las acciones */
   .cp-table thead { display: none; }
   .cp-table, .cp-table tbody { display: block; }
   .cp-table tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'who dias' 'hook hook' 'meta acts'; align-items: center; gap: 6px 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }

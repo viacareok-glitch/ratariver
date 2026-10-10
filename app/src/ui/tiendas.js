@@ -352,9 +352,12 @@
   function card(x, hoy) {
     const { d, doc, mv } = x;
     const u = doc && doc.ultima;
-    const origen = !doc || doc.origen === 'anuncio' ? 'vino de un anuncio' : 'agregada a mano';
-    let cuando = u && u.fecha ? 'Revisada ' + U.timeAgo(u.fecha) : 'Sin revisar';
-    if (u && u.error && u.intento) cuando += ' · falló ' + U.timeAgo(u.intento);
+    // "Sin revisar" ya lo dice el chip: acá va solo cuándo se revisó y de dónde vino
+    const partes = [];
+    if (u && u.fecha) partes.push('Revisada ' + U.timeAgo(u.fecha));
+    if (u && u.error && u.intento) partes.push('falló ' + U.timeAgo(u.intento));
+    partes.push(!doc || doc.origen === 'anuncio' ? 'vino de un anuncio' : 'agregada a mano');
+    const sub = partes.join(' · ');
     const conf = state.confirmar && state.confirmar.d === d && Date.now() < state.confirmar.hasta;
     let h =
       '<article class="tn-card' +
@@ -367,7 +370,7 @@
       e(d) +
       icon('external') +
       '</a><span class="tn-sub">' +
-      e(cuando + ' · ' + origen) +
+      e(sub.charAt(0).toUpperCase() + sub.slice(1)) +
       '</span></div><div class="tn-head-r">' +
       '<span class="tn-mov">' +
       chip(mv.nivel ? MOV[mv.nivel] : 'Sin revisar', mv.nivel ? TONO[mv.nivel] : 'neutral') +
