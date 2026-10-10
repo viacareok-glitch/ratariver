@@ -173,7 +173,8 @@
     const box = $('#of-best', el);
     if (!box) return;
     const best = evs.find((x) => x.mejor);
-    if (!best) {
+    // Sin costos el número engaña: queda solo el aviso de arriba
+    if (!best || !P.costsReady(App.cfg)) {
       box.innerHTML = '';
       return;
     }
@@ -223,7 +224,7 @@
             (x.ganancia >= 0 ? 'pos' : 'neg') +
             '" style="width:' +
             Math.max(1, (Math.abs(x.ganancia) / max) * 100).toFixed(1) +
-            '%"></span></span><span class="ob-val mono ' +
+            '%"></span></span><span class="ob-val ' +
             (x.ganancia >= 0 ? 'pos' : 'neg') +
             '">' +
             e(U.money(x.ganancia)) +
@@ -271,7 +272,8 @@
 
   function liftText(x) {
     if (x.liftNecesario == null) return '<span class="neg">No empata ni con publicidad gratis</span>';
-    if (x.liftNecesario <= 0) return '<span class="pos">Gana aunque venda ' + e(U.pct(-x.liftNecesario)) + ' menos</span>';
+    if (Math.round(x.liftNecesario * 100) === 0) return 'Empata';
+    if (x.liftNecesario < 0) return '<span class="pos">Gana aunque venda ' + e(U.pct(-x.liftNecesario)) + ' menos</span>';
     return e(U.pct(x.liftNecesario)) + ' más pedidos';
   }
 

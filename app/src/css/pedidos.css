@@ -158,7 +158,7 @@
   #panel-ganancia .tool-actions { flex-wrap: nowrap; }
   #gan-range { flex: 1 1 auto; min-width: 0; }
   #gan-range .seg { display: flex; }
-  #gan-range .seg-btn { padding-inline: 10px; }
+  #gan-range .seg-btn { padding-inline: 10px; flex: 1 0 auto; justify-content: center; }
 }
 
 @media (max-width: 560px) {

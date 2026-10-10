@@ -354,7 +354,7 @@
     // Ancho útil del panel (sin el relleno), para que el gráfico no se pase y entre en media columna
     const cs = getComputedStyle(box);
     const inner = Math.floor(box.clientWidth - parseFloat(cs.paddingLeft || 0) - parseFloat(cs.paddingRight || 0));
-    const W = Math.max(280, inner, res.days.length * 16);
+    const W = Math.max(280, inner, res.days.length * 12);
     const H = 190;
     const pad = { t: 18, b: hasNeg ? 42 : 26, l: 8, r: 8 };
     const hasPos = vals.some((v) => v > 0);
@@ -395,7 +395,9 @@
         bars += '<text class="bar-label" x="' + (x + w / 2).toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="middle">' + e(U.moneyShort(v)) + '</text>';
       }
       const step = Math.ceil(res.days.length / 10);
-      if (i % step === 0 || i === res.days.length - 1) bars += '<text class="axis-label" x="' + (x + w / 2).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle">' + e(U.fmtDay(d.day)) + '</text>';
+      const last = res.days.length - 1;
+      // La última fecha siempre; las otras cada "step" días, salvo que se pisen con la última
+      if ((i % step === 0 && last - i > step / 2) || i === last) bars += '<text class="axis-label" x="' + (x + w / 2).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle">' + e(U.fmtDay(d.day)) + '</text>';
     });
     box.innerHTML =
       '<div class="panel-head"><div class="panel-title">' +

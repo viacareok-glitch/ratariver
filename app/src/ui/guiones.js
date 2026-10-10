@@ -683,7 +683,7 @@
   async function escribirTanda(ctx) {
     if (!AI.sample) throw new Error('Claude no está disponible en esta vista.');
     const pasos = [
-      { label: 'Juntar tu último reporte de anuncios, la competencia y los comentarios', estado: 'curso', det: '' },
+      { label: 'Juntar anuncios, competencia y comentarios', estado: 'curso', det: '' },
       { label: 'Escribir los guiones con Claude', estado: 'espera', det: '' },
       { label: 'Guardar la tanda', estado: 'espera', det: '' },
     ];

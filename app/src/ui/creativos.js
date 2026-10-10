@@ -319,9 +319,9 @@
               e(angleLabel(x.angulo)) +
               '</h4>' +
               (win ? chip('Ganador', 'good') : '<span class="muted small">' + x.anuncios + (x.anuncios === 1 ? ' anuncio' : ' anuncios') + '</span>') +
-              '</div><div class="cr-angle-cpa"><span class="cr-big">' +
-              e(x.cpa != null ? U.money(x.cpa) : '—') +
-              '</span><span class="muted small">por venta</span></div>' +
+              '</div><div class="cr-angle-cpa">' +
+              (x.cpa != null ? '<span class="cr-big">' + e(U.money(x.cpa)) + '</span><span class="muted small">por venta</span>' : '<span class="cr-big is-none">—</span><span class="muted small">sin ventas</span>') +
+              '</div>' +
               nums([
                 ['Gasto', U.money(x.gasto)],
                 ['Ventas', U.int(x.compras)],

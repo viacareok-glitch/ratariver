@@ -155,10 +155,13 @@
       unwatch = Store.watch(
         'tiendas',
         (m) => {
+          const antes = dominios().length;
           state.docs = m;
           paintList();
+          // Si cambió la cantidad de tiendas, se actualizan el botón y la línea de estado
+          if (dominios().length !== antes) paintStatus();
         },
-        () => Store.list('tiendas').then((m) => ((state.docs = m), paintList()))
+        () => Store.list('tiendas').then((m) => ((state.docs = m), render()))
       );
     }
     if (!suscripto) {
@@ -268,7 +271,9 @@
     const n = dominios().length;
     act.innerHTML = corriendo
       ? '<button class="btn ghost" data-act="tn-detener">' + icon('stop') + 'Detener</button>'
-      : '<button class="btn" data-act="tn-revisar"' + (n && !state.enCola ? '' : ' disabled') + '>' + icon('refresh') + 'Revisar ahora</button>';
+      : n
+        ? '<button class="btn" data-act="tn-revisar"' + (state.enCola ? ' disabled' : '') + '>' + icon('refresh') + 'Revisar ahora</button>'
+        : '';
     box.innerHTML = state.enCola && otra ? nota('clock', 'En cola: espera que termine la ' + e(A.NOMBRES[otra] || otra) + '.') : '';
   }
 
@@ -364,8 +369,10 @@
       '</a><span class="tn-sub">' +
       e(cuando + ' · ' + origen) +
       '</span></div><div class="tn-head-r">' +
+      '<span class="tn-mov">' +
       chip(mv.nivel ? MOV[mv.nivel] : 'Sin revisar', mv.nivel ? TONO[mv.nivel] : 'neutral') +
-      '<button type="button" class="btn link sm tn-quitar' +
+      (mv.nivel && mv.motivos && mv.motivos.length ? info(e(mv.texto), 'Por qué') : '') +
+      '</span><button type="button" class="btn link sm tn-quitar' +
       (conf ? ' is-confirm' : '') +
       '" data-act="tn-quitar" data-d="' +
       e(d) +
@@ -380,7 +387,6 @@
       const total = u.total != null ? u.total : u.productos.length;
       const agotados = u.agotados != null ? u.agotados : u.productos.filter((p) => !p.disponible).length;
       h +=
-        (mv.nivel && mv.motivos && mv.motivos.length ? '<p class="tn-why">' + e(mv.texto) + '</p>' : '') +
         '<p class="tn-facts"><span><strong>' +
         e(U.int(total)) +
         '</strong> productos</span><span><strong>' +
@@ -397,8 +403,6 @@
         cambios(d, doc) +
         '</div>' +
         otrosYHistorial(d, doc);
-    } else if (!u || !u.error) {
-      h += '<p class="tn-quiet">' + icon('clock') + e(Browser.available ? 'Se lee su catálogo con “Revisar ahora”.' : 'Se revisa desde la app de escritorio de Claude.') + '</p>';
     }
     if (u && u.error) h += '<p class="error-text">' + e(u.error) + '</p>';
     return h + '</article>';
@@ -448,7 +452,7 @@
               e(U.int(est.min)) +
               ' a ' +
               e(U.int(est.max)) +
-              ' ventas desde el ' +
+              ' ventas desde el <span class="nowrap">' +
               e(U.fmtDay(U.dayKeyAR(doc.cambios.desde))) +
               ' ' +
               info(
@@ -459,7 +463,8 @@
                   ' a ' +
                   S.COMPRAS_POR_RESENA[1] +
                   ' compras: es una estimación gruesa.'
-              )
+              ) +
+              '</span>'
           )
         : '') +
       '</div>'

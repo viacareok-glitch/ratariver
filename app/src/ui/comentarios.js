@@ -20,7 +20,7 @@
   function mount(section) {
     el = section;
     el.innerHTML =
-      pageHead('Comentarios', 'Pegá los comentarios y te armo una respuesta para cada uno.') +
+      pageHead('Comentarios', 'Una respuesta lista para cada comentario.') +
       '<div id="cm-warn"></div><section class="panel" id="cm-input"></section><div id="cm-summary"></div><div id="cm-list" class="cm-list"></div><section class="panel" id="cm-lib"></section>';
     el.addEventListener('click', onClick);
     el.addEventListener('input', onInput);
@@ -137,7 +137,9 @@
           icon('refresh') +
           'Otra</button><button class="btn link" data-act="guardar" data-i="' +
           i +
-          '">Guardar</button></div></div></article>'
+          '"' +
+          (it.guardada === it.respuesta ? ' disabled>Guardada' : '>Guardar') +
+          '</button></div></div></article>'
         );
       })
       .join('');
@@ -274,6 +276,11 @@
         n.textContent = t.value.length + '/' + CM.MAX;
         n.classList.toggle('is-over', t.value.length > CM.MAX);
       }
+      const g = $('[data-act="guardar"][data-i="' + t.dataset.i + '"]', el);
+      if (g) {
+        g.disabled = it.guardada === t.value;
+        g.textContent = g.disabled ? 'Guardada' : 'Guardar';
+      }
     }
   }
 
@@ -306,6 +313,9 @@
         const doc = { tipo: it.tipo, respuesta: it.respuesta, ejemplo: it.comentario, creada: new Date().toISOString() };
         state.biblioteca.set(id, doc);
         Store.set('respuestas/' + id, doc).catch(storeFail);
+        it.guardada = it.respuesta;
+        t.disabled = true;
+        t.textContent = 'Guardada';
         renderLib();
         toast('Guardada en la biblioteca.', 'good');
         break;

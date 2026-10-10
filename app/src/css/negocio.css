@@ -7,7 +7,7 @@
 :is(#panel-ofertas, #panel-productos, #panel-ajustes) .table-wrap { min-width: 0; }
 :is(#panel-ofertas, #panel-productos, #panel-ajustes) .panel-title { min-width: 0; }
 :is(#panel-ofertas, #panel-productos, #panel-ajustes) .panel-title h3 { min-width: 0; overflow-wrap: anywhere; }
-:is(#panel-ofertas, #panel-productos, #panel-ajustes) .note .ico { width: 15px; height: 15px; vertical-align: -3px; margin-right: 2px; }
+:is(#panel-ofertas, #panel-productos, #panel-ajustes) .note .ico { width: 15px; height: 15px; vertical-align: -3px; margin-right: 5px; }
 :is(#panel-ofertas, #panel-productos, #panel-ajustes) .btn.link .ico { width: 15px; height: 15px; }
 :is(#panel-ofertas, #panel-productos, #panel-ajustes) .unit.is-after { padding: 0 10px 0 0; }
 
@@ -75,12 +75,13 @@
 .of-bars .wf-track { height: 12px; }
 .of-bars li.is-best .ob-name { font-weight: 700; }
 .of-bars li:not(.is-best) .wf-bar.pos { background: color-mix(in srgb, var(--good) 45%, var(--surface-3)); }
-.of-bars .ob-val { text-align: right; font-size: 0.875rem; font-weight: 500; white-space: nowrap; }
+.of-bars .ob-val { text-align: right; font-size: 0.875rem; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .of-bars li.is-best .ob-val { font-weight: 700; }
 .of-res .more + .more { margin-top: -4px; }
 #of-detail, #of-sens { display: grid; gap: 10px; min-width: 0; }
 .of-detail th, .of-detail td { white-space: nowrap; }
 .of-detail td.small { white-space: normal; min-width: 150px; }
+.of-sens thead th.num { text-transform: none; }
 .of-sens th.is-now { color: var(--accent); }
 .of-sens td.is-best-cell { background: var(--good-soft); color: var(--good); font-weight: 700; }
 
@@ -113,9 +114,10 @@
 .pr-card.is-flash { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .pr-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .pr-card-title { display: grid; gap: 2px; min-width: 0; }
-.pr-card-name { display: flex; align-items: flex-start; gap: 2px; min-width: 0; }
-.pr-card-name h4 { font-size: 1.0625rem; overflow-wrap: anywhere; min-width: 0; }
-.pr-card-name .info { flex: none; margin-top: 1px; }
+/* El "?" sigue al final del nombre aunque el nombre ocupe dos líneas */
+.pr-card-name { min-width: 0; }
+.pr-card-name h4 { display: inline; font-size: 1.0625rem; overflow-wrap: anywhere; }
+.pr-card-name .info { display: inline-block; vertical-align: -4px; margin-left: 2px; }
 .pr-card-name .info > summary { width: 20px; height: 20px; }
 .pr-ref { color: var(--muted); font-size: var(--step--1); }
 .pr-score { display: grid; justify-items: center; align-content: center; flex: none; width: 58px; height: 58px; border-radius: 16px; background: var(--accent-soft); color: var(--accent); }
@@ -131,8 +133,8 @@
 .pr-num-lbl { display: flex; align-items: center; gap: 2px; height: 20px; color: var(--muted); font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
 .pr-num-lbl .info { line-height: 0; }
 .pr-num-lbl .info > summary { width: 18px; height: 18px; }
-.pr-num { font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-.pr-nums > div:first-child .pr-num { font-size: 1.125rem; font-weight: 700; }
+.pr-num { font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.pr-nums > div:first-child .pr-num { font-size: 1.125rem; font-weight: 800; }
 .pr-card .more { padding-top: 12px; }
 .pr-more { display: grid; gap: 14px; }
 .pr-more .pr-fld { max-width: 220px; }
@@ -163,6 +165,7 @@
 .aj-field .input-unit input { min-height: 38px; }
 .aj-panel .more { padding-top: 14px; }
 .aj-more { display: grid; gap: 14px; }
+.aj-nw { white-space: nowrap; }
 .aj-tpls { display: grid; }
 .aj-tpls .more { padding-block: 12px; }
 .aj-tpls .more:last-child { padding-bottom: 0; }
@@ -213,5 +216,6 @@
   .pr-num { font-size: 0.875rem; }
   .pr-nums > div:first-child .pr-num { font-size: 1rem; }
   .aj-fields { grid-template-columns: minmax(0, 1fr); }
+  #aj-guiones textarea { min-height: 156px; }
   #aj-costos .aj-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 10px; }
 }

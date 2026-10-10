@@ -13,12 +13,13 @@
   const { e, $, $$, App, chip, banner, toast, storeFail, icon, bubble, pageHead, info, more, toggle } = VC.ui;
   const A = VC.auto;
 
+  // Puntajes del 1 al 5: etiqueta corta y qué significan los extremos
   const ESCALAS = [
-    ['demanda', 'Demanda'],
-    ['competencia', 'Competencia (5 = mucha)'],
-    ['afinidad', 'Afinidad con tu cliente'],
-    ['video', 'Se luce en video'],
-    ['riesgo', 'Riesgo (5 = alto)'],
+    ['demanda', 'Demanda', 'poca', 'mucha'],
+    ['competencia', 'Competencia', 'poca', 'mucha'],
+    ['afinidad', 'Afinidad con tu cliente', 'poca', 'mucha'],
+    ['video', 'Se luce en video', 'poco', 'mucho'],
+    ['riesgo', 'Riesgo', 'bajo', 'alto'],
   ];
   const CADA = [24, 72, 168];
   const CANCELADO = 'Cancelado.';
@@ -126,6 +127,7 @@
 
   function renderRanking() {
     const list = scored().sort((a, b) => b.completo - a.completo || b.puntaje - a.puntaje);
+    const algunoCompleto = list.some((s) => s.completo);
     $('#pr-ranking', el).innerHTML =
       '<ol class="pr-rk">' +
       list
@@ -140,7 +142,7 @@
             e(s.p.nombre) +
             '</button>' +
             (v ? chip(v.label, v.tone) : '') +
-            (s.completo ? '' : '<span class="pr-rk-miss">sin precio</span>') +
+            (s.completo || !algunoCompleto ? '' : '<span class="pr-rk-miss">sin precio</span>') +
             '</span><span class="wf-track"><span class="wf-bar ' +
             (i === 0 && s.completo ? 'pos' : 'base') +
             '" style="width:' +
@@ -151,7 +153,8 @@
           );
         })
         .join('') +
-      '</ol>';
+      '</ol>' +
+      (algunoCompleto ? '' : '<p class="note">' + icon('info') + 'Cargá precio y costo en cada producto para sumar el margen.</p>');
   }
 
   function refText(p) {
@@ -182,6 +185,7 @@
     const p = s.p;
     const sug = state.ia.data && state.ia.data.find((x) => norm(x.nombre) === norm(p.nombre));
     const inv = state.inv.get(W.docId(p.id));
+    const ml = mlInner(p);
     return (
       '<article class="pr-card" id="pc-' +
       e(p.id) +
@@ -197,9 +201,9 @@
       '<div class="pr-ml" data-out="ml" data-v="' +
       e(inv ? inv.fecha : '') +
       '"' +
-      (inv || Browser.available ? '' : ' hidden') +
+      (ml ? '' : ' hidden') +
       '>' +
-      mlInner(p) +
+      ml +
       '</div><div class="pr-inputs">' +
       (p.custom ? fld(i, 'nombre', 'Nombre', p.nombre, true, 'pr-name') : '') +
       fld(i, 'precio', 'Precio de venta', p.precio) +
@@ -222,7 +226,7 @@
   }
 
   function num(label, k, val, cls, extra) {
-    return '<div><span class="pr-num-lbl">' + e(label) + (extra || '') + '</span><span class="pr-num mono' + (cls ? ' ' + cls : '') + '" data-out="' + k + '">' + e(val) + '</span></div>';
+    return '<div><span class="pr-num-lbl">' + e(label) + (extra || '') + '</span><span class="pr-num' + (cls ? ' ' + cls : '') + '" data-out="' + k + '">' + e(val) + '</span></div>';
   }
 
   function masInner(p, i) {
@@ -230,7 +234,7 @@
     return (
       '<div class="pr-more"><div class="pr-scales">' +
       ESCALAS.map(
-        ([k, label]) =>
+        ([k, label, bajo, alto]) =>
           '<label for="pr-' +
           i +
           '-' +
@@ -246,7 +250,7 @@
           '" data-k="' +
           k +
           '">' +
-          [1, 2, 3, 4, 5].map((n) => '<option' + (Number(p[k]) === n ? ' selected' : '') + '>' + n + '</option>').join('') +
+          [1, 2, 3, 4, 5].map((n) => '<option value="' + n + '"' + (Number(p[k]) === n ? ' selected' : '') + '>' + n + (n === 1 ? ' · ' + bajo : n === 5 ? ' · ' + alto : '') + '</option>').join('') +
           '</select></label>'
       ).join('') +
       fld(i, 'envioExtra', 'Envío extra', p.envioExtra) +
@@ -291,8 +295,8 @@
     const inv = state.inv.get(W.docId(s.p.id));
     if (ml && ml.dataset.v !== (inv ? inv.fecha : '')) {
       ml.dataset.v = inv ? inv.fecha : '';
-      ml.hidden = !inv && !Browser.available;
       ml.innerHTML = mlInner(s.p);
+      ml.hidden = !ml.innerHTML;
     }
     for (const k of ['demanda', 'competencia']) {
       const sel = card.querySelector('select[data-k="' + k + '"]');
@@ -303,7 +307,8 @@
   /* Bloque "Mercado Libre · hace X" de una tarjeta */
   function mlInner(p) {
     const inv = state.inv.get(W.docId(p.id));
-    if (!inv || !inv.senales) return Browser.available ? '<p class="pr-ml-none">' + icon('search') + 'Todavía sin medir en Mercado Libre</p>' : '';
+    // "Sin medir" solo cuando ya hay otros medidos (si no, lo dice el panel de arriba)
+    if (!inv || !inv.senales) return Browser.available && state.inv.size ? '<p class="pr-ml-none">' + icon('search') + 'Sin medir en Mercado Libre</p>' : '';
     const s = inv.senales;
     const v = W.veredicto(s.vende);
     const facts = [];
@@ -346,7 +351,7 @@
     return (
       '<li><span class="pr-pub-t">' +
       e(l.titulo || 'Sin título') +
-      '</span><span class="pr-pub-p mono">' +
+      '</span><span class="pr-pub-p">' +
       (l.precio ? e(U.money(l.precio)) : '—') +
       '</span>' +
       (meta.length ? '<span class="pr-pub-m">' + e(meta.join(' · ')) + '</span>' : '') +

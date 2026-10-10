@@ -33,8 +33,9 @@
 /* Progreso de cada búsqueda */
 .cp-prog { padding: 12px 14px; border-radius: var(--r); background: var(--surface-2); gap: 6px; }
 .cp-prog li > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.cp-prog .st, .tn-log-list .st { font-family: var(--font-body); font-weight: 700; letter-spacing: 0; }
 .cp-prog .st { min-width: 84px; }
-.cp-prog .st:not(.ok):not(.err) { color: var(--info); }
+.cp-prog li.is-leyendo .st { color: var(--info); }
 .cp-prog li.is-espera, .cp-prog li.is-omitida { color: var(--muted); }
 .cp-prog li.is-espera .st, .cp-prog li.is-omitida .st { color: var(--faint); }
 
@@ -108,6 +109,7 @@
 .cp-c-hook { min-width: 220px; max-width: 380px; }
 .cp-hook { display: block; color: var(--ink); overflow-wrap: anywhere; }
 .cp-hook-note { display: block; margin-top: 3px; color: var(--muted); font-size: 0.75rem; }
+.cp-table .cp-c-mm { display: none; }
 .cp-acts { display: flex; align-items: center; justify-content: flex-end; gap: 8px; white-space: nowrap; }
 .cp-acts .btn.link { gap: 4px; }
 .cp-acts .ico { width: 15px; height: 15px; }
@@ -136,26 +138,28 @@
 
 /* ---------- Celular ---------- */
 @media (max-width: 640px) {
-  /* La tabla de anuncios pasa a tarjetas */
+  /* La tabla de anuncios pasa a tarjetas: quién y días, el gancho, y abajo los datos con las acciones */
   .cp-table thead { display: none; }
   .cp-table, .cp-table tbody { display: block; }
-  .cp-table tr { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .cp-table tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'who dias' 'hook hook' 'meta acts'; align-items: center; gap: 6px 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
   .cp-table tbody tr:last-child { border-bottom: 0; }
   .cp-table tbody tr:hover > * { background: none; }
   .cp-table th, .cp-table td { display: block; padding: 0; border: 0; min-width: 0; max-width: none; text-align: left; }
-  .cp-table .cp-c-who { order: 1; flex: 1 1 auto; min-width: 0; white-space: normal; }
-  .cp-table .cp-c-dias { order: 2; flex: none; }
-  .cp-table .cp-c-hook { order: 3; flex: 1 1 100%; }
-  .cp-table .cp-c-meta { order: 4; flex: none; color: var(--muted); font-size: 0.8125rem; }
-  .cp-table .cp-c-meta + .cp-c-meta:not(.is-empty)::before { content: '·'; margin-right: 8px; color: var(--faint); }
-  .cp-table .cp-c-meta.is-empty { display: none; }
-  .cp-table .cp-c-acts { order: 5; margin-left: auto; }
+  .cp-table .cp-c-who { grid-area: who; white-space: normal; }
+  .cp-table .cp-c-dias { grid-area: dias; align-self: start; }
+  .cp-table .cp-c-hook { grid-area: hook; }
+  .cp-table .cp-c-meta { display: none; }
+  .cp-table .cp-c-mm { display: block; grid-area: meta; color: var(--muted); font-size: 0.8125rem; overflow-wrap: anywhere; }
+  .cp-table .cp-c-acts { grid-area: acts; }
   .cp-table-wrap, .cp-saved .table-wrap { margin-inline: 0; padding-inline: 0; overflow: visible; }
 }
 @media (max-width: 560px) {
   /* Las ayudas "?" se abren como una tarjeta fija abajo, para que no se salgan de la pantalla */
   #panel-competencia .info-pop { position: fixed; top: auto; left: 16px; right: 16px; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); width: auto; z-index: 25; }
   .cp-auto-row > .row-actions, .cp-auto-row > .row-actions .btn { width: 100%; }
+  /* "Copiar" queda solo con el ícono para no apretar el título */
+  .btn.cp-copy { padding: 6px; min-width: 32px; }
+  .btn.cp-copy > span { display: none; }
   .cp-sec { padding: 12px 14px; }
   .cp-step { padding: 14px; }
   .cp-form .form-grid:not(.wide) { grid-template-columns: repeat(2, minmax(0, 1fr)); }

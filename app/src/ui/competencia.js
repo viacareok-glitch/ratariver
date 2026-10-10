@@ -150,7 +150,7 @@
       }
       cerrar();
       if (l.length <= 60 && (/:$/.test(l) || !/[.!?…)"”]$/.test(l))) {
-        nueva(l.replace(/:$/, ''));
+        nueva(l.replace(/:$/, '').replace(/^\d+[.)]\s+/, ''));
         continue;
       }
       if (!cur) nueva('');
@@ -410,7 +410,7 @@
     box.innerHTML =
       head(
         'Escaneado ' + U.timeAgo(u.fecha) + (pb.length ? ' · ' + plural(pb.length, 'búsqueda', 'búsquedas') : ''),
-        u.resumen ? '<button type="button" class="btn ghost sm" data-act="found-copiar">' + icon('copy') + 'Copiar</button>' : ''
+        u.resumen ? '<button type="button" class="btn ghost sm cp-copy" data-act="found-copiar" aria-label="Copiar el resumen">' + icon('copy') + '<span>Copiar</span></button>' : ''
       ) +
       '<div class="chips cp-nums">' +
       num(u.nuevos, u.nuevos === 1 ? 'nuevo' : 'nuevos', u.nuevos ? 'peach' : '') +
@@ -621,6 +621,8 @@
 
   function fila(a) {
     const angulo = CP.ANGULOS[a.angulo] || a.angulo || '';
+    // En el celular ángulo, oferta y precio van juntos en una sola línea
+    const metaCel = [angulo, a.oferta || '', a.precio ? U.money(a.precio) : ''].filter(Boolean).join(' · ');
     return (
       '<tr><th scope="row" class="cp-c-who"><span class="cp-who">' +
       e(a.anunciante || 'Sin nombre') +
@@ -645,6 +647,8 @@
       e(a.gancho) +
       '”</span>' +
       (a.nota ? '<span class="cp-hook-note">' + e(a.nota) + '</span>' : '') +
+      '</td><td class="cp-c-mm">' +
+      e(metaCel) +
       '</td><td class="cp-c-acts"><div class="cp-acts">' +
       (a.idBiblioteca
         ? '<a class="btn link sm" href="' + e(R.adUrl(a.idBiblioteca)) + '" target="_blank" rel="noopener" aria-label="Ver en la Biblioteca el anuncio de ' + e(a.anunciante || '') + '">Ver' + icon('external') + '</a>'

@@ -51,7 +51,7 @@
   }
 
   function fmtVal(v, unit) {
-    if (v == null || v === '' || (unit !== '%' && !Number(v))) return '';
+    if (v == null || v === '' || !Number(v)) return '';
     return unit === '%' ? String(v).replace('.', ',') : U.int(v);
   }
 
@@ -136,7 +136,7 @@
           '</div><p class="note">' +
           icon('chart') +
           (rates.total
-            ? e(rates.total) + ' pedidos en tu historial · ' + e(U.pct(rates.anulados / rates.total)) + ' anulados · ticket entregado ' + e(U.money(rates.ticketPromedio))
+            ? e(rates.total) + ' pedidos en tu historial · ' + e(U.pct(rates.anulados / rates.total)) + ' anulados · <span class="aj-nw">ticket entregado ' + e(U.money(rates.ticketPromedio)) + '</span>'
             : 'Todavía no se cargaron pedidos.') +
           '</p></div>',
         'aj-more-tasas'
