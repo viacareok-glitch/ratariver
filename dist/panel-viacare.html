@@ -672,6 +672,12 @@ details.panel[open] > summary { margin-bottom: 4px; }
 .chip.cp-num.tone-neutral { color: var(--muted); }
 .chip.cp-num.tone-neutral strong { color: var(--ink); }
 
+/* Los hijos de los paneles se achican en vez de estirar la pantalla */
+.cp-auto > *, .cp-found > *, .cp-saved > *, .cp-step > *, .tn > * { min-width: 0; }
+
+/* Estados vacíos más compactos dentro de los paneles */
+.cp-found .empty, .cp-saved .empty, .tn .empty { padding: 26px 18px; }
+
 /* Título con "?" al lado */
 .cp-title { display: flex; align-items: center; gap: 4px; }
 
@@ -689,6 +695,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
 .cp-prog .st { min-width: 84px; }
 .cp-prog .st:not(.ok):not(.err) { color: var(--info); }
 .cp-prog li.is-espera, .cp-prog li.is-omitida { color: var(--muted); }
+.cp-prog li.is-espera .st, .cp-prog li.is-omitida .st { color: var(--faint); }
 
 /* Opciones */
 .cp-auto-cfg { display: grid; gap: 14px; }
@@ -705,11 +712,14 @@ details.panel[open] > summary { margin-bottom: 4px; }
 .cp-q-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .cp-q-x[disabled] { opacity: 0.35; cursor: not-allowed; }
 .cp-q-form { display: flex; align-items: center; gap: 8px; }
-.cp-q-form input { flex: 1 1 auto; min-width: 0; }
+.cp-q-form input { flex: 1 1 auto; width: 100%; min-width: 0; }
 
 /* ---------- Qué encontré ---------- */
 .cp-found { gap: 16px; }
+.cp-found > .panel-head { flex-wrap: nowrap; align-items: flex-start; }
+.cp-found .panel-title { flex: 1 1 auto; min-width: 0; }
 .cp-found .panel-title > div { min-width: 0; }
+.cp-found > .panel-head > .btn { flex: none; }
 .cp-sk { height: 140px; }
 .cp-found-body { display: grid; gap: 6px; justify-items: start; min-width: 0; }
 .cp-found-body > .cp-prose { width: 100%; }
@@ -750,21 +760,21 @@ details.panel[open] > summary { margin-bottom: 4px; }
 .cp-ideas-out { display: grid; gap: 6px; justify-items: start; min-width: 0; }
 .cp-ideas-out > .cp-prose { width: 100%; }
 
-.cp-table .cp-c-who { min-width: 150px; }
+.cp-table .cp-c-who { min-width: 180px; }
 .cp-who { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-weight: 700; color: var(--ink); white-space: normal; }
 .cp-who-sub { display: block; color: var(--muted); font-size: 0.75rem; font-weight: 500; white-space: normal; }
 .cp-table .chip { white-space: nowrap; }
-.cp-c-hook { min-width: 240px; max-width: 420px; }
+.cp-c-hook { min-width: 220px; max-width: 380px; }
 .cp-hook { display: block; color: var(--ink); overflow-wrap: anywhere; }
 .cp-hook-note { display: block; margin-top: 3px; color: var(--muted); font-size: 0.75rem; }
 .cp-acts { display: flex; align-items: center; justify-content: flex-end; gap: 8px; white-space: nowrap; }
 .cp-acts .btn.link { gap: 4px; }
 .cp-acts .ico { width: 15px; height: 15px; }
-.cp-del { color: var(--faint); }
-.cp-del:hover { color: var(--bad); text-decoration: none; }
+.btn.cp-del { color: var(--faint); }
+.btn.cp-del:hover { color: var(--bad); text-decoration: none; }
 .cp-saved-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
-.cp-del-all { color: var(--muted); font-weight: 500; }
-.cp-del-all:hover, .cp-del-all.is-confirm { color: var(--bad); }
+.btn.cp-del-all { color: var(--muted); font-weight: 500; }
+.btn.cp-del-all:hover, .btn.cp-del-all.is-confirm { color: var(--bad); }
 
 /* ---------- Buscar a mano ---------- */
 .cp-manual > .more > summary { font-size: 0.875rem; }
@@ -779,6 +789,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
 .cp-links .ico { width: 14px; height: 14px; color: var(--faint); }
 .cp-step .row-actions .chip { align-self: center; }
 .cp-form { display: grid; gap: 12px; }
+.cp-form .form-grid:not(.wide) { grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); }
 .cp-form .form-grid label, .cp-form .form-grid.wide label { display: grid; gap: 4px; font-size: var(--step--1); color: var(--muted); font-weight: 500; }
 .cp-form input, .cp-form select { width: 100%; }
 
@@ -801,9 +812,12 @@ details.panel[open] > summary { margin-bottom: 4px; }
   .cp-table-wrap, .cp-saved .table-wrap { margin-inline: 0; padding-inline: 0; overflow: visible; }
 }
 @media (max-width: 560px) {
+  /* Las ayudas "?" se abren como una tarjeta fija abajo, para que no se salgan de la pantalla */
+  #panel-competencia .info-pop { position: fixed; top: auto; left: 16px; right: 16px; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); width: auto; z-index: 25; }
   .cp-auto-row > .row-actions, .cp-auto-row > .row-actions .btn { width: 100%; }
   .cp-sec { padding: 12px 14px; }
   .cp-step { padding: 14px; }
+  .cp-form .form-grid:not(.wide) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cp-ideas { padding: 12px; }
 }
 /* css/tiendas.css */
@@ -822,7 +836,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
 
 /* Agregar tienda: una fila */
 .tn-add { display: flex; align-items: center; gap: 8px; }
-.tn-add input { flex: 1 1 auto; min-width: 0; }
+.tn-add input { flex: 1 1 auto; width: 100%; min-width: 0; }
 .tn-add .btn { flex: none; }
 
 .tn-opts { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; }
@@ -848,16 +862,27 @@ details.panel[open] > summary { margin-bottom: 4px; }
 .tn-dom:hover .ico { color: var(--accent); }
 .tn-sub { color: var(--muted); font-size: 0.75rem; }
 .tn-head-r { display: flex; align-items: center; gap: 4px; margin-left: auto; }
-.tn-quitar { color: var(--faint); gap: 6px; padding: 6px; }
-.tn-quitar .ico { width: 16px; height: 16px; }
-.tn-quitar:hover { color: var(--bad); text-decoration: none; }
-.tn-quitar.is-confirm { color: var(--bad); font-weight: 600; font-size: 0.8125rem; }
+.btn.tn-quitar { color: var(--faint); gap: 6px; padding: 6px; }
+.btn.tn-quitar .ico { width: 16px; height: 16px; }
+.btn.tn-quitar:hover { color: var(--bad); text-decoration: none; }
+.btn.tn-quitar.is-confirm { color: var(--bad); font-weight: 600; font-size: 0.8125rem; }
 
 .tn-why { color: var(--muted); font-size: 0.875rem; line-height: 1.5; max-width: 72ch; }
 .tn-facts { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: var(--step--1); color: var(--muted); }
 .tn-facts strong { color: var(--ink); font-family: var(--font-display); font-weight: 800; font-variant-numeric: tabular-nums; margin-right: 3px; }
 .tn-quiet { display: flex; align-items: flex-start; gap: 7px; color: var(--muted); font-size: var(--step--1); }
 .tn-quiet .ico { width: 15px; height: 15px; margin-top: 2px; color: var(--faint); }
+
+/* Su corrector y los cambios: uno debajo del otro, o lado a lado en pantallas anchas */
+.tn-body { display: grid; gap: 12px; min-width: 0; align-items: start; }
+.tn-body > * { min-width: 0; }
+.tn-body > .tn-det { border-top: 1px solid var(--line); }
+@media (min-width: 1100px) {
+  .tn-body { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 12px 20px; }
+  .tn-body > .tn-det { border-top: 0; }
+  .tn-body > .tn-det > summary { padding-top: 4px; }
+  .tn-body > .tn-quiet { padding-top: 6px; }
+}
 
 /* Su corrector contra el tuyo */
 .tn-corr { display: grid; gap: 10px; min-width: 0; padding: 14px; background: var(--surface-2); border-radius: var(--r); }
@@ -873,14 +898,14 @@ details.panel[open] > summary { margin-bottom: 4px; }
 .tn-vs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
 .tn-mio { color: var(--muted); font-size: var(--step--1); font-variant-numeric: tabular-nums; }
 .tn-vs .chip { font-weight: 700; }
+.tn-corr .chip.tone-neutral { background: var(--surface); }
 .tn-delta { margin-left: 4px; color: var(--good); font-weight: 800; font-variant-numeric: tabular-nums; }
 
 /* Desplegables de la tarjeta */
 .tn-dets { display: grid; border-top: 1px solid var(--line); }
 .tn-det + .tn-det { border-top: 1px solid var(--line); }
-.tn-card > .tn-det { border-top: 1px solid var(--line); }
 .tn-det > summary { list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 10px 0; font-size: 0.875rem; font-weight: 600; color: var(--ink); }
-.tn-card > .tn-det > summary { padding-bottom: 4px; }
+.tn-body > .tn-det > summary { padding-bottom: 4px; }
 .tn-det > summary::-webkit-details-marker { display: none; }
 .tn-det > summary .ico { width: 16px; height: 16px; color: var(--muted); transition: transform 0.15s; }
 .tn-det[open] > summary .ico { transform: rotate(90deg); }
@@ -890,9 +915,10 @@ details.panel[open] > summary { margin-bottom: 4px; }
 .tn-dets > .tn-det:last-child:not([open]) > summary { padding-bottom: 0; }
 
 .tn-changes { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; font-size: 0.875rem; }
-.tn-changes li { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.tn-changes li { display: grid; grid-template-columns: 80px minmax(0, 1fr); align-items: baseline; gap: 8px; min-width: 0; }
 .tn-changes li > span:last-child { min-width: 0; overflow-wrap: anywhere; }
-.tn-changes li .chip { flex: none; min-width: 76px; justify-content: center; }
+.tn-changes li .chip { justify-content: center; }
+.tn-changes li.muted { display: block; padding-left: 88px; }
 
 .tn-otros { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: var(--step--1); }
 .tn-otros li { display: flex; flex-wrap: wrap; gap: 0 8px; min-width: 0; }
@@ -909,7 +935,6 @@ details.panel[open] > summary { margin-bottom: 4px; }
   .tn-head-r { width: 100%; justify-content: space-between; margin-left: 0; }
   .tn-corr { padding: 12px; }
   .tn-det-body { padding-left: 0; }
-  .tn-changes li { flex-wrap: wrap; }
 }
 /* css/productos-auto.css */
 /* Productos: panel "Buscar ganadores", productos nuevos y bloque de Mercado Libre de cada tarjeta */
@@ -939,12 +964,16 @@ details.panel[open] > summary { margin-bottom: 4px; }
 .pr-cada select { min-height: 34px; padding: 4px 8px; font-size: 0.8125rem; color: var(--ink); }
 
 /* Productos nuevos */
-.pr-desc { display: grid; gap: 10px; padding-top: 14px; border-top: 1px solid var(--line); min-width: 0; }
-.pr-desc-head { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; }
-.pr-desc-when { color: var(--faint); font-size: var(--step--1); font-weight: 600; }
+.pr-desc { min-width: 0; }
+.pr-desc-body { display: grid; gap: 10px; }
+.pr-desc > summary { color: var(--ink); font-size: 0.875rem; }
+.pr-desc-count { min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--peach-soft); color: var(--peach); font-size: 0.6875rem; font-weight: 800; line-height: 18px; text-align: center; font-variant-numeric: tabular-nums; }
+.pr-desc-when { color: var(--faint); font-size: var(--step--1); font-weight: 500; margin-left: 4px; }
 .pr-desc-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 10px; }
 .pr-desc-card { display: grid; gap: 8px; align-content: start; min-width: 0; padding: 14px; background: var(--surface-2); border-radius: var(--r); }
 .pr-desc-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; }
+.pr-desc-title { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.pr-desc-title .info { flex: none; }
 .pr-desc-name { font-family: var(--font-display); font-size: var(--step-0); font-weight: 700; color: var(--ink); min-width: 0; overflow-wrap: anywhere; }
 .pr-desc-why { color: var(--muted); font-size: var(--step--1); overflow-wrap: anywhere; }
 .pr-desc-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 2px; }
@@ -1104,6 +1133,8 @@ details.panel[open] > summary { margin-bottom: 4px; }
 
 /* ---------- Ganancia ---------- */
 .gan-dates { padding: 2px 0; }
+.gan-side { display: grid; gap: 18px; align-content: start; min-width: 0; }
+.gan-side > * { min-width: 0; }
 
 .gan-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .gan-kpis .kpi-sk { height: 128px; }
@@ -1136,13 +1167,29 @@ details.panel[open] > summary { margin-bottom: 4px; }
 .sp-ins { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; min-width: 0; }
 .sp-headrow .sp-ins span { text-align: right; padding-right: 12px; }
 .sp-ins .num-input { min-width: 0; }
-.sp-ins .num-input::placeholder { font-family: var(--font-body); }
+.sp-ins .num-input { font-family: var(--font-body); font-size: 0.875rem; font-variant-numeric: tabular-nums; }
 .sp-day { font-size: 0.875rem; font-weight: 600; white-space: nowrap; }
-.sp-gan { text-align: right; font-size: 0.8125rem; white-space: nowrap; }
+.sp-gan { text-align: right; font-size: 0.8125rem; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .sp-headrow .sp-day, .sp-headrow .sp-gan { font-size: inherit; font-weight: inherit; }
 #gan-be:empty { display: none; }
 
 .gan-src th, .gan-src td { white-space: nowrap; }
+
+/* Desglose y gráfico */
+#gan-break .wf-val { font-size: 0.875rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#gan-break .wf-total .wf-val { font-weight: 700; }
+#gan-chart .bar-label { font-family: var(--font-body); font-weight: 700; }
+@media (min-width: 561px) {
+  /* Las barras arrancan y terminan en la misma línea en todas las filas */
+  #gan-break .waterfall { grid-template-columns: max-content minmax(0, 1fr) max-content; column-gap: 14px; }
+  #gan-break .waterfall li { grid-column: 1 / -1; grid-template-columns: subgrid; column-gap: 14px; }
+}
+
+/* Con dos columnas, la lista de gastos no se estira más que lo que hay al lado */
+@media (min-width: 1120px) {
+  .sp-list { max-height: 440px; overflow-y: auto; overscroll-behavior: contain; }
+  .sp-headrow { position: sticky; top: 0; z-index: 1; background: var(--surface); }
+}
 
 /* ---------- Reseñas ---------- */
 .res-card .oc-top { align-items: center; }
@@ -1169,15 +1216,20 @@ details.panel[open] > summary { margin-bottom: 4px; }
 .rv-stars label { display: inline-grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; cursor: pointer; color: var(--line-strong); transition: color 0.1s, transform 0.1s; }
 .rv-stars label .ico { width: 26px; height: 26px; fill: currentColor; stroke-width: 1.5; }
 .rv-stars input:checked ~ label { color: var(--warn); }
-.rv-stars:hover input ~ label { color: var(--line-strong); }
-.rv-stars:hover label:hover, .rv-stars:hover label:hover ~ label { color: var(--warn); }
-.rv-stars label:hover { transform: scale(1.08); }
+@media (hover: hover) {
+  .rv-stars:has(label:hover) label { color: var(--line-strong); }
+  .rv-stars:has(label:hover) label:hover, .rv-stars:has(label:hover) label:hover ~ label { color: var(--warn); }
+  .rv-stars label:hover { transform: scale(1.08); }
+}
 .rv-stars input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 #res-export > .more { min-width: 0; }
 #res-csv { max-width: 100%; }
 .res-foot .more { border-top: 0; padding-top: 0; }
 .res-opts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
+@media (min-width: 561px) {
+  .res-card .oc-actions > .decide:only-child { margin-left: auto; }
+}
 
 /* Tarjeta en una sola fila cuando hay lugar: datos a la izquierda, botones a la derecha */
 @media (min-width: 1100px) {
@@ -1206,7 +1258,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
 .cli-ofertas-panel > .more > summary { color: var(--ink); font-size: 0.9375rem; }
 .cli-ofertas-panel > .more[open] > summary { margin-bottom: 16px; }
 .cli-of-body { display: grid; gap: 16px; min-width: 0; }
-.cli-of-body > .form-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+.cli-of-body > .form-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
 .cli-code { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .cli-code .num-input.short { width: 56px; min-height: 34px; padding: 4px 8px; border: 0; background: transparent; }
 .cli-tpl-head { display: flex; align-items: center; gap: 4px; padding-top: 14px; border-top: 1px solid var(--line); }
@@ -1222,6 +1274,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
 .cli-msg > summary .ico { width: 15px; height: 15px; transition: transform 0.15s; }
 .cli-msg[open] > summary .ico { transform: rotate(90deg); }
 .cli-msg .preview { margin-top: 8px; max-width: 64ch; }
+.cli-card .decide-btn.tone-info.is-on { background: var(--info-soft); border-color: var(--info); color: var(--info); }
 
 @media (max-width: 1180px) {
   .gan-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1251,6 +1304,14 @@ details.panel[open] > summary { margin-bottom: 4px; }
   .sp-ins { grid-area: ins; }
   .sp-headrow { padding-bottom: 0; }
   .sp-headrow .sp-day, .sp-headrow .sp-gan { display: none; }
+
+  .gan-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gan-dates label { display: grid; gap: 4px; font-size: var(--step--1); font-weight: 600; }
+  .gan-dates input { width: 100%; min-width: 0; }
+
+  #gan-break .waterfall { gap: 10px; }
+  #gan-break .waterfall li { row-gap: 5px; }
+  #gan-break .wf-track { height: 6px; }
 
   .gan-src .hide-sm { display: none; }
   .gan-src th, .gan-src td { padding-inline: 6px; }
@@ -1400,7 +1461,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
 /* Las ayudas "?" se abren pegadas al borde de su tarjeta, para no salirse de la pantalla */
 :is(#panel-ofertas, #panel-productos, #panel-ajustes) :is(.panel, .of-hero, .pr-card) { position: relative; }
 :is(#panel-ofertas, #panel-productos, #panel-ajustes) :is(.panel, .of-hero, .pr-card) .info { position: static; }
-:is(#panel-ofertas, #panel-productos, #panel-ajustes) .info-pop { top: auto; left: 14px; margin-top: 8px; width: min(340px, calc(100vw - 64px)); }
+:is(#panel-ofertas, #panel-productos, #panel-ajustes) .info-pop { top: auto; left: 14px; margin-top: 8px; width: min(340px, calc(100vw - 64px)); white-space: normal; text-align: left; }
 :is(#panel-ofertas, #panel-productos, #panel-ajustes) .table-wrap { min-width: 0; }
 :is(#panel-ofertas, #panel-productos, #panel-ajustes) .panel-title { min-width: 0; }
 :is(#panel-ofertas, #panel-productos, #panel-ajustes) .panel-title h3 { min-width: 0; overflow-wrap: anywhere; }
@@ -1510,9 +1571,10 @@ details.panel[open] > summary { margin-bottom: 4px; }
 .pr-card.is-flash { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .pr-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .pr-card-title { display: grid; gap: 2px; min-width: 0; }
-.pr-card-title h4 { font-size: 1.0625rem; overflow-wrap: anywhere; }
-.pr-card-title h4 .info { margin-left: 2px; vertical-align: -4px; }
-.pr-card-title h4 .info > summary { width: 20px; height: 20px; }
+.pr-card-name { display: flex; align-items: flex-start; gap: 2px; min-width: 0; }
+.pr-card-name h4 { font-size: 1.0625rem; overflow-wrap: anywhere; min-width: 0; }
+.pr-card-name .info { flex: none; margin-top: 1px; }
+.pr-card-name .info > summary { width: 20px; height: 20px; }
 .pr-ref { color: var(--muted); font-size: var(--step--1); }
 .pr-score { display: grid; justify-items: center; align-content: center; flex: none; width: 58px; height: 58px; border-radius: 16px; background: var(--accent-soft); color: var(--accent); }
 .pr-score-num { font-family: var(--font-display); font-size: 1.375rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
@@ -1532,7 +1594,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
 .pr-card .more { padding-top: 12px; }
 .pr-more { display: grid; gap: 14px; }
 .pr-more .pr-fld { max-width: 220px; }
-.pr-scales { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 10px; }
+.pr-scales { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 10px; align-items: end; }
 .pr-scales label { display: grid; gap: 4px; min-width: 0; color: var(--muted); font-size: var(--step--1); font-weight: 600; }
 .pr-scales select { width: 100%; min-height: 36px; color: var(--ink); }
 .pr-links { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
@@ -1571,8 +1633,9 @@ details.panel[open] > summary { margin-bottom: 4px; }
 .aj-tpl-side .btn.link { font-size: 0.8125rem; }
 .aj-status { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 0.875rem; }
 .aj-switch { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
-.aj-panel .note { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 4px; }
-.aj-panel .note .ico { margin-right: 4px; }
+.aj-panel .note .ico { margin-right: 6px; }
+.aj-panel .note .info { margin-left: 2px; }
+.aj-panel .note .info > summary { width: 20px; height: 20px; vertical-align: -5px; }
 
 /* ---------- Celular ---------- */
 @media (max-width: 760px) {
@@ -1608,7 +1671,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
   .pr-num { font-size: 0.875rem; }
   .pr-nums > div:first-child .pr-num { font-size: 1rem; }
   .aj-fields { grid-template-columns: minmax(0, 1fr); }
-  .aj-fields.is-half { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #aj-costos .aj-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 10px; }
 }
 </style>
 
@@ -7269,8 +7332,8 @@ details.panel[open] > summary { margin-bottom: 4px; }
       '<h3>Gasto en anuncios</h3>' +
       info('Copiá lo que gastaste cada día en cada plataforma, en pesos. Se guarda solo.') +
       '</div></div><div id="gan-be"></div><div id="gan-spend-rows"></div></section>' +
-      '<section class="panel" id="gan-break"></section></div>' +
-      '<section class="panel" id="gan-chart"></section><section class="panel" id="gan-sources"></section>';
+      '<div class="gan-side"><section class="panel" id="gan-break"></section><section class="panel" id="gan-chart"></section></div></div>' +
+      '<section class="panel" id="gan-sources"></section>';
     el.addEventListener('click', onClick);
     el.addEventListener('change', onChange);
     el.addEventListener('input', onInput);
@@ -7501,7 +7564,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
           e(U.fmtDay(d.day, true)) +
           '</span><span class="sp-ins">' +
           PLATAFORMAS.map(([k, label]) => inp(k, label)).join('') +
-          '</span><span class="sp-gan mono ' +
+          '</span><span class="sp-gan ' +
           (d.ganancia >= 0 ? 'pos' : 'neg') +
           '" title="Ganancia del día">' +
           e(U.moneyShort(d.ganancia)) +
@@ -7533,12 +7596,12 @@ details.panel[open] > summary { margin-bottom: 4px; }
     const max = Math.max(1, t.ventas, Math.abs(t.ganancia));
     const bar = (v, cls) => '<span class="wf-bar ' + cls + '" style="width:' + Math.max(1, (Math.abs(v) / max) * 100).toFixed(1) + '%"></span>';
     const list = items
-      .map((x) => '<li><span class="wf-label">' + e(x[0]) + '</span><span class="wf-track">' + bar(x[1], x[2] === 'base' ? 'base' : 'cost') + '</span><span class="wf-val mono">' + e(U.money(x[1])) + '</span></li>')
+      .map((x) => '<li><span class="wf-label">' + e(x[0]) + '</span><span class="wf-track">' + bar(x[1], x[2] === 'base' ? 'base' : 'cost') + '</span><span class="wf-val">' + e(U.money(x[1])) + '</span></li>')
       .join('');
     const g =
       '<li class="wf-total"><span class="wf-label">Ganancia</span><span class="wf-track">' +
       bar(t.ganancia, t.ganancia >= 0 ? 'pos' : 'neg') +
-      '</span><span class="wf-val mono ' +
+      '</span><span class="wf-val ' +
       (t.ganancia >= 0 ? 'pos' : 'neg') +
       '">' +
       e(U.money(t.ganancia)) +
@@ -7564,7 +7627,10 @@ details.panel[open] > summary { margin-bottom: 4px; }
     const vals = res.days.map((d) => d.ganancia);
     const maxAbs = Math.max(1, ...vals.map(Math.abs));
     const hasNeg = vals.some((v) => v < 0);
-    const W = Math.max(300, Math.floor(box.clientWidth) - 34, res.days.length * 28);
+    // Ancho útil del panel (sin el relleno), para que el gráfico no se pase y entre en media columna
+    const cs = getComputedStyle(box);
+    const inner = Math.floor(box.clientWidth - parseFloat(cs.paddingLeft || 0) - parseFloat(cs.paddingRight || 0));
+    const W = Math.max(280, inner, res.days.length * 16);
     const H = 190;
     const pad = { t: 18, b: hasNeg ? 42 : 26, l: 8, r: 8 };
     const hasPos = vals.some((v) => v > 0);
@@ -8462,7 +8528,8 @@ details.panel[open] > summary { margin-bottom: 4px; }
     const ideal = Number(App.msgs.diasResena) || 4;
     const st = R_ESTADOS[r.estado];
     const chips = [
-      st ? chip(st.label, st.tone) : dias < ideal ? chip('Ideal en ' + (ideal - dias) + (ideal - dias === 1 ? ' día' : ' días'), 'neutral') : '',
+      // "Recibida" no lleva chip: ya lo dicen la cita y el borde verde
+      st ? (r.estado === 'recibida' ? '' : chip(st.label, st.tone)) : dias < ideal ? chip('Ideal en ' + (ideal - dias) + (ideal - dias === 1 ? ' día' : ' días'), 'neutral') : '',
       r.foto ? chip('Con foto', 'good') : '',
       r.estado === 'recibida' && !r.permiso ? chip('Sin permiso', 'warn') : '',
     ].join('');
@@ -8505,9 +8572,9 @@ details.panel[open] > summary { margin-bottom: 4px; }
         : '') +
       (editing
         ? form(o, r)
-        : '<div class="oc-actions"><div class="row-actions">' +
-          wa +
-          '</div><div class="row-actions decide"><button class="btn ghost sm" data-act="cargar" data-key="' +
+        : '<div class="oc-actions">' +
+          (wa ? '<div class="row-actions">' + wa + '</div>' : '') +
+          '<div class="row-actions decide"><button class="btn ghost sm" data-act="cargar" data-key="' +
           k +
           '">' +
           icon('star') +
@@ -9779,11 +9846,12 @@ details.panel[open] > summary { margin-bottom: 4px; }
           e(msg) +
           '</p></details>' +
           '<div class="oc-actions"><div class="row-actions">' +
-          waButton(U.waLink(c.phone.wa, msg), ct ? 'Volver a escribir' : 'Enviar oferta', 'wa-oferta', c.wa, ct ? 'ghost' : 'wa') +
+          // Verde solo si ya corresponde escribirle
+          waButton(U.waLink(c.phone.wa, msg), ct ? 'Volver a escribir' : 'Enviar oferta', 'wa-oferta', c.wa, !ct && c.listo ? 'wa' : 'ghost') +
           '</div>' +
           (ct
             ? '<div class="row-actions decide" role="group" aria-label="¿Qué respondió?">' +
-              decide('respondio', 'Respondió', c, 'warn', 'message') +
+              decide('respondio', 'Respondió', c, 'info', 'message') +
               decide('compro', 'Compró', c, 'good', 'check') +
               decide('no', 'No le interesa', c, 'bad', 'x') +
               '<button class="btn link" data-act="deshacer" data-key="' +
@@ -10099,6 +10167,8 @@ details.panel[open] > summary { margin-bottom: 4px; }
   const EXPLICA =
     'Leo el catálogo público de cada tienda Shopify (precios, agotados y productos nuevos) y las reseñas de sus correctores. Shopify no muestra las ventas de otros: comparando una revisión con la siguiente se ven lanzamientos, cambios de precio y reseñas nuevas. Son señales, no ventas exactas, y las reseñas pueden ser inventadas.';
   const MOV = { alto: 'Mucho movimiento', medio: 'Algo de movimiento', bajo: 'Poco movimiento' };
+  // Precio que no se corta entre "$" y el número
+  const plata = (n) => U.money(n).replace(' ', '\u00a0');
 
   function mount(container) {
     if (!container) return;
@@ -10239,7 +10309,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
     if (!Browser.available) {
       act.innerHTML = '';
       box.innerHTML = nota(
-        'info',
+        'alert',
         'Necesita la app de escritorio de Claude. ' +
           info('La revisión usa el navegador de Claude en tu PC: abrí este panel desde la app de escritorio (Cowork). Igual podés agregar o quitar tiendas y ver lo que ya se revisó.')
       );
@@ -10374,8 +10444,10 @@ details.panel[open] > summary { margin-bottom: 4px; }
         ' días</span>' +
         (u.parcial ? '<span>catálogo leído en parte</span>' : '') +
         '</p>' +
+        '<div class="tn-body">' +
         corrector(d, doc, hoy) +
         cambios(d, doc) +
+        '</div>' +
         otrosYHistorial(d, doc);
     } else if (!u || !u.error) {
       h += '<p class="tn-quiet">' + icon('clock') + e(Browser.available ? 'Se lee su catálogo con “Revisar ahora”.' : 'Se revisa desde la app de escritorio de Claude.') + '</p>';
@@ -10405,7 +10477,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
     let vs = '';
     if (cmp) {
       const etiqueta = cmp.tono === 'neutral' ? 'Mismo precio' : U.pct(Math.abs(cmp.pct)) + (cmp.dif < 0 ? ' más barato' : ' más caro');
-      vs = '<span class="tn-mio">Vos ' + e(U.money(mio)) + '</span>' + chip(etiqueta, cmp.tono, ' title="' + e(cmp.texto) + '"');
+      vs = '<span class="tn-mio">Tu precio ' + e(plata(mio)) + '</span>' + chip(etiqueta, cmp.tono, ' title="' + e(cmp.texto) + '"');
     }
     return (
       '<div class="tn-corr"><div class="tn-corr-top"><div class="tn-corr-name"><span class="eyebrow">Su corrector</span><a href="' +
@@ -10413,9 +10485,9 @@ details.panel[open] > summary { margin-bottom: 4px; }
       '" target="_blank" rel="noopener">' +
       e(c.titulo || c.handle) +
       '</a></div><div class="tn-price"><strong>' +
-      e(U.money(c.precioMin)) +
+      e(plata(c.precioMin)) +
       '</strong>' +
-      (c.tachado && c.tachado > c.precioMin ? '<s>' + e(U.money(c.tachado)) + '</s>' : '') +
+      (c.tachado && c.tachado > c.precioMin ? '<s>' + e(plata(c.tachado)) + '</s>' : '') +
       '</div></div>' +
       (vs ? '<div class="tn-vs">' + vs + '</div>' : '') +
       '<div class="chips">' +
@@ -10447,13 +10519,13 @@ details.panel[open] > summary { margin-bottom: 4px; }
   }
 
   const GRUPOS = [
-    ['nuevos', 'Nuevo', 'info', (x) => x.titulo + ' · ' + U.money(x.precio)],
-    ['precios', 'Precio', 'warn', (x) => x.titulo + ': ' + U.money(x.antes) + ' → ' + U.money(x.ahora)],
-    ['agotados', 'Se agotó', 'bad', (x) => x.titulo + ' · ' + U.money(x.precio)],
-    ['repuestos', 'Repuesto', 'good', (x) => x.titulo + ' · ' + U.money(x.precio)],
+    ['nuevos', 'Nuevo', 'info', (x) => x.titulo + ' · ' + plata(x.precio)],
+    ['precios', 'Precio', 'warn', (x) => x.titulo + ': ' + plata(x.antes) + ' → ' + plata(x.ahora)],
+    ['agotados', 'Se agotó', 'bad', (x) => x.titulo + ' · ' + plata(x.precio)],
+    ['repuestos', 'Repuesto', 'good', (x) => x.titulo + ' · ' + plata(x.precio)],
     ['variantes', 'Variantes', 'neutral', (x) => x.titulo + ': ' + x.ahora + ' de ' + x.de + ' con stock (antes ' + x.antes + ')'],
     ['resenas', 'Reseñas', 'source', (x) => x.titulo + ': +' + U.int(x.suma) + ' (' + U.int(x.ahora) + ' en total)'],
-    ['quitados', 'Quitado', 'neutral', (x) => x.titulo + ' · ' + U.money(x.precio)],
+    ['quitados', 'Quitado', 'neutral', (x) => x.titulo + ' · ' + plata(x.precio)],
   ];
 
   function cambios(d, doc) {
@@ -10498,7 +10570,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
                 '" target="_blank" rel="noopener">' +
                 e(p.titulo || p.handle) +
                 '</a><span class="muted">' +
-                e(U.money(p.precioMin) + (p.disponible ? '' : ' · agotado') + (res[p.handle] != null ? ' · ' + U.int(res[p.handle]) + ' reseñas' : '')) +
+                e(plata(p.precioMin) + (p.disponible ? '' : ' · agotado') + (res[p.handle] != null ? ' · ' + U.int(res[p.handle]) + ' reseñas' : '')) +
                 '</span></li>'
             )
             .join('') +
@@ -10524,7 +10596,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
                 '</td><td class="num">' +
                 n(x.agotados) +
                 '</td><td class="num">' +
-                (x.precioCorrector == null ? '—' : e(U.money(x.precioCorrector))) +
+                (x.precioCorrector == null ? '—' : e(plata(x.precioCorrector))) +
                 '</td><td class="num">' +
                 n(x.resenasTotal) +
                 (x.resenasNuevas ? ' <span class="tn-delta">+' + e(U.int(x.resenasNuevas)) + '</span>' : '') +
@@ -10763,7 +10835,8 @@ details.panel[open] > summary { margin-bottom: 4px; }
       lista = false;
     };
     for (const raw of String(text || '').split(/\r?\n/)) {
-      const l = raw.replace(/\*\*/g, '').replace(/^#+\s*/, '').trim();
+      // Sin markdown y sin cortar "$ 49.990" entre líneas
+      const l = raw.replace(/\*\*/g, '').replace(/^#+\s*/, '').replace(/\$ (?=\d)/g, '$\u00a0').trim();
       if (!l) {
         cerrar();
         continue;
@@ -10795,6 +10868,13 @@ details.panel[open] > summary { margin-bottom: 4px; }
     return '<section class="cp-sec">' + (s.t ? '<h4>' + (ic ? icon(ic) : '') + '<span>' + e(s.t) + '</span></h4>' : '') + s.h + '</section>';
   }
 
+  // "Ver más: Precios y Qué probar" (o "Ver todo" si las partes no tienen título)
+  function resto(secs) {
+    const t = secs.map((x) => x.t).filter(Boolean);
+    if (!t.length || t.length !== secs.length || t.join('').length > 60) return 'Ver todo';
+    return 'Ver más: ' + (t.length > 1 ? t.slice(0, -1).join(', ') + ' y ' + t[t.length - 1] : t[0]);
+  }
+
   /* Texto de Claude con buena tipografía; si es largo, muestra las dos primeras partes y "Ver todo" */
   function prosa(text, key) {
     const secs = secciones(text);
@@ -10813,7 +10893,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
           '" aria-expanded="' +
           !!abierto +
           '">' +
-          (abierto ? 'Ver menos' : 'Ver todo · ' + (secs.length - 2) + ' más') +
+          e(abierto ? 'Ver menos' : resto(secs.slice(2))) +
           icon('chevronDown') +
           '</button>'
         : '')
@@ -10844,7 +10924,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
     const est = A.estado.competencia || {};
     const ult = A.ultima('competencia');
     let meta;
-    if (corriendo) meta = 'Escaneando la Biblioteca…';
+    if (corriendo) meta = vivo.items.some((it) => it.estado === 'leyendo' || it.estado === 'espera') ? 'Escaneando la Biblioteca…' : A.progress.competencia || 'Escaneando…';
     else if (ult) meta = 'Escaneado ' + U.timeAgo(ult) + (est.resultado && est.resultado.nuevos != null ? ' · ' + plural(est.resultado.nuevos, 'nuevo', 'nuevos') : '');
     else meta = 'Todavía no escaneaste';
     let accion = '';
@@ -10857,12 +10937,12 @@ details.panel[open] > summary { margin-bottom: 4px; }
     if (!Browser.checked) aviso = nota('clock', 'Buscando el navegador de Claude…');
     else if (!Browser.available)
       aviso = nota(
-        'info',
+        'alert',
         'Necesita la app de escritorio de Claude. ' +
           info('El escaneo abre la Biblioteca de anuncios en el navegador de Claude de tu PC. Funciona si abrís este panel desde la app de escritorio (Cowork). Mientras tanto podés buscar a mano.') +
           ' <button type="button" class="btn link sm" data-act="abrir-manual">Buscar a mano</button>'
       );
-    else if (!chk.ok) aviso = nota('info', e(chk.motivo));
+    else if (!chk.ok) aviso = nota('alert', e(chk.motivo));
     else if (otra) aviso = nota('clock', pedido ? 'En cola: arranca cuando termine la ' + e(otra) + '.' : 'Ahora corre la ' + e(otra) + '. Si escaneás, queda en cola.');
     else if (!corriendo && est.error === CANCELADO) aviso = nota('stop', 'Detuviste el último escaneo.');
     else if (!corriendo && est.error) aviso = '<p class="error-text">No terminó: ' + e(est.error) + '</p>';
@@ -10898,7 +10978,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
       return;
     }
     box.innerHTML =
-      '<ul class="auto-progress cp-prog">' +
+      '<ul class="auto-progress cp-prog" aria-live="polite">' +
       vivo.items
         .map((it) => {
           const st = ST[it.estado] || ST.espera;
@@ -10906,8 +10986,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
           return '<li class="is-' + e(it.estado) + '"><span class="st' + (st[1] ? ' ' + st[1] : '') + '">' + e(st[0]) + '</span><span>' + e(it.q) + (det ? ' <span class="muted">· ' + e(det) + '</span>' : '') + '</span></li>';
         })
         .join('') +
-      '</ul>' +
-      (corriendo && A.progress.competencia ? '<p class="muted small" aria-live="polite">' + e(A.progress.competencia) + '</p>' : '');
+      '</ul>';
   }
 
   function busquedasCfg() {
@@ -12454,6 +12533,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
   // Tareas automáticas: progreso en vivo y si el usuario las dejó en cola
   const vivo = { medir: [], desc: [] };
   const pedido = { productos: false, descubrir: false };
+  let abrirDesc = false;
 
   function mount(section) {
     el = section;
@@ -12602,11 +12682,11 @@ details.panel[open] > summary { margin-bottom: 4px; }
     return (
       '<article class="pr-card" id="pc-' +
       e(p.id) +
-      '"><header class="pr-card-head"><div class="pr-card-title"><h4><span data-out="nombre">' +
+      '"><header class="pr-card-head"><div class="pr-card-title"><div class="pr-card-name"><h4 data-out="nombre">' +
       e(p.nombre) +
-      '</span>' +
+      '</h4>' +
       (p.nota ? info(e(p.nota)) : '') +
-      '</h4><p class="pr-ref" data-out="ref">' +
+      '</div><p class="pr-ref" data-out="ref">' +
       e(refText(p)) +
       '</p></div><div class="pr-score" title="Puntaje de 0 a 100"><span class="pr-score-num" data-out="puntaje">' +
       s.puntaje +
@@ -12873,7 +12953,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
   }
 
   function nota(ic, html) {
-    return '<p class="note">' + icon(ic) + html + '</p>';
+    return '<div class="note">' + icon(ic) + '<span>' + html + '</span></div>';
   }
 
   function renderAutoHead() {
@@ -13032,18 +13112,25 @@ details.panel[open] > summary { margin-bottom: 4px; }
       box.innerHTML = '';
       return;
     }
+    // Plegado para no alargar el panel; se abre solo al terminar una búsqueda
+    const prev = $('#pr-desc-more', box);
+    const abierto = abrirDesc || (prev ? prev.open : false);
+    abrirDesc = false;
     const prods = Array.isArray(d.productos) ? d.productos : [];
     box.innerHTML =
-      '<div class="pr-desc"><div class="pr-desc-head"><h4>Productos nuevos</h4><span class="pr-desc-when">' +
+      '<details class="more pr-desc" id="pr-desc-more"' +
+      (abierto ? ' open' : '') +
+      '><summary>' +
+      icon('chevronRight') +
+      'Productos nuevos' +
+      (prods.length ? '<span class="pr-desc-count">' + prods.length + '</span>' : '') +
+      '<span class="pr-desc-when">' +
       e(U.timeAgo(d.fecha)) +
-      '</span>' +
-      info(
-        (d.modo === 'claude' ? 'Claude eligió qué páginas de Mercado Libre leer.' : 'Se midieron búsquedas de partida en Mercado Libre.') +
-          ' Las señales salen de lo que muestran las publicaciones: no son ventas exactas.'
-      ) +
-      '</div>' +
+      '</span></summary><div class="pr-desc-body">' +
       (prods.length ? '<ul class="pr-desc-list">' + prods.map(descCard).join('') + '</ul>' : '<p class="note">La última búsqueda no encontró productos nuevos con señales de venta claras.</p>') +
-      '</div>';
+      '<p class="note">' +
+      (d.modo === 'claude' ? 'Claude eligió qué páginas de Mercado Libre leer.' : 'Salen de búsquedas de partida en Mercado Libre.') +
+      ' Son señales, no ventas exactas.</p></div></details>';
   }
 
   function descCard(d, n) {
@@ -13055,9 +13142,11 @@ details.panel[open] > summary { margin-bottom: 4px; }
     if (d.opiniones != null) facts.push('<li><strong>' + e(U.int(d.opiniones)) + '</strong> opiniones</li>');
     const extra = [d.evidencia ? '<strong>Evidencia:</strong> ' + e(d.evidencia) : '', d.video ? '<strong>En video:</strong> ' + e(d.video) : ''].filter(Boolean).join('<br><br>');
     return (
-      '<li class="pr-desc-card"><div class="pr-desc-top"><strong class="pr-desc-name">' +
+      '<li class="pr-desc-card"><div class="pr-desc-top"><span class="pr-desc-title"><strong class="pr-desc-name">' +
       e(d.nombre) +
       '</strong>' +
+      (extra ? info(extra) : '') +
+      '</span>' +
       (v ? chip(v.label, v.tone) : '') +
       '</div>' +
       (facts.length ? '<ul class="pr-facts">' + facts.join('') + '</ul>' : '') +
@@ -13068,9 +13157,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
       e(PR.mlUrl(d.busqueda || d.nombre)) +
       '" target="_blank" rel="noopener">Mercado Libre' +
       icon('external') +
-      '</a>' +
-      (extra ? info(extra) : '') +
-      '</div></li>'
+      '</a></div></li>'
     );
   }
 
@@ -13095,6 +13182,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
       else renderDescProg();
       return;
     }
+    if (ev.type === 'done' && ev.job === 'descubrir') abrirDesc = true;
     renderAutoHead();
     renderAutoProg();
     renderDesc();
@@ -13841,11 +13929,11 @@ details.panel[open] > summary { margin-bottom: 4px; }
       icon('upload') +
       'Importar CSV<input type="file" accept=".csv,text/csv" data-act="importar-csv" hidden></label>' +
       (Shop.mode === 'live' ? '<button class="btn ghost" data-act="refrescar">' + icon('refresh') + 'Traer pedidos</button>' : '') +
-      '</div><p class="note">' +
+      '</div><div class="note">' +
       (Store.mode === 'db'
         ? icon('check') + 'Se guarda en tu cuenta.' + info('Confirmaciones, gastos, reseñas y ajustes quedan guardados en el panel: los ves desde cualquier dispositivo.')
         : icon('alert') + 'Se guarda solo en este navegador.' + info('Abrí el panel desde claude.ai para guardar tus datos en tu cuenta.')) +
-      '</p></section>';
+      '</div></section>';
 
     el.innerHTML =
       pageHead('Ajustes', 'Tus costos, datos y mensajes. Se guarda solo.') +

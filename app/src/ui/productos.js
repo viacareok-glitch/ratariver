@@ -36,6 +36,7 @@
   // Tareas automáticas: progreso en vivo y si el usuario las dejó en cola
   const vivo = { medir: [], desc: [] };
   const pedido = { productos: false, descubrir: false };
+  let abrirDesc = false;
 
   function mount(section) {
     el = section;
@@ -184,11 +185,11 @@
     return (
       '<article class="pr-card" id="pc-' +
       e(p.id) +
-      '"><header class="pr-card-head"><div class="pr-card-title"><h4><span data-out="nombre">' +
+      '"><header class="pr-card-head"><div class="pr-card-title"><div class="pr-card-name"><h4 data-out="nombre">' +
       e(p.nombre) +
-      '</span>' +
+      '</h4>' +
       (p.nota ? info(e(p.nota)) : '') +
-      '</h4><p class="pr-ref" data-out="ref">' +
+      '</div><p class="pr-ref" data-out="ref">' +
       e(refText(p)) +
       '</p></div><div class="pr-score" title="Puntaje de 0 a 100"><span class="pr-score-num" data-out="puntaje">' +
       s.puntaje +
@@ -455,7 +456,7 @@
   }
 
   function nota(ic, html) {
-    return '<p class="note">' + icon(ic) + html + '</p>';
+    return '<div class="note">' + icon(ic) + '<span>' + html + '</span></div>';
   }
 
   function renderAutoHead() {
@@ -614,18 +615,25 @@
       box.innerHTML = '';
       return;
     }
+    // Plegado para no alargar el panel; se abre solo al terminar una búsqueda
+    const prev = $('#pr-desc-more', box);
+    const abierto = abrirDesc || (prev ? prev.open : false);
+    abrirDesc = false;
     const prods = Array.isArray(d.productos) ? d.productos : [];
     box.innerHTML =
-      '<div class="pr-desc"><div class="pr-desc-head"><h4>Productos nuevos</h4><span class="pr-desc-when">' +
+      '<details class="more pr-desc" id="pr-desc-more"' +
+      (abierto ? ' open' : '') +
+      '><summary>' +
+      icon('chevronRight') +
+      'Productos nuevos' +
+      (prods.length ? '<span class="pr-desc-count">' + prods.length + '</span>' : '') +
+      '<span class="pr-desc-when">' +
       e(U.timeAgo(d.fecha)) +
-      '</span>' +
-      info(
-        (d.modo === 'claude' ? 'Claude eligió qué páginas de Mercado Libre leer.' : 'Se midieron búsquedas de partida en Mercado Libre.') +
-          ' Las señales salen de lo que muestran las publicaciones: no son ventas exactas.'
-      ) +
-      '</div>' +
+      '</span></summary><div class="pr-desc-body">' +
       (prods.length ? '<ul class="pr-desc-list">' + prods.map(descCard).join('') + '</ul>' : '<p class="note">La última búsqueda no encontró productos nuevos con señales de venta claras.</p>') +
-      '</div>';
+      '<p class="note">' +
+      (d.modo === 'claude' ? 'Claude eligió qué páginas de Mercado Libre leer.' : 'Salen de búsquedas de partida en Mercado Libre.') +
+      ' Son señales, no ventas exactas.</p></div></details>';
   }
 
   function descCard(d, n) {
@@ -637,9 +645,11 @@
     if (d.opiniones != null) facts.push('<li><strong>' + e(U.int(d.opiniones)) + '</strong> opiniones</li>');
     const extra = [d.evidencia ? '<strong>Evidencia:</strong> ' + e(d.evidencia) : '', d.video ? '<strong>En video:</strong> ' + e(d.video) : ''].filter(Boolean).join('<br><br>');
     return (
-      '<li class="pr-desc-card"><div class="pr-desc-top"><strong class="pr-desc-name">' +
+      '<li class="pr-desc-card"><div class="pr-desc-top"><span class="pr-desc-title"><strong class="pr-desc-name">' +
       e(d.nombre) +
       '</strong>' +
+      (extra ? info(extra) : '') +
+      '</span>' +
       (v ? chip(v.label, v.tone) : '') +
       '</div>' +
       (facts.length ? '<ul class="pr-facts">' + facts.join('') + '</ul>' : '') +
@@ -650,9 +660,7 @@
       e(PR.mlUrl(d.busqueda || d.nombre)) +
       '" target="_blank" rel="noopener">Mercado Libre' +
       icon('external') +
-      '</a>' +
-      (extra ? info(extra) : '') +
-      '</div></li>'
+      '</a></div></li>'
     );
   }
 
@@ -677,6 +685,7 @@
       else renderDescProg();
       return;
     }
+    if (ev.type === 'done' && ev.job === 'descubrir') abrirDesc = true;
     renderAutoHead();
     renderAutoProg();
     renderDesc();

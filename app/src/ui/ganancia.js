@@ -56,8 +56,8 @@
       '<h3>Gasto en anuncios</h3>' +
       info('Copiá lo que gastaste cada día en cada plataforma, en pesos. Se guarda solo.') +
       '</div></div><div id="gan-be"></div><div id="gan-spend-rows"></div></section>' +
-      '<section class="panel" id="gan-break"></section></div>' +
-      '<section class="panel" id="gan-chart"></section><section class="panel" id="gan-sources"></section>';
+      '<div class="gan-side"><section class="panel" id="gan-break"></section><section class="panel" id="gan-chart"></section></div></div>' +
+      '<section class="panel" id="gan-sources"></section>';
     el.addEventListener('click', onClick);
     el.addEventListener('change', onChange);
     el.addEventListener('input', onInput);
@@ -288,7 +288,7 @@
           e(U.fmtDay(d.day, true)) +
           '</span><span class="sp-ins">' +
           PLATAFORMAS.map(([k, label]) => inp(k, label)).join('') +
-          '</span><span class="sp-gan mono ' +
+          '</span><span class="sp-gan ' +
           (d.ganancia >= 0 ? 'pos' : 'neg') +
           '" title="Ganancia del día">' +
           e(U.moneyShort(d.ganancia)) +
@@ -320,12 +320,12 @@
     const max = Math.max(1, t.ventas, Math.abs(t.ganancia));
     const bar = (v, cls) => '<span class="wf-bar ' + cls + '" style="width:' + Math.max(1, (Math.abs(v) / max) * 100).toFixed(1) + '%"></span>';
     const list = items
-      .map((x) => '<li><span class="wf-label">' + e(x[0]) + '</span><span class="wf-track">' + bar(x[1], x[2] === 'base' ? 'base' : 'cost') + '</span><span class="wf-val mono">' + e(U.money(x[1])) + '</span></li>')
+      .map((x) => '<li><span class="wf-label">' + e(x[0]) + '</span><span class="wf-track">' + bar(x[1], x[2] === 'base' ? 'base' : 'cost') + '</span><span class="wf-val">' + e(U.money(x[1])) + '</span></li>')
       .join('');
     const g =
       '<li class="wf-total"><span class="wf-label">Ganancia</span><span class="wf-track">' +
       bar(t.ganancia, t.ganancia >= 0 ? 'pos' : 'neg') +
-      '</span><span class="wf-val mono ' +
+      '</span><span class="wf-val ' +
       (t.ganancia >= 0 ? 'pos' : 'neg') +
       '">' +
       e(U.money(t.ganancia)) +
@@ -351,7 +351,10 @@
     const vals = res.days.map((d) => d.ganancia);
     const maxAbs = Math.max(1, ...vals.map(Math.abs));
     const hasNeg = vals.some((v) => v < 0);
-    const W = Math.max(300, Math.floor(box.clientWidth) - 34, res.days.length * 28);
+    // Ancho útil del panel (sin el relleno), para que el gráfico no se pase y entre en media columna
+    const cs = getComputedStyle(box);
+    const inner = Math.floor(box.clientWidth - parseFloat(cs.paddingLeft || 0) - parseFloat(cs.paddingRight || 0));
+    const W = Math.max(280, inner, res.days.length * 16);
     const H = 190;
     const pad = { t: 18, b: hasNeg ? 42 : 26, l: 8, r: 8 };
     const hasPos = vals.some((v) => v > 0);

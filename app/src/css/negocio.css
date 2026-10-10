@@ -3,7 +3,7 @@
 /* Las ayudas "?" se abren pegadas al borde de su tarjeta, para no salirse de la pantalla */
 :is(#panel-ofertas, #panel-productos, #panel-ajustes) :is(.panel, .of-hero, .pr-card) { position: relative; }
 :is(#panel-ofertas, #panel-productos, #panel-ajustes) :is(.panel, .of-hero, .pr-card) .info { position: static; }
-:is(#panel-ofertas, #panel-productos, #panel-ajustes) .info-pop { top: auto; left: 14px; margin-top: 8px; width: min(340px, calc(100vw - 64px)); }
+:is(#panel-ofertas, #panel-productos, #panel-ajustes) .info-pop { top: auto; left: 14px; margin-top: 8px; width: min(340px, calc(100vw - 64px)); white-space: normal; text-align: left; }
 :is(#panel-ofertas, #panel-productos, #panel-ajustes) .table-wrap { min-width: 0; }
 :is(#panel-ofertas, #panel-productos, #panel-ajustes) .panel-title { min-width: 0; }
 :is(#panel-ofertas, #panel-productos, #panel-ajustes) .panel-title h3 { min-width: 0; overflow-wrap: anywhere; }
@@ -113,9 +113,10 @@
 .pr-card.is-flash { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .pr-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .pr-card-title { display: grid; gap: 2px; min-width: 0; }
-.pr-card-title h4 { font-size: 1.0625rem; overflow-wrap: anywhere; }
-.pr-card-title h4 .info { margin-left: 2px; vertical-align: -4px; }
-.pr-card-title h4 .info > summary { width: 20px; height: 20px; }
+.pr-card-name { display: flex; align-items: flex-start; gap: 2px; min-width: 0; }
+.pr-card-name h4 { font-size: 1.0625rem; overflow-wrap: anywhere; min-width: 0; }
+.pr-card-name .info { flex: none; margin-top: 1px; }
+.pr-card-name .info > summary { width: 20px; height: 20px; }
 .pr-ref { color: var(--muted); font-size: var(--step--1); }
 .pr-score { display: grid; justify-items: center; align-content: center; flex: none; width: 58px; height: 58px; border-radius: 16px; background: var(--accent-soft); color: var(--accent); }
 .pr-score-num { font-family: var(--font-display); font-size: 1.375rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }

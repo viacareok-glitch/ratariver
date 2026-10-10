@@ -115,6 +115,8 @@
   const EXPLICA =
     'Leo el catálogo público de cada tienda Shopify (precios, agotados y productos nuevos) y las reseñas de sus correctores. Shopify no muestra las ventas de otros: comparando una revisión con la siguiente se ven lanzamientos, cambios de precio y reseñas nuevas. Son señales, no ventas exactas, y las reseñas pueden ser inventadas.';
   const MOV = { alto: 'Mucho movimiento', medio: 'Algo de movimiento', bajo: 'Poco movimiento' };
+  // Precio que no se corta entre "$" y el número
+  const plata = (n) => U.money(n).replace(' ', '\u00a0');
 
   function mount(container) {
     if (!container) return;
@@ -255,7 +257,7 @@
     if (!Browser.available) {
       act.innerHTML = '';
       box.innerHTML = nota(
-        'info',
+        'alert',
         'Necesita la app de escritorio de Claude. ' +
           info('La revisión usa el navegador de Claude en tu PC: abrí este panel desde la app de escritorio (Cowork). Igual podés agregar o quitar tiendas y ver lo que ya se revisó.')
       );
@@ -390,8 +392,10 @@
         ' días</span>' +
         (u.parcial ? '<span>catálogo leído en parte</span>' : '') +
         '</p>' +
+        '<div class="tn-body">' +
         corrector(d, doc, hoy) +
         cambios(d, doc) +
+        '</div>' +
         otrosYHistorial(d, doc);
     } else if (!u || !u.error) {
       h += '<p class="tn-quiet">' + icon('clock') + e(Browser.available ? 'Se lee su catálogo con “Revisar ahora”.' : 'Se revisa desde la app de escritorio de Claude.') + '</p>';
@@ -421,7 +425,7 @@
     let vs = '';
     if (cmp) {
       const etiqueta = cmp.tono === 'neutral' ? 'Mismo precio' : U.pct(Math.abs(cmp.pct)) + (cmp.dif < 0 ? ' más barato' : ' más caro');
-      vs = '<span class="tn-mio">Vos ' + e(U.money(mio)) + '</span>' + chip(etiqueta, cmp.tono, ' title="' + e(cmp.texto) + '"');
+      vs = '<span class="tn-mio">Tu precio ' + e(plata(mio)) + '</span>' + chip(etiqueta, cmp.tono, ' title="' + e(cmp.texto) + '"');
     }
     return (
       '<div class="tn-corr"><div class="tn-corr-top"><div class="tn-corr-name"><span class="eyebrow">Su corrector</span><a href="' +
@@ -429,9 +433,9 @@
       '" target="_blank" rel="noopener">' +
       e(c.titulo || c.handle) +
       '</a></div><div class="tn-price"><strong>' +
-      e(U.money(c.precioMin)) +
+      e(plata(c.precioMin)) +
       '</strong>' +
-      (c.tachado && c.tachado > c.precioMin ? '<s>' + e(U.money(c.tachado)) + '</s>' : '') +
+      (c.tachado && c.tachado > c.precioMin ? '<s>' + e(plata(c.tachado)) + '</s>' : '') +
       '</div></div>' +
       (vs ? '<div class="tn-vs">' + vs + '</div>' : '') +
       '<div class="chips">' +
@@ -463,13 +467,13 @@
   }
 
   const GRUPOS = [
-    ['nuevos', 'Nuevo', 'info', (x) => x.titulo + ' · ' + U.money(x.precio)],
-    ['precios', 'Precio', 'warn', (x) => x.titulo + ': ' + U.money(x.antes) + ' → ' + U.money(x.ahora)],
-    ['agotados', 'Se agotó', 'bad', (x) => x.titulo + ' · ' + U.money(x.precio)],
-    ['repuestos', 'Repuesto', 'good', (x) => x.titulo + ' · ' + U.money(x.precio)],
+    ['nuevos', 'Nuevo', 'info', (x) => x.titulo + ' · ' + plata(x.precio)],
+    ['precios', 'Precio', 'warn', (x) => x.titulo + ': ' + plata(x.antes) + ' → ' + plata(x.ahora)],
+    ['agotados', 'Se agotó', 'bad', (x) => x.titulo + ' · ' + plata(x.precio)],
+    ['repuestos', 'Repuesto', 'good', (x) => x.titulo + ' · ' + plata(x.precio)],
     ['variantes', 'Variantes', 'neutral', (x) => x.titulo + ': ' + x.ahora + ' de ' + x.de + ' con stock (antes ' + x.antes + ')'],
     ['resenas', 'Reseñas', 'source', (x) => x.titulo + ': +' + U.int(x.suma) + ' (' + U.int(x.ahora) + ' en total)'],
-    ['quitados', 'Quitado', 'neutral', (x) => x.titulo + ' · ' + U.money(x.precio)],
+    ['quitados', 'Quitado', 'neutral', (x) => x.titulo + ' · ' + plata(x.precio)],
   ];
 
   function cambios(d, doc) {
@@ -514,7 +518,7 @@
                 '" target="_blank" rel="noopener">' +
                 e(p.titulo || p.handle) +
                 '</a><span class="muted">' +
-                e(U.money(p.precioMin) + (p.disponible ? '' : ' · agotado') + (res[p.handle] != null ? ' · ' + U.int(res[p.handle]) + ' reseñas' : '')) +
+                e(plata(p.precioMin) + (p.disponible ? '' : ' · agotado') + (res[p.handle] != null ? ' · ' + U.int(res[p.handle]) + ' reseñas' : '')) +
                 '</span></li>'
             )
             .join('') +
@@ -540,7 +544,7 @@
                 '</td><td class="num">' +
                 n(x.agotados) +
                 '</td><td class="num">' +
-                (x.precioCorrector == null ? '—' : e(U.money(x.precioCorrector))) +
+                (x.precioCorrector == null ? '—' : e(plata(x.precioCorrector))) +
                 '</td><td class="num">' +
                 n(x.resenasTotal) +
                 (x.resenasNuevas ? ' <span class="tn-delta">+' + e(U.int(x.resenasNuevas)) + '</span>' : '') +

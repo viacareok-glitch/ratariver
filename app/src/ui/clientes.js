@@ -241,11 +241,12 @@
           e(msg) +
           '</p></details>' +
           '<div class="oc-actions"><div class="row-actions">' +
-          waButton(U.waLink(c.phone.wa, msg), ct ? 'Volver a escribir' : 'Enviar oferta', 'wa-oferta', c.wa, ct ? 'ghost' : 'wa') +
+          // Verde solo si ya corresponde escribirle
+          waButton(U.waLink(c.phone.wa, msg), ct ? 'Volver a escribir' : 'Enviar oferta', 'wa-oferta', c.wa, !ct && c.listo ? 'wa' : 'ghost') +
           '</div>' +
           (ct
             ? '<div class="row-actions decide" role="group" aria-label="¿Qué respondió?">' +
-              decide('respondio', 'Respondió', c, 'warn', 'message') +
+              decide('respondio', 'Respondió', c, 'info', 'message') +
               decide('compro', 'Compró', c, 'good', 'check') +
               decide('no', 'No le interesa', c, 'bad', 'x') +
               '<button class="btn link" data-act="deshacer" data-key="' +

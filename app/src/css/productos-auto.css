@@ -25,12 +25,16 @@
 .pr-cada select { min-height: 34px; padding: 4px 8px; font-size: 0.8125rem; color: var(--ink); }
 
 /* Productos nuevos */
-.pr-desc { display: grid; gap: 10px; padding-top: 14px; border-top: 1px solid var(--line); min-width: 0; }
-.pr-desc-head { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; }
-.pr-desc-when { color: var(--faint); font-size: var(--step--1); font-weight: 600; }
+.pr-desc { min-width: 0; }
+.pr-desc-body { display: grid; gap: 10px; }
+.pr-desc > summary { color: var(--ink); font-size: 0.875rem; }
+.pr-desc-count { min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--peach-soft); color: var(--peach); font-size: 0.6875rem; font-weight: 800; line-height: 18px; text-align: center; font-variant-numeric: tabular-nums; }
+.pr-desc-when { color: var(--faint); font-size: var(--step--1); font-weight: 500; margin-left: 4px; }
 .pr-desc-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 10px; }
 .pr-desc-card { display: grid; gap: 8px; align-content: start; min-width: 0; padding: 14px; background: var(--surface-2); border-radius: var(--r); }
 .pr-desc-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; }
+.pr-desc-title { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.pr-desc-title .info { flex: none; }
 .pr-desc-name { font-family: var(--font-display); font-size: var(--step-0); font-weight: 700; color: var(--ink); min-width: 0; overflow-wrap: anywhere; }
 .pr-desc-why { color: var(--muted); font-size: var(--step--1); overflow-wrap: anywhere; }
 .pr-desc-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 2px; }

@@ -132,7 +132,8 @@
       lista = false;
     };
     for (const raw of String(text || '').split(/\r?\n/)) {
-      const l = raw.replace(/\*\*/g, '').replace(/^#+\s*/, '').trim();
+      // Sin markdown y sin cortar "$ 49.990" entre líneas
+      const l = raw.replace(/\*\*/g, '').replace(/^#+\s*/, '').replace(/\$ (?=\d)/g, '$\u00a0').trim();
       if (!l) {
         cerrar();
         continue;
@@ -164,6 +165,13 @@
     return '<section class="cp-sec">' + (s.t ? '<h4>' + (ic ? icon(ic) : '') + '<span>' + e(s.t) + '</span></h4>' : '') + s.h + '</section>';
   }
 
+  // "Ver más: Precios y Qué probar" (o "Ver todo" si las partes no tienen título)
+  function resto(secs) {
+    const t = secs.map((x) => x.t).filter(Boolean);
+    if (!t.length || t.length !== secs.length || t.join('').length > 60) return 'Ver todo';
+    return 'Ver más: ' + (t.length > 1 ? t.slice(0, -1).join(', ') + ' y ' + t[t.length - 1] : t[0]);
+  }
+
   /* Texto de Claude con buena tipografía; si es largo, muestra las dos primeras partes y "Ver todo" */
   function prosa(text, key) {
     const secs = secciones(text);
@@ -182,7 +190,7 @@
           '" aria-expanded="' +
           !!abierto +
           '">' +
-          (abierto ? 'Ver menos' : 'Ver todo · ' + (secs.length - 2) + ' más') +
+          e(abierto ? 'Ver menos' : resto(secs.slice(2))) +
           icon('chevronDown') +
           '</button>'
         : '')
@@ -213,7 +221,7 @@
     const est = A.estado.competencia || {};
     const ult = A.ultima('competencia');
     let meta;
-    if (corriendo) meta = 'Escaneando la Biblioteca…';
+    if (corriendo) meta = vivo.items.some((it) => it.estado === 'leyendo' || it.estado === 'espera') ? 'Escaneando la Biblioteca…' : A.progress.competencia || 'Escaneando…';
     else if (ult) meta = 'Escaneado ' + U.timeAgo(ult) + (est.resultado && est.resultado.nuevos != null ? ' · ' + plural(est.resultado.nuevos, 'nuevo', 'nuevos') : '');
     else meta = 'Todavía no escaneaste';
     let accion = '';
@@ -226,12 +234,12 @@
     if (!Browser.checked) aviso = nota('clock', 'Buscando el navegador de Claude…');
     else if (!Browser.available)
       aviso = nota(
-        'info',
+        'alert',
         'Necesita la app de escritorio de Claude. ' +
           info('El escaneo abre la Biblioteca de anuncios en el navegador de Claude de tu PC. Funciona si abrís este panel desde la app de escritorio (Cowork). Mientras tanto podés buscar a mano.') +
           ' <button type="button" class="btn link sm" data-act="abrir-manual">Buscar a mano</button>'
       );
-    else if (!chk.ok) aviso = nota('info', e(chk.motivo));
+    else if (!chk.ok) aviso = nota('alert', e(chk.motivo));
     else if (otra) aviso = nota('clock', pedido ? 'En cola: arranca cuando termine la ' + e(otra) + '.' : 'Ahora corre la ' + e(otra) + '. Si escaneás, queda en cola.');
     else if (!corriendo && est.error === CANCELADO) aviso = nota('stop', 'Detuviste el último escaneo.');
     else if (!corriendo && est.error) aviso = '<p class="error-text">No terminó: ' + e(est.error) + '</p>';
@@ -267,7 +275,7 @@
       return;
     }
     box.innerHTML =
-      '<ul class="auto-progress cp-prog">' +
+      '<ul class="auto-progress cp-prog" aria-live="polite">' +
       vivo.items
         .map((it) => {
           const st = ST[it.estado] || ST.espera;
@@ -275,8 +283,7 @@
           return '<li class="is-' + e(it.estado) + '"><span class="st' + (st[1] ? ' ' + st[1] : '') + '">' + e(st[0]) + '</span><span>' + e(it.q) + (det ? ' <span class="muted">· ' + e(det) + '</span>' : '') + '</span></li>';
         })
         .join('') +
-      '</ul>' +
-      (corriendo && A.progress.competencia ? '<p class="muted small" aria-live="polite">' + e(A.progress.competencia) + '</p>' : '');
+      '</ul>';
   }
 
   function busquedasCfg() {

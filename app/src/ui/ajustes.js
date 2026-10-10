@@ -221,11 +221,11 @@
       icon('upload') +
       'Importar CSV<input type="file" accept=".csv,text/csv" data-act="importar-csv" hidden></label>' +
       (Shop.mode === 'live' ? '<button class="btn ghost" data-act="refrescar">' + icon('refresh') + 'Traer pedidos</button>' : '') +
-      '</div><p class="note">' +
+      '</div><div class="note">' +
       (Store.mode === 'db'
         ? icon('check') + 'Se guarda en tu cuenta.' + info('Confirmaciones, gastos, reseñas y ajustes quedan guardados en el panel: los ves desde cualquier dispositivo.')
         : icon('alert') + 'Se guarda solo en este navegador.' + info('Abrí el panel desde claude.ai para guardar tus datos en tu cuenta.')) +
-      '</p></section>';
+      '</div></section>';
 
     el.innerHTML =
       pageHead('Ajustes', 'Tus costos, datos y mensajes. Se guarda solo.') +

@@ -150,7 +150,8 @@
     const ideal = Number(App.msgs.diasResena) || 4;
     const st = R_ESTADOS[r.estado];
     const chips = [
-      st ? chip(st.label, st.tone) : dias < ideal ? chip('Ideal en ' + (ideal - dias) + (ideal - dias === 1 ? ' día' : ' días'), 'neutral') : '',
+      // "Recibida" no lleva chip: ya lo dicen la cita y el borde verde
+      st ? (r.estado === 'recibida' ? '' : chip(st.label, st.tone)) : dias < ideal ? chip('Ideal en ' + (ideal - dias) + (ideal - dias === 1 ? ' día' : ' días'), 'neutral') : '',
       r.foto ? chip('Con foto', 'good') : '',
       r.estado === 'recibida' && !r.permiso ? chip('Sin permiso', 'warn') : '',
     ].join('');
@@ -193,9 +194,9 @@
         : '') +
       (editing
         ? form(o, r)
-        : '<div class="oc-actions"><div class="row-actions">' +
-          wa +
-          '</div><div class="row-actions decide"><button class="btn ghost sm" data-act="cargar" data-key="' +
+        : '<div class="oc-actions">' +
+          (wa ? '<div class="row-actions">' + wa + '</div>' : '') +
+          '<div class="row-actions decide"><button class="btn ghost sm" data-act="cargar" data-key="' +
           k +
           '">' +
           icon('star') +

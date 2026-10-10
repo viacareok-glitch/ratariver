@@ -7,6 +7,8 @@
 
 /* ---------- Ganancia ---------- */
 .gan-dates { padding: 2px 0; }
+.gan-side { display: grid; gap: 18px; align-content: start; min-width: 0; }
+.gan-side > * { min-width: 0; }
 
 .gan-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .gan-kpis .kpi-sk { height: 128px; }
@@ -39,13 +41,29 @@
 .sp-ins { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; min-width: 0; }
 .sp-headrow .sp-ins span { text-align: right; padding-right: 12px; }
 .sp-ins .num-input { min-width: 0; }
-.sp-ins .num-input::placeholder { font-family: var(--font-body); }
+.sp-ins .num-input { font-family: var(--font-body); font-size: 0.875rem; font-variant-numeric: tabular-nums; }
 .sp-day { font-size: 0.875rem; font-weight: 600; white-space: nowrap; }
-.sp-gan { text-align: right; font-size: 0.8125rem; white-space: nowrap; }
+.sp-gan { text-align: right; font-size: 0.8125rem; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .sp-headrow .sp-day, .sp-headrow .sp-gan { font-size: inherit; font-weight: inherit; }
 #gan-be:empty { display: none; }
 
 .gan-src th, .gan-src td { white-space: nowrap; }
+
+/* Desglose y gráfico */
+#gan-break .wf-val { font-size: 0.875rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#gan-break .wf-total .wf-val { font-weight: 700; }
+#gan-chart .bar-label { font-family: var(--font-body); font-weight: 700; }
+@media (min-width: 561px) {
+  /* Las barras arrancan y terminan en la misma línea en todas las filas */
+  #gan-break .waterfall { grid-template-columns: max-content minmax(0, 1fr) max-content; column-gap: 14px; }
+  #gan-break .waterfall li { grid-column: 1 / -1; grid-template-columns: subgrid; column-gap: 14px; }
+}
+
+/* Con dos columnas, la lista de gastos no se estira más que lo que hay al lado */
+@media (min-width: 1120px) {
+  .sp-list { max-height: 440px; overflow-y: auto; overscroll-behavior: contain; }
+  .sp-headrow { position: sticky; top: 0; z-index: 1; background: var(--surface); }
+}
 
 /* ---------- Reseñas ---------- */
 .res-card .oc-top { align-items: center; }
@@ -72,15 +90,20 @@
 .rv-stars label { display: inline-grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; cursor: pointer; color: var(--line-strong); transition: color 0.1s, transform 0.1s; }
 .rv-stars label .ico { width: 26px; height: 26px; fill: currentColor; stroke-width: 1.5; }
 .rv-stars input:checked ~ label { color: var(--warn); }
-.rv-stars:hover input ~ label { color: var(--line-strong); }
-.rv-stars:hover label:hover, .rv-stars:hover label:hover ~ label { color: var(--warn); }
-.rv-stars label:hover { transform: scale(1.08); }
+@media (hover: hover) {
+  .rv-stars:has(label:hover) label { color: var(--line-strong); }
+  .rv-stars:has(label:hover) label:hover, .rv-stars:has(label:hover) label:hover ~ label { color: var(--warn); }
+  .rv-stars label:hover { transform: scale(1.08); }
+}
 .rv-stars input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 #res-export > .more { min-width: 0; }
 #res-csv { max-width: 100%; }
 .res-foot .more { border-top: 0; padding-top: 0; }
 .res-opts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
+@media (min-width: 561px) {
+  .res-card .oc-actions > .decide:only-child { margin-left: auto; }
+}
 
 /* Tarjeta en una sola fila cuando hay lugar: datos a la izquierda, botones a la derecha */
 @media (min-width: 1100px) {
@@ -109,7 +132,7 @@
 .cli-ofertas-panel > .more > summary { color: var(--ink); font-size: 0.9375rem; }
 .cli-ofertas-panel > .more[open] > summary { margin-bottom: 16px; }
 .cli-of-body { display: grid; gap: 16px; min-width: 0; }
-.cli-of-body > .form-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+.cli-of-body > .form-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
 .cli-code { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .cli-code .num-input.short { width: 56px; min-height: 34px; padding: 4px 8px; border: 0; background: transparent; }
 .cli-tpl-head { display: flex; align-items: center; gap: 4px; padding-top: 14px; border-top: 1px solid var(--line); }
@@ -125,6 +148,7 @@
 .cli-msg > summary .ico { width: 15px; height: 15px; transition: transform 0.15s; }
 .cli-msg[open] > summary .ico { transform: rotate(90deg); }
 .cli-msg .preview { margin-top: 8px; max-width: 64ch; }
+.cli-card .decide-btn.tone-info.is-on { background: var(--info-soft); border-color: var(--info); color: var(--info); }
 
 @media (max-width: 1180px) {
   .gan-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -154,6 +178,14 @@
   .sp-ins { grid-area: ins; }
   .sp-headrow { padding-bottom: 0; }
   .sp-headrow .sp-day, .sp-headrow .sp-gan { display: none; }
+
+  .gan-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gan-dates label { display: grid; gap: 4px; font-size: var(--step--1); font-weight: 600; }
+  .gan-dates input { width: 100%; min-width: 0; }
+
+  #gan-break .waterfall { gap: 10px; }
+  #gan-break .waterfall li { row-gap: 5px; }
+  #gan-break .wf-track { height: 6px; }
 
   .gan-src .hide-sm { display: none; }
   .gan-src th, .gan-src td { padding-inline: 6px; }

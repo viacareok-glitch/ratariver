@@ -13,7 +13,7 @@
 
 /* Agregar tienda: una fila */
 .tn-add { display: flex; align-items: center; gap: 8px; }
-.tn-add input { flex: 1 1 auto; min-width: 0; }
+.tn-add input { flex: 1 1 auto; width: 100%; min-width: 0; }
 .tn-add .btn { flex: none; }
 
 .tn-opts { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; }
@@ -39,16 +39,27 @@
 .tn-dom:hover .ico { color: var(--accent); }
 .tn-sub { color: var(--muted); font-size: 0.75rem; }
 .tn-head-r { display: flex; align-items: center; gap: 4px; margin-left: auto; }
-.tn-quitar { color: var(--faint); gap: 6px; padding: 6px; }
-.tn-quitar .ico { width: 16px; height: 16px; }
-.tn-quitar:hover { color: var(--bad); text-decoration: none; }
-.tn-quitar.is-confirm { color: var(--bad); font-weight: 600; font-size: 0.8125rem; }
+.btn.tn-quitar { color: var(--faint); gap: 6px; padding: 6px; }
+.btn.tn-quitar .ico { width: 16px; height: 16px; }
+.btn.tn-quitar:hover { color: var(--bad); text-decoration: none; }
+.btn.tn-quitar.is-confirm { color: var(--bad); font-weight: 600; font-size: 0.8125rem; }
 
 .tn-why { color: var(--muted); font-size: 0.875rem; line-height: 1.5; max-width: 72ch; }
 .tn-facts { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: var(--step--1); color: var(--muted); }
 .tn-facts strong { color: var(--ink); font-family: var(--font-display); font-weight: 800; font-variant-numeric: tabular-nums; margin-right: 3px; }
 .tn-quiet { display: flex; align-items: flex-start; gap: 7px; color: var(--muted); font-size: var(--step--1); }
 .tn-quiet .ico { width: 15px; height: 15px; margin-top: 2px; color: var(--faint); }
+
+/* Su corrector y los cambios: uno debajo del otro, o lado a lado en pantallas anchas */
+.tn-body { display: grid; gap: 12px; min-width: 0; align-items: start; }
+.tn-body > * { min-width: 0; }
+.tn-body > .tn-det { border-top: 1px solid var(--line); }
+@media (min-width: 1100px) {
+  .tn-body { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 12px 20px; }
+  .tn-body > .tn-det { border-top: 0; }
+  .tn-body > .tn-det > summary { padding-top: 4px; }
+  .tn-body > .tn-quiet { padding-top: 6px; }
+}
 
 /* Su corrector contra el tuyo */
 .tn-corr { display: grid; gap: 10px; min-width: 0; padding: 14px; background: var(--surface-2); border-radius: var(--r); }
@@ -64,14 +75,14 @@
 .tn-vs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
 .tn-mio { color: var(--muted); font-size: var(--step--1); font-variant-numeric: tabular-nums; }
 .tn-vs .chip { font-weight: 700; }
+.tn-corr .chip.tone-neutral { background: var(--surface); }
 .tn-delta { margin-left: 4px; color: var(--good); font-weight: 800; font-variant-numeric: tabular-nums; }
 
 /* Desplegables de la tarjeta */
 .tn-dets { display: grid; border-top: 1px solid var(--line); }
 .tn-det + .tn-det { border-top: 1px solid var(--line); }
-.tn-card > .tn-det { border-top: 1px solid var(--line); }
 .tn-det > summary { list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 10px 0; font-size: 0.875rem; font-weight: 600; color: var(--ink); }
-.tn-card > .tn-det > summary { padding-bottom: 4px; }
+.tn-body > .tn-det > summary { padding-bottom: 4px; }
 .tn-det > summary::-webkit-details-marker { display: none; }
 .tn-det > summary .ico { width: 16px; height: 16px; color: var(--muted); transition: transform 0.15s; }
 .tn-det[open] > summary .ico { transform: rotate(90deg); }
@@ -81,9 +92,10 @@
 .tn-dets > .tn-det:last-child:not([open]) > summary { padding-bottom: 0; }
 
 .tn-changes { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; font-size: 0.875rem; }
-.tn-changes li { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.tn-changes li { display: grid; grid-template-columns: 80px minmax(0, 1fr); align-items: baseline; gap: 8px; min-width: 0; }
 .tn-changes li > span:last-child { min-width: 0; overflow-wrap: anywhere; }
-.tn-changes li .chip { flex: none; min-width: 76px; justify-content: center; }
+.tn-changes li .chip { justify-content: center; }
+.tn-changes li.muted { display: block; padding-left: 88px; }
 
 .tn-otros { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: var(--step--1); }
 .tn-otros li { display: flex; flex-wrap: wrap; gap: 0 8px; min-width: 0; }
@@ -100,5 +112,4 @@
   .tn-head-r { width: 100%; justify-content: space-between; margin-left: 0; }
   .tn-corr { padding: 12px; }
   .tn-det-body { padding-left: 0; }
-  .tn-changes li { flex-wrap: wrap; }
 }

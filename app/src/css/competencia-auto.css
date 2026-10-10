@@ -13,6 +13,12 @@
 .chip.cp-num.tone-neutral { color: var(--muted); }
 .chip.cp-num.tone-neutral strong { color: var(--ink); }
 
+/* Los hijos de los paneles se achican en vez de estirar la pantalla */
+.cp-auto > *, .cp-found > *, .cp-saved > *, .cp-step > *, .tn > * { min-width: 0; }
+
+/* Estados vacíos más compactos dentro de los paneles */
+.cp-found .empty, .cp-saved .empty, .tn .empty { padding: 26px 18px; }
+
 /* Título con "?" al lado */
 .cp-title { display: flex; align-items: center; gap: 4px; }
 
@@ -30,6 +36,7 @@
 .cp-prog .st { min-width: 84px; }
 .cp-prog .st:not(.ok):not(.err) { color: var(--info); }
 .cp-prog li.is-espera, .cp-prog li.is-omitida { color: var(--muted); }
+.cp-prog li.is-espera .st, .cp-prog li.is-omitida .st { color: var(--faint); }
 
 /* Opciones */
 .cp-auto-cfg { display: grid; gap: 14px; }
@@ -46,11 +53,14 @@
 .cp-q-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .cp-q-x[disabled] { opacity: 0.35; cursor: not-allowed; }
 .cp-q-form { display: flex; align-items: center; gap: 8px; }
-.cp-q-form input { flex: 1 1 auto; min-width: 0; }
+.cp-q-form input { flex: 1 1 auto; width: 100%; min-width: 0; }
 
 /* ---------- Qué encontré ---------- */
 .cp-found { gap: 16px; }
+.cp-found > .panel-head { flex-wrap: nowrap; align-items: flex-start; }
+.cp-found .panel-title { flex: 1 1 auto; min-width: 0; }
 .cp-found .panel-title > div { min-width: 0; }
+.cp-found > .panel-head > .btn { flex: none; }
 .cp-sk { height: 140px; }
 .cp-found-body { display: grid; gap: 6px; justify-items: start; min-width: 0; }
 .cp-found-body > .cp-prose { width: 100%; }
@@ -91,21 +101,21 @@
 .cp-ideas-out { display: grid; gap: 6px; justify-items: start; min-width: 0; }
 .cp-ideas-out > .cp-prose { width: 100%; }
 
-.cp-table .cp-c-who { min-width: 150px; }
+.cp-table .cp-c-who { min-width: 180px; }
 .cp-who { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-weight: 700; color: var(--ink); white-space: normal; }
 .cp-who-sub { display: block; color: var(--muted); font-size: 0.75rem; font-weight: 500; white-space: normal; }
 .cp-table .chip { white-space: nowrap; }
-.cp-c-hook { min-width: 240px; max-width: 420px; }
+.cp-c-hook { min-width: 220px; max-width: 380px; }
 .cp-hook { display: block; color: var(--ink); overflow-wrap: anywhere; }
 .cp-hook-note { display: block; margin-top: 3px; color: var(--muted); font-size: 0.75rem; }
 .cp-acts { display: flex; align-items: center; justify-content: flex-end; gap: 8px; white-space: nowrap; }
 .cp-acts .btn.link { gap: 4px; }
 .cp-acts .ico { width: 15px; height: 15px; }
-.cp-del { color: var(--faint); }
-.cp-del:hover { color: var(--bad); text-decoration: none; }
+.btn.cp-del { color: var(--faint); }
+.btn.cp-del:hover { color: var(--bad); text-decoration: none; }
 .cp-saved-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
-.cp-del-all { color: var(--muted); font-weight: 500; }
-.cp-del-all:hover, .cp-del-all.is-confirm { color: var(--bad); }
+.btn.cp-del-all { color: var(--muted); font-weight: 500; }
+.btn.cp-del-all:hover, .btn.cp-del-all.is-confirm { color: var(--bad); }
 
 /* ---------- Buscar a mano ---------- */
 .cp-manual > .more > summary { font-size: 0.875rem; }
@@ -120,6 +130,7 @@
 .cp-links .ico { width: 14px; height: 14px; color: var(--faint); }
 .cp-step .row-actions .chip { align-self: center; }
 .cp-form { display: grid; gap: 12px; }
+.cp-form .form-grid:not(.wide) { grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); }
 .cp-form .form-grid label, .cp-form .form-grid.wide label { display: grid; gap: 4px; font-size: var(--step--1); color: var(--muted); font-weight: 500; }
 .cp-form input, .cp-form select { width: 100%; }
 
@@ -142,8 +153,11 @@
   .cp-table-wrap, .cp-saved .table-wrap { margin-inline: 0; padding-inline: 0; overflow: visible; }
 }
 @media (max-width: 560px) {
+  /* Las ayudas "?" se abren como una tarjeta fija abajo, para que no se salgan de la pantalla */
+  #panel-competencia .info-pop { position: fixed; top: auto; left: 16px; right: 16px; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); width: auto; z-index: 25; }
   .cp-auto-row > .row-actions, .cp-auto-row > .row-actions .btn { width: 100%; }
   .cp-sec { padding: 12px 14px; }
   .cp-step { padding: 14px; }
+  .cp-form .form-grid:not(.wide) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cp-ideas { padding: 12px; }
 }
