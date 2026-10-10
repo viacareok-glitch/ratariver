@@ -7,7 +7,7 @@
   const S = VC.stores;
   const A = VC.auto;
   const { Store, Browser } = VC.runtime;
-  const { e, $, App, chip, emptyState, toast, storeFail } = VC.ui;
+  const { e, $, App, chip, emptyState, toast, storeFail, icon, bubble, info, more, toggle } = VC.ui;
 
   const CADA = [24, 48, 72];
   const TONO = { alto: 'good', medio: 'info', bajo: 'neutral' };
@@ -18,6 +18,8 @@
     log: [], // [{st: 'ok'|'err', texto}] de la corrida en curso o la última
     enCola: false,
     confirmar: null, // {d, hasta}: botón Quitar esperando el segundo toque
+    skip: '', // por qué no se pudo revisar (si el motor la salteó)
+    det: {}, // desplegables abiertos o cerrados a mano en cada tarjeta
   };
   let el = null;
   let unwatch = null;
@@ -110,6 +112,10 @@
 
   /* ---------- Interfaz ---------- */
 
+  const EXPLICA =
+    'Leo el catálogo público de cada tienda Shopify (precios, agotados y productos nuevos) y las reseñas de sus correctores. Shopify no muestra las ventas de otros: comparando una revisión con la siguiente se ven lanzamientos, cambios de precio y reseñas nuevas. Son señales, no ventas exactas, y las reseñas pueden ser inventadas.';
+  const MOV = { alto: 'Mucho movimiento', medio: 'Algo de movimiento', bajo: 'Poco movimiento' };
+
   function mount(container) {
     if (!container) return;
     if (el === container && $('.tn', el)) {
@@ -118,13 +124,31 @@
     }
     el = container;
     el.innerHTML =
-      '<section class="panel auto-panel tn" aria-labelledby="tn-title"><div class="auto-head"><h3 id="tn-title">Tiendas de la competencia</h3><div class="auto-meta" id="tn-meta"></div></div>' +
-      '<p class="muted small">Lee el catálogo público de cada tienda Shopify (precios, precio tachado, qué está agotado y cuándo publicó cada producto) y las reseñas de sus correctores. Shopify no muestra las ventas de otros: comparando una revisión con la siguiente se ven lanzamientos, cambios de precio, productos que se agotan y se reponen, y reseñas nuevas. Son señales de venta, no ventas exactas, y las reseñas pueden ser inventadas.</p>' +
-      '<form class="tn-add" id="tn-add" novalidate><label for="tn-dominio" class="sr-only">Dominio o dirección de la tienda</label><input id="tn-dominio" name="dominio" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="tienda.com.ar o el link de la tienda"><button class="btn ghost" type="submit">Agregar tienda</button></form>' +
-      '<div id="tn-ctrl" class="tn-ctrl"></div><div id="tn-prog" class="tn-prog"></div><div id="tn-summary"></div><div id="tn-list" class="tn-list"></div></section>';
+      '<section class="panel tn" aria-labelledby="tn-title">' +
+      '<div class="tn-top">' +
+      bubble('store', 'source') +
+      '<div class="tn-top-txt"><div class="tn-title"><h3 id="tn-title">Tiendas</h3>' +
+      info(EXPLICA, 'Cómo se miden las tiendas') +
+      '</div><p class="tn-meta" id="tn-meta"></p></div><div class="row-actions" id="tn-act"></div></div>' +
+      '<div id="tn-ctrl" class="tn-ctrl"></div><div id="tn-prog" class="tn-prog"></div>' +
+      '<form class="tn-add" id="tn-add" novalidate><label for="tn-dominio" class="sr-only">Dominio o link de la tienda</label><input id="tn-dominio" name="dominio" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="tienda.com.ar o su link"><button class="btn ghost" type="submit">' +
+      icon('plus') +
+      'Agregar</button></form>' +
+      '<div id="tn-summary"></div><div id="tn-list" class="tn-list"></div>' +
+      more('Opciones', '<div id="tn-opts" class="tn-opts"></div>', 'tn-more') +
+      '</section>';
     el.addEventListener('click', onClick);
     el.addEventListener('change', onChange);
     el.addEventListener('submit', onSubmit);
+    // Recordamos qué desplegables de cada tarjeta quedaron abiertos (el evento toggle no burbujea)
+    el.addEventListener(
+      'toggle',
+      (ev) => {
+        const k = ev.target && ev.target.dataset && ev.target.dataset.k;
+        if (k) state.det[k] = ev.target.open;
+      },
+      true
+    );
     if (!unwatch) {
       unwatch = Store.watch(
         'tiendas',
@@ -173,7 +197,8 @@
         return;
       }
       state.enCola = false;
-      if (ev.type === 'skip' && ev.motivo) state.log = [{ st: 'err', texto: ev.motivo }];
+      if (ev.type === 'start') state.skip = '';
+      if (ev.type === 'skip' && ev.motivo) state.skip = ev.motivo;
       render();
       return;
     }
@@ -193,6 +218,18 @@
     return [...set];
   }
 
+  function plural(n, uno, varios) {
+    return (n || 0) + ' ' + (n === 1 ? uno : varios);
+  }
+
+  function num(n, label, tone, prefijo) {
+    return '<span class="chip cp-num tone-' + (tone || 'neutral') + '"><strong>' + (prefijo || '') + e(U.int(n || 0)) + '</strong>' + e(label) + '</span>';
+  }
+
+  function nota(ic, html) {
+    return '<div class="note tn-note">' + icon(ic) + '<span>' + html + '</span></div>';
+  }
+
   function paintStatus() {
     paintCtrl();
     paintProg();
@@ -201,33 +238,36 @@
   function paintCtrl() {
     if (!montado()) return;
     const box = $('#tn-ctrl', el);
+    const act = $('#tn-act', el);
+    const c = A.cfg.tiendas || {};
+    const horas = Number(c.cadaHoras) || 24;
+    const opts = CADA.includes(horas) ? CADA : CADA.concat([horas]).sort((a, b) => a - b);
+    $('#tn-opts', el).innerHTML =
+      toggle('tn-auto', !!c.auto, 'Revisarlas solas al abrir el panel') +
+      '<label class="tn-cada" for="tn-cada">Cada <select id="tn-cada">' +
+      opts.map((h) => '<option value="' + h + '"' + (h === horas ? ' selected' : '') + '>' + h + ' horas</option>').join('') +
+      '</select></label>';
     if (!Browser.checked) {
-      box.innerHTML = '<p class="muted small">Buscando el navegador de Claude en tu PC…</p>';
+      act.innerHTML = '';
+      box.innerHTML = nota('clock', 'Buscando el navegador de Claude…');
       return;
     }
     if (!Browser.available) {
-      box.innerHTML =
-        '<div class="auto-off">La revisión usa el navegador de Claude en tu PC, que solo está disponible si abrís este panel desde la app de escritorio de Claude (Cowork). Igual podés agregar o quitar tiendas y ver lo que ya se revisó.</div>';
+      act.innerHTML = '';
+      box.innerHTML = nota(
+        'info',
+        'Necesita la app de escritorio de Claude. ' +
+          info('La revisión usa el navegador de Claude en tu PC: abrí este panel desde la app de escritorio (Cowork). Igual podés agregar o quitar tiendas y ver lo que ya se revisó.')
+      );
       return;
     }
-    const c = A.cfg.tiendas || {};
     const corriendo = A.running === 'tiendas';
     const otra = A.running && !corriendo ? A.running : null;
     const n = dominios().length;
-    const horas = Number(c.cadaHoras) || 24;
-    const opts = CADA.includes(horas) ? CADA : CADA.concat([horas]).sort((a, b) => a - b);
-    box.innerHTML =
-      '<div class="row-actions">' +
-      (corriendo
-        ? '<button class="btn ghost" data-act="tn-detener">Detener</button>'
-        : '<button class="btn" data-act="tn-revisar"' + (n && !state.enCola ? '' : ' disabled') + '>Revisar tiendas ahora</button>') +
-      (state.enCola && otra ? '<span class="muted small">En cola: espera que termine ' + e(A.NOMBRES[otra] || otra) + '.</span>' : '') +
-      (!n ? '<span class="muted small">Agregá una tienda para revisarla.</span>' : '') +
-      '</div><div class="auto-toggles"><label><input type="checkbox" id="tn-auto"' +
-      (c.auto ? ' checked' : '') +
-      '> Revisar solas al abrir el panel</label><label for="tn-cada">cada <select id="tn-cada">' +
-      opts.map((h) => '<option value="' + h + '"' + (h === horas ? ' selected' : '') + '>' + h + '</option>').join('') +
-      '</select> horas</label></div>';
+    act.innerHTML = corriendo
+      ? '<button class="btn ghost" data-act="tn-detener">' + icon('stop') + 'Detener</button>'
+      : '<button class="btn" data-act="tn-revisar"' + (n && !state.enCola ? '' : ' disabled') + '>' + icon('refresh') + 'Revisar ahora</button>';
+    box.innerHTML = state.enCola && otra ? nota('clock', 'En cola: espera que termine la ' + e(A.NOMBRES[otra] || otra) + '.') : '';
   }
 
   function paintProg() {
@@ -235,23 +275,21 @@
     const est = A.estado.tiendas;
     const c = A.cfg.tiendas || {};
     const corriendo = A.running === 'tiendas';
-    const meta = [];
-    meta.push(est && est.ultima ? 'Última revisión ' + U.timeAgo(est.ultima) + (est.origen === 'auto' ? ' (sola)' : '') : 'Todavía no se revisó');
-    meta.push(dominios().length + ' tienda' + (dominios().length === 1 ? '' : 's'));
-    if (c.auto) meta.push('se revisan solas cada ' + (Number(c.cadaHoras) || 24) + ' h');
-    $('#tn-meta', el).innerHTML = meta.map((m) => '<span>' + e(m) + '</span>').join('');
+    const n = dominios().length;
+    const meta = corriendo ? 'Revisando…' : est && est.ultima ? 'Revisadas ' + U.timeAgo(est.ultima) : 'Sin revisar todavía';
+    $('#tn-meta', el).innerHTML =
+      '<span>' + e(meta + ' · ' + plural(n, 'tienda', 'tiendas')) + '</span>' + (c.auto ? chip('Solas cada ' + (Number(c.cadaHoras) || 24) + ' h', 'good') : '');
     let h = '';
-    if (corriendo || state.log.length) {
+    if (corriendo) {
       h +=
-        '<ul class="auto-progress" aria-live="polite">' +
+        '<ul class="auto-progress tn-log-list" aria-live="polite">' +
         state.log.map((l) => '<li><span class="st ' + (l.st === 'ok' ? 'ok' : 'err') + '">' + (l.st === 'ok' ? 'listo' : 'error') + '</span><span class="tn-log">' + e(l.texto) + '</span></li>').join('') +
-        (corriendo ? '<li><span class="st">revisando</span><span class="tn-log">' + e(A.progress.tiendas || 'Empezando…') + '</span></li>' : '') +
-        '</ul>';
-    }
-    if (!corriendo && est) {
-      if (est.resultado && est.resultado.resumen) h += '<p class="small">' + e(est.resultado.resumen) + '</p>';
-      if (est.error) h += '<p class="error-text">' + e(est.error === 'Cancelado.' ? 'La última revisión se detuvo antes de terminar.' : est.error) + '</p>';
-    }
+        '<li class="is-curso"><span class="st">revisando</span><span class="tn-log">' +
+        e(A.progress.tiendas || 'Empezando…') +
+        '</span></li></ul>';
+    } else if (state.skip) h += nota('info', e(state.skip));
+    else if (est && est.error === 'Cancelado.') h += nota('stop', 'La última revisión se detuvo antes de terminar.');
+    else if (est && est.error) h += '<p class="error-text">No terminó: ' + e(est.error) + '</p>';
     $('#tn-prog', el).innerHTML = h;
   }
 
@@ -266,10 +304,7 @@
     paintSummary(items);
     const box = $('#tn-list', el);
     if (!items.length) {
-      box.innerHTML = emptyState(
-        'Todavía no seguís ninguna tienda',
-        'Pegá arriba el dominio o el link de un competidor (por ejemplo, la tienda a la que llevan sus anuncios) y tocá “Agregar tienda”. El escaneo de anuncios de esta pestaña también suma solo las tiendas que encuentra.'
-      );
+      box.innerHTML = emptyState('Sin tiendas todavía', 'Pegá arriba el link de un competidor. El escaneo de anuncios también las suma solo.', '', 'store');
       return;
     }
     box.innerHTML = items.map((x) => card(x, hoy)).join('');
@@ -292,95 +327,104 @@
       resenas += U.sum(k.resenas || [], (r) => r.suma);
     }
     box.innerHTML =
-      '<div class="summary-strip">' +
-      stat(rev.length, 'tiendas revisadas') +
-      stat(altos, 'con movimiento alto', altos ? 'good' : '') +
-      stat(cambios, 'cambios en la última revisión') +
-      stat(resenas ? '+' + U.int(resenas) : 0, 'reseñas nuevas') +
+      '<div class="chips cp-nums">' +
+      num(rev.length, rev.length === 1 ? 'revisada' : 'revisadas', '') +
+      num(altos, 'con mucho movimiento', altos ? 'good' : '') +
+      num(cambios, cambios === 1 ? 'cambio' : 'cambios', cambios ? 'info' : '') +
+      num(resenas, resenas === 1 ? 'reseña nueva' : 'reseñas nuevas', resenas ? 'source' : '', resenas ? '+' : '') +
       '</div>';
   }
 
-  function stat(v, label, tone) {
-    return '<div class="stat' + (tone ? ' tone-' + tone : '') + '"><span class="stat-value">' + e(v) + '</span><span class="stat-label">' + e(label) + '</span></div>';
+  // Desplegable de una tarjeta que recuerda si quedó abierto
+  function det(d, kind, open, summary, body) {
+    const k = d + ':' + kind;
+    const abierto = state.det[k] != null ? state.det[k] : open;
+    return '<details class="tn-det" data-k="' + e(k) + '"' + (abierto ? ' open' : '') + '><summary>' + icon('chevronRight') + summary + '</summary><div class="tn-det-body">' + body + '</div></details>';
   }
 
   function card(x, hoy) {
     const { d, doc, mv } = x;
     const u = doc && doc.ultima;
-    const origen = !doc || doc.origen === 'anuncio' ? 'La sumó el escaneo de anuncios' : 'Agregada a mano';
-    let cuando = u && u.fecha ? 'Revisada ' + U.timeAgo(u.fecha) : 'Todavía no se revisó';
-    if (u && u.error && u.intento) cuando += ' · el último intento ' + U.timeAgo(u.intento) + ' falló';
+    const origen = !doc || doc.origen === 'anuncio' ? 'vino de un anuncio' : 'agregada a mano';
+    let cuando = u && u.fecha ? 'Revisada ' + U.timeAgo(u.fecha) : 'Sin revisar';
+    if (u && u.error && u.intento) cuando += ' · falló ' + U.timeAgo(u.intento);
+    const conf = state.confirmar && state.confirmar.d === d && Date.now() < state.confirmar.hasta;
     let h =
       '<article class="tn-card' +
       (mv.nivel ? ' is-' + mv.nivel : '') +
-      '"><header class="tn-card-head"><div class="tn-name"><a class="tn-dom" href="https://' +
+      '"><header class="tn-card-head"><span class="tn-ini" aria-hidden="true">' +
+      e(d.charAt(0).toUpperCase()) +
+      '</span><div class="tn-name"><a class="tn-dom" href="https://' +
       e(d) +
       '" target="_blank" rel="noopener">' +
       e(d) +
-      '</a><span class="muted small">' +
+      icon('external') +
+      '</a><span class="tn-sub">' +
       e(cuando + ' · ' + origen) +
-      '</span></div>' +
-      chip(mv.nivel ? 'Movimiento ' + mv.nivel : 'Sin revisar', mv.nivel ? TONO[mv.nivel] : 'neutral') +
-      '</header>';
-    if (u && u.fecha) {
-      const lz = S.lanzamientos(u.productos, hoy).length;
-      h +=
-        '<p class="small tn-why">' +
-        e(mv.texto) +
-        '</p><ul class="tn-facts"><li><strong>' +
-        e(U.int(u.total != null ? u.total : u.productos.length)) +
-        '</strong> productos</li><li><strong>' +
-        e(U.int(u.agotados != null ? u.agotados : u.productos.filter((p) => !p.disponible).length)) +
-        '</strong> agotados</li><li><strong>' +
-        e(U.int(lz)) +
-        '</strong> publicados en los últimos ' +
-        S.DIAS_LANZAMIENTO +
-        ' días</li>' +
-        (u.parcial ? '<li>catálogo leído en parte</li>' : '') +
-        '</ul>' +
-        corrector(d, doc, hoy) +
-        cambios(doc) +
-        historial(doc);
-    } else if (!u || !u.error) {
-      h += '<p class="muted small">' + (Browser.available ? 'Tocá “Revisar tiendas ahora” para leer su catálogo.' : 'Se va a revisar cuando abras el panel desde la app de escritorio de Claude.') + '</p>';
-    }
-    if (u && u.error) h += '<p class="error-text">' + e(u.error) + '</p>';
-    const conf = state.confirmar && state.confirmar.d === d && Date.now() < state.confirmar.hasta;
-    h +=
-      '<div class="row-actions tn-actions"><button type="button" class="btn link tn-quitar' +
+      '</span></div><div class="tn-head-r">' +
+      chip(mv.nivel ? MOV[mv.nivel] : 'Sin revisar', mv.nivel ? TONO[mv.nivel] : 'neutral') +
+      '<button type="button" class="btn link sm tn-quitar' +
       (conf ? ' is-confirm' : '') +
       '" data-act="tn-quitar" data-d="' +
       e(d) +
       '" aria-label="Dejar de seguir ' +
       e(d) +
-      '">' +
-      (conf ? 'Tocá de nuevo para quitar' : 'Quitar') +
-      '</button></div></article>';
-    return h;
+      '" title="Quitar">' +
+      icon('trash') +
+      (conf ? 'Tocá de nuevo para quitar' : '') +
+      '</button></div></header>';
+    if (u && u.fecha) {
+      const lz = S.lanzamientos(u.productos, hoy).length;
+      const total = u.total != null ? u.total : u.productos.length;
+      const agotados = u.agotados != null ? u.agotados : u.productos.filter((p) => !p.disponible).length;
+      h +=
+        (mv.nivel && mv.motivos && mv.motivos.length ? '<p class="tn-why">' + e(mv.texto) + '</p>' : '') +
+        '<p class="tn-facts"><span><strong>' +
+        e(U.int(total)) +
+        '</strong> productos</span><span><strong>' +
+        e(U.int(agotados)) +
+        '</strong> agotados</span><span><strong>' +
+        e(U.int(lz)) +
+        '</strong> nuevos en ' +
+        S.DIAS_LANZAMIENTO +
+        ' días</span>' +
+        (u.parcial ? '<span>catálogo leído en parte</span>' : '') +
+        '</p>' +
+        corrector(d, doc, hoy) +
+        cambios(d, doc) +
+        otrosYHistorial(d, doc);
+    } else if (!u || !u.error) {
+      h += '<p class="tn-quiet">' + icon('clock') + e(Browser.available ? 'Se lee su catálogo con “Revisar ahora”.' : 'Se revisa desde la app de escritorio de Claude.') + '</p>';
+    }
+    if (u && u.error) h += '<p class="error-text">' + e(u.error) + '</p>';
+    return h + '</article>';
   }
 
   function corrector(d, doc, hoy) {
     const u = doc.ultima;
     const res = u.resenas || {};
     const c = S.principal(u.productos, res);
-    if (!c) return '<div class="tn-corr"><span class="eyebrow">Su corrector</span><p class="muted small">No encontramos productos de postura en su catálogo.</p></div>';
+    if (!c) return '<p class="tn-quiet">' + icon('search') + 'No vende correctores de postura.</p>';
     const delta = ((doc.cambios && doc.cambios.resenas) || []).find((r) => r.handle === c.handle);
     const dias = R.daysSince(c.publicado || c.creado, hoy);
-    const cmp = S.compararPrecio(c.precioMin, App.tienda.precio1);
-    const facts = [chip(c.disponible ? 'Disponible' : 'Agotado', c.disponible ? 'good' : 'bad')];
-    if (c.variantes > 1) facts.push(e(c.disponibles + ' de ' + c.variantes + ' variantes con stock'));
-    if (dias != null) facts.push(e('Publicado hace ' + dias + (dias === 1 ? ' día' : ' días')));
-    facts.push(
+    const mio = App.tienda.precio1;
+    const cmp = S.compararPrecio(c.precioMin, mio);
+    const chips = [chip(c.disponible ? 'Con stock' : 'Agotado', c.disponible ? 'good' : 'bad')];
+    if (c.variantes > 1) chips.push(chip(c.disponibles + ' de ' + c.variantes + ' variantes', c.disponibles < c.variantes ? 'warn' : 'neutral'));
+    if (dias != null) chips.push(chip('Publicado hace ' + dias + (dias === 1 ? ' día' : ' días'), 'neutral'));
+    chips.push(
       res[c.handle] != null
-        ? '<strong>' + e(U.int(res[c.handle])) + '</strong> reseñas' + (delta ? ' <span class="tn-delta' + (delta.suma ? ' is-up' : '') + '">+' + e(U.int(delta.suma)) + ' desde la revisión anterior</span>' : '')
-        : 'Sin reseñas visibles'
+        ? '<span class="chip tone-source">' + e(U.int(res[c.handle]) + ' reseñas') + (delta && delta.suma ? '<strong class="tn-delta">+' + e(U.int(delta.suma)) + '</strong>' : '') + '</span>'
+        : chip('Sin reseñas visibles', 'neutral')
     );
     const est = delta ? S.ventasEstimadas(delta.suma) : null;
-    const otros = S.posturaOrdenada(u.productos)
-      .filter((p) => p.id !== c.id)
-      .slice(0, 4);
+    let vs = '';
+    if (cmp) {
+      const etiqueta = cmp.tono === 'neutral' ? 'Mismo precio' : U.pct(Math.abs(cmp.pct)) + (cmp.dif < 0 ? ' más barato' : ' más caro');
+      vs = '<span class="tn-mio">Vos ' + e(U.money(mio)) + '</span>' + chip(etiqueta, cmp.tono, ' title="' + e(cmp.texto) + '"');
+    }
     return (
-      '<div class="tn-corr"><div class="tn-corr-head"><span class="eyebrow">Su corrector</span><a href="' +
+      '<div class="tn-corr"><div class="tn-corr-top"><div class="tn-corr-name"><span class="eyebrow">Su corrector</span><a href="' +
       e(R.productUrl(d, c.handle)) +
       '" target="_blank" rel="noopener">' +
       e(c.titulo || c.handle) +
@@ -388,40 +432,31 @@
       e(U.money(c.precioMin)) +
       '</strong>' +
       (c.tachado && c.tachado > c.precioMin ? '<s>' + e(U.money(c.tachado)) + '</s>' : '') +
-      (cmp ? chip(cmp.texto, cmp.tono) : '') +
-      '</div><ul class="tn-facts">' +
-      facts.map((f) => '<li>' + f + '</li>').join('') +
-      '</ul>' +
+      '</div></div>' +
+      (vs ? '<div class="tn-vs">' + vs + '</div>' : '') +
+      '<div class="chips">' +
+      chips.join('') +
+      '</div>' +
       (est
-        ? '<p class="note">Si esas ' +
-          e(U.int(delta.suma)) +
-          ' reseñas nuevas son reales, del orden de ' +
-          e(U.int(est.min)) +
-          ' a ' +
-          e(U.int(est.max)) +
-          ' ventas desde el ' +
-          e(U.fmtDay(U.dayKeyAR(doc.cambios.desde))) +
-          ' (se suele dejar 1 reseña cada ' +
-          S.COMPRAS_POR_RESENA[0] +
-          ' a ' +
-          S.COMPRAS_POR_RESENA[1] +
-          ' compras). Es una estimación gruesa.</p>'
-        : '') +
-      (otros.length
-        ? '<ul class="tn-otros">' +
-          otros
-            .map(
-              (p) =>
-                '<li><a href="' +
-                e(R.productUrl(d, p.handle)) +
-                '" target="_blank" rel="noopener">' +
-                e(p.titulo || p.handle) +
-                '</a><span class="muted">' +
-                e(U.money(p.precioMin) + (p.disponible ? '' : ' · agotado') + (res[p.handle] != null ? ' · ' + U.int(res[p.handle]) + ' reseñas' : '')) +
-                '</span></li>'
-            )
-            .join('') +
-          '</ul>'
+        ? nota(
+            'trending',
+            'Unas ' +
+              e(U.int(est.min)) +
+              ' a ' +
+              e(U.int(est.max)) +
+              ' ventas desde el ' +
+              e(U.fmtDay(U.dayKeyAR(doc.cambios.desde))) +
+              ' ' +
+              info(
+                'Si esas ' +
+                  e(U.int(delta.suma)) +
+                  ' reseñas nuevas son reales. Se suele dejar 1 reseña cada ' +
+                  S.COMPRAS_POR_RESENA[0] +
+                  ' a ' +
+                  S.COMPRAS_POR_RESENA[1] +
+                  ' compras: es una estimación gruesa.'
+              )
+          )
         : '') +
       '</div>'
     );
@@ -437,9 +472,9 @@
     ['quitados', 'Quitado', 'neutral', (x) => x.titulo + ' · ' + U.money(x.precio)],
   ];
 
-  function cambios(doc) {
+  function cambios(d, doc) {
     const k = doc.cambios;
-    if (!k) return '<p class="muted small">Primera revisión: los cambios aparecen a partir de la próxima.</p>';
+    if (!k) return '<p class="tn-quiet">' + icon('clock') + 'Primera revisión: los cambios se ven en la próxima.</p>';
     const conteo = k.conteo || {};
     let total = 0;
     let lis = '';
@@ -451,39 +486,71 @@
       if (n > list.length) lis += '<li class="muted small">y ' + (n - list.length) + ' más (' + e(label.toLowerCase()) + ')</li>';
     }
     const desde = U.fmtDay(U.dayKeyAR(k.desde));
-    if (!total) return '<p class="muted small">Sin cambios desde la revisión del ' + e(desde) + '.</p>';
-    return '<details class="tn-changes"' + (total <= 6 ? ' open' : '') + '><summary>Cambios desde el ' + e(desde) + ' (' + total + ')</summary><ul>' + lis + '</ul></details>';
+    if (!total) return '<p class="tn-quiet">' + icon('check') + 'Sin cambios desde el ' + e(desde) + '.</p>';
+    return det(d, 'cambios', total <= 6, '<span>' + plural(total, 'cambio', 'cambios') + '</span><span class="muted small">desde el ' + e(desde) + '</span>', '<ul class="tn-changes">' + lis + '</ul>');
   }
 
-  function historial(doc) {
+  function otrosYHistorial(d, doc) {
+    const u = doc.ultima;
+    const res = u.resenas || {};
+    const c = S.principal(u.productos, res);
+    const otros = S.posturaOrdenada(u.productos)
+      .filter((p) => !c || p.id !== c.id)
+      .slice(0, 4);
     const h = (doc.historial || []).filter((x) => x && x.fecha);
-    if (h.length < 2) return '';
-    const n = (v) => (v == null ? '—' : e(U.int(v)));
-    return (
-      '<details class="tn-hist"><summary>Historial (' +
-      h.length +
-      ' revisiones)</summary><div class="table-wrap"><table class="table"><thead><tr><th>Fecha</th><th class="num">Productos</th><th class="num">Agotados</th><th class="num">Corrector</th><th class="num">Reseñas</th></tr></thead><tbody>' +
-      h
-        .slice()
-        .reverse()
-        .map(
-          (x) =>
-            '<tr><th scope="row">' +
-            e(U.fmtDay(U.dayKeyAR(x.fecha))) +
-            '</th><td class="num">' +
-            n(x.productos) +
-            '</td><td class="num">' +
-            n(x.agotados) +
-            '</td><td class="num">' +
-            (x.precioCorrector == null ? '—' : e(U.money(x.precioCorrector))) +
-            '</td><td class="num">' +
-            n(x.resenasTotal) +
-            (x.resenasNuevas ? ' <span class="tn-delta is-up">+' + e(U.int(x.resenasNuevas)) + '</span>' : '') +
-            '</td></tr>'
-        )
-        .join('') +
-      '</tbody></table></div></details>'
-    );
+    let out = '';
+    if (otros.length)
+      out += det(
+        d,
+        'otros',
+        false,
+        '<span>Otros de postura</span><span class="muted small">' + otros.length + '</span>',
+        '<ul class="tn-otros">' +
+          otros
+            .map(
+              (p) =>
+                '<li><a href="' +
+                e(R.productUrl(d, p.handle)) +
+                '" target="_blank" rel="noopener">' +
+                e(p.titulo || p.handle) +
+                '</a><span class="muted">' +
+                e(U.money(p.precioMin) + (p.disponible ? '' : ' · agotado') + (res[p.handle] != null ? ' · ' + U.int(res[p.handle]) + ' reseñas' : '')) +
+                '</span></li>'
+            )
+            .join('') +
+          '</ul>'
+      );
+    if (h.length >= 2) {
+      const n = (v) => (v == null ? '—' : e(U.int(v)));
+      out += det(
+        d,
+        'hist',
+        false,
+        '<span>Historial</span><span class="muted small">' + h.length + ' revisiones</span>',
+        '<div class="table-wrap"><table class="table tn-hist"><thead><tr><th>Fecha</th><th class="num">Productos</th><th class="num">Agotados</th><th class="num">Corrector</th><th class="num">Reseñas</th></tr></thead><tbody>' +
+          h
+            .slice()
+            .reverse()
+            .map(
+              (x) =>
+                '<tr><th scope="row">' +
+                e(U.fmtDay(U.dayKeyAR(x.fecha))) +
+                '</th><td class="num">' +
+                n(x.productos) +
+                '</td><td class="num">' +
+                n(x.agotados) +
+                '</td><td class="num">' +
+                (x.precioCorrector == null ? '—' : e(U.money(x.precioCorrector))) +
+                '</td><td class="num">' +
+                n(x.resenasTotal) +
+                (x.resenasNuevas ? ' <span class="tn-delta">+' + e(U.int(x.resenasNuevas)) + '</span>' : '') +
+                '</td></tr>'
+            )
+            .join('') +
+          '</tbody></table></div>'
+      );
+    }
+    return out ? '<div class="tn-dets">' + out + '</div>' : '';
   }
 
   /* ---------- Acciones ---------- */
@@ -507,7 +574,7 @@
     const c = A.cfg.tiendas || {};
     A.setCfg('tiendas', { dominios: [...new Set((c.dominios || []).concat(d))], quitadas: (c.quitadas || []).filter((x) => x !== d) });
     Store.set('tiendas/' + d, doc).catch(storeFail);
-    toast(Browser.available ? 'Agregaste ' + d + '. Tocá “Revisar tiendas ahora” para leer su catálogo.' : 'Agregaste ' + d + '. Se revisa cuando abras el panel desde la app de escritorio de Claude.', 'good');
+    toast(Browser.available ? 'Agregaste ' + d + '. Tocá “Revisar ahora” para leer su catálogo.' : 'Agregaste ' + d + '. Se revisa desde la app de escritorio de Claude.', 'good');
     return true;
   }
 
@@ -541,6 +608,7 @@
     switch (t.dataset.act) {
       case 'tn-revisar':
         state.log = [];
+        state.skip = '';
         state.enCola = !!A.running && A.running !== 'tiendas';
         A.run('tiendas', { origen: 'manual' });
         paintStatus();
@@ -556,13 +624,13 @@
         }
         state.confirmar = { d, hasta: Date.now() + 4000 };
         t.classList.add('is-confirm');
-        t.textContent = 'Tocá de nuevo para quitar';
+        t.innerHTML = icon('trash') + 'Tocá de nuevo para quitar';
         setTimeout(() => {
           if (state.confirmar && state.confirmar.d === d && Date.now() >= state.confirmar.hasta) {
             state.confirmar = null;
             if (t.isConnected) {
               t.classList.remove('is-confirm');
-              t.textContent = 'Quitar';
+              t.innerHTML = icon('trash');
             }
           }
         }, 4100);

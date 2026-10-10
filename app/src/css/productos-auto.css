@@ -1,46 +1,68 @@
-/* Productos: buscar ganadores en Mercado Libre, productos nuevos y bloque de señales en cada tarjeta */
-#pr-auto > div:empty, #pr-auto .pr-desc > div:empty { display: none; }
+/* Productos: panel "Buscar ganadores", productos nuevos y bloque de Mercado Libre de cada tarjeta */
+#pr-auto > div:empty { display: none; }
 #pr-auto-head { display: grid; gap: 10px; }
-.pr-auto-title { display: grid; gap: 4px; min-width: 0; }
-.pr-auto-lede { color: var(--muted); font-size: var(--step--1); max-width: 72ch; }
-.pr-auto-cfg { display: grid; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
-.pr-auto-when { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
-#pr-auto .auto-progress li > span:last-child { min-width: 0; overflow-wrap: anywhere; }
-#pr-auto .auto-progress .st:not(.ok):not(.err) { color: var(--info); }
+.pr-auto-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 14px; }
+.pr-auto-txt { flex: 1 1 240px; min-width: 0; display: grid; gap: 3px; }
+.pr-auto-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; color: var(--muted); font-size: var(--step--1); }
+.pr-auto-actions { flex-direction: row-reverse; }
+.pr-auto-notes { display: grid; gap: 6px; }
+.pr-auto-notes .note, .pr-auto-cfg .note { display: flex; align-items: flex-start; gap: 6px; }
+.pr-auto-notes .note .ico, .pr-auto-cfg .note .ico { margin: 2px 0 0; flex: none; }
+.pr-auto-notes .note .info > summary { vertical-align: -6px; }
+.pr-auto .more { padding-top: 12px; }
+
+/* Progreso mientras corre */
+.pr-prog { display: grid; gap: 6px; padding: 12px 14px; border-radius: var(--r); background: var(--surface-2); }
+.pr-prog .auto-progress li > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.pr-prog .auto-progress .st { min-width: 74px; }
+.pr-prog .auto-progress .st:not(.ok):not(.err) { color: var(--info); }
+.pr-prog .auto-progress li.is-espera, .pr-prog .auto-progress li.is-omitida { color: var(--muted); }
+
+/* Opciones */
+.pr-auto-cfg { display: grid; gap: 12px; }
+.pr-auto-when { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; }
+.pr-cada { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.875rem; font-weight: 500; }
+.pr-cada select { min-height: 34px; padding: 4px 8px; font-size: 0.8125rem; color: var(--ink); }
 
 /* Productos nuevos */
-.pr-desc { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid var(--line); min-width: 0; }
-.pr-desc .panel-head { align-items: flex-start; }
-.pr-desc .panel-head .muted { max-width: 64ch; }
-.pr-desc-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 10px; }
-.pr-desc-card { display: grid; gap: 6px; align-content: start; min-width: 0; padding: 12px 14px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-sm); }
-.pr-desc-card p { overflow-wrap: anywhere; }
+.pr-desc { display: grid; gap: 10px; padding-top: 14px; border-top: 1px solid var(--line); min-width: 0; }
+.pr-desc-head { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; }
+.pr-desc-when { color: var(--faint); font-size: var(--step--1); font-weight: 600; }
+.pr-desc-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 10px; }
+.pr-desc-card { display: grid; gap: 8px; align-content: start; min-width: 0; padding: 14px; background: var(--surface-2); border-radius: var(--r); }
 .pr-desc-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; }
-.pr-desc-name { font-family: var(--font-display); font-size: var(--step-0); font-weight: 600; color: var(--ink); min-width: 0; overflow-wrap: anywhere; }
-.pr-desc-card .row-actions { margin-top: 2px; }
+.pr-desc-name { font-family: var(--font-display); font-size: var(--step-0); font-weight: 700; color: var(--ink); min-width: 0; overflow-wrap: anywhere; }
+.pr-desc-why { color: var(--muted); font-size: var(--step--1); overflow-wrap: anywhere; }
+.pr-desc-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 2px; }
+.pr-desc-actions .btn.link .ico { width: 14px; height: 14px; }
 
-/* Señales de Mercado Libre (tarjeta de producto y productos nuevos) */
+/* Señales de Mercado Libre */
 .pr-facts { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; font-size: var(--step--1); color: var(--muted); }
-.pr-facts strong { color: var(--ink); font-family: var(--font-mono); font-weight: 500; font-variant-numeric: tabular-nums; }
-.pr-ml { display: grid; gap: 6px; min-width: 0; padding: 10px 12px; background: var(--surface-2); border-radius: var(--r-sm); border-left: 3px solid var(--line); }
-.pr-ml:has(.chip.tone-good) { border-left-color: var(--good); }
-.pr-ml:has(.chip.tone-info) { border-left-color: var(--info); }
-.pr-ml:has(.chip.tone-warn) { border-left-color: var(--warn); }
+.pr-facts strong { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+.pr-ml { display: grid; gap: 6px; min-width: 0; padding: 10px 12px; background: var(--surface-2); border-radius: var(--r-sm); box-shadow: inset 3px 0 0 var(--line-strong); }
+.pr-ml:has(.chip.tone-good) { box-shadow: inset 3px 0 0 var(--good); }
+.pr-ml:has(.chip.tone-info) { box-shadow: inset 3px 0 0 var(--info); }
+.pr-ml:has(.chip.tone-warn) { box-shadow: inset 3px 0 0 var(--warn); }
+.pr-ml:has(.pr-ml-none) { padding: 0; background: none; box-shadow: none; }
+.pr-ml-none { display: flex; align-items: center; gap: 6px; color: var(--faint); font-size: var(--step--1); font-weight: 500; }
+.pr-ml-none .ico { width: 15px; height: 15px; }
 .pr-ml-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; }
-.pr-ml-head .eyebrow { margin-right: 0; }
-.pr-pubs > summary { cursor: pointer; color: var(--accent); font-size: var(--step--1); font-weight: 500; }
-.pr-pubs[open] > summary { margin-bottom: 6px; }
-.pr-pubs ol { margin: 0; padding: 0 0 0 20px; display: grid; gap: 6px; font-size: var(--step--1); }
+.pr-ml-src { font-size: 0.75rem; font-weight: 700; color: var(--muted); }
+.pr-ml .more { padding-top: 8px; margin-top: 2px; }
+.pr-ml .more[open] > summary { margin-bottom: 8px; }
+.pr-pubs { margin: 0; padding: 0 0 0 20px; display: grid; gap: 6px; font-size: var(--step--1); }
 .pr-pubs li { min-width: 0; }
 .pr-pubs li::marker { color: var(--muted); font-family: var(--font-mono); font-size: 0.75rem; }
 .pr-pub-t { overflow-wrap: anywhere; color: var(--ink); }
 .pr-pub-p { margin-left: 8px; white-space: nowrap; color: var(--ink); }
 .pr-pub-m { display: block; color: var(--muted); font-size: 0.75rem; overflow-wrap: anywhere; }
-.pr-pubs .note { margin-top: 8px; }
+.pr-ml .note { margin-top: 8px; }
+
+/* Ranking: producto sin precio */
+.pr-rk-miss { color: var(--faint); font-size: 0.75rem; font-weight: 500; }
 
 @media (max-width: 560px) {
-  #pr-auto .auto-head .row-actions, #pr-auto .auto-head .row-actions .btn { width: 100%; }
-  .pr-desc .panel-head .row-actions, .pr-desc .panel-head .row-actions .btn { width: 100%; }
-  .pr-desc-card { padding: 10px 12px; }
+  .pr-auto-actions { flex-direction: column; align-items: stretch; width: 100%; }
+  .pr-auto-actions .btn { width: 100%; }
   .pr-pub-p { display: block; margin-left: 0; }
 }

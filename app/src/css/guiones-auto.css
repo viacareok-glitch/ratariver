@@ -1,42 +1,113 @@
-/* Guiones: tanda automática y "Elegirlo yo" */
+/* Guiones: panel automático, tanda, "Elegirlo yo" y tarjetas de guion */
 #ugc-auto > div:empty { display: none; }
+.ugc-auto .more { padding-top: 12px; }
+.ugc-auto-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 14px; }
+.ugc-auto-txt { flex: 1 1 220px; min-width: 0; display: grid; gap: 3px; }
+.ugc-auto-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; color: var(--muted); font-size: var(--step--1); }
 #ugc-auto-head { display: grid; gap: 10px; }
-.ugc-auto-title { display: grid; gap: 4px; min-width: 0; }
-.ugc-auto-lede { color: var(--muted); font-size: var(--step--1); max-width: 72ch; }
-#ugc-auto .auto-progress li > span:last-child { min-width: 0; overflow-wrap: anywhere; }
-#ugc-auto .auto-progress .st:not(.ok):not(.err) { color: var(--info); }
-.ugc-plan { display: grid; gap: 8px; padding: 12px 14px; border-radius: var(--r-sm); background: var(--surface-2); min-width: 0; }
-.ugc-razones { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 0.875rem; line-height: 1.5; overflow-wrap: anywhere; }
-.ugc-razones li::marker { color: var(--accent); }
-.ugc-auto-cfg { padding-top: 12px; border-top: 1px solid var(--line); }
-.ugc-auto-when { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+#ugc-auto-head .note .ico { width: 15px; height: 15px; vertical-align: -3px; }
+#ugc-auto-head .note .info > summary { vertical-align: -6px; }
 
-/* Tarjetas de la tanda automática, plegables */
+/* Progreso mientras corre */
+.ugc-prog { padding: 12px 14px; border-radius: var(--r); background: var(--surface-2); gap: 6px; }
+.ugc-prog li > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.ugc-prog .st { min-width: 70px; }
+.ugc-prog .st:not(.ok):not(.err) { color: var(--info); }
+.ugc-prog li.is-espera { color: var(--muted); }
+
+/* Por qué salió así */
+.ugc-plan { display: grid; gap: 8px; padding: 12px 14px; border-radius: var(--r); background: var(--surface-2); min-width: 0; }
+.ugc-plan-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; }
+.ugc-plan-head .eyebrow { margin: 0; }
+.ugc-razones { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 0.875rem; line-height: 1.45; }
+.ugc-razones li { display: flex; gap: 8px; align-items: flex-start; min-width: 0; }
+.ugc-razones li > span { min-width: 0; overflow-wrap: anywhere; }
+.ugc-razones .ico { width: 16px; height: 16px; margin-top: 2px; color: var(--good); }
+
+/* Opciones del automático */
+.ugc-auto-cfg { display: grid; gap: 14px; }
+.ugc-auto-cfg .form-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); }
+.ugc-auto-cfg .note .ico { width: 15px; height: 15px; vertical-align: -3px; }
+
+/* Tanda automática, plegable */
 .ugc-tanda { min-width: 0; }
 .ugc-tanda > summary {
-  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px;
-  padding: 6px 2px; cursor: pointer; list-style: none; border-radius: var(--r-sm);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px;
+  padding: 10px 2px; cursor: pointer; list-style: none; border-radius: var(--r-sm);
 }
 .ugc-tanda > summary::-webkit-details-marker { display: none; }
-.ugc-tanda > summary::before {
-  content: ''; flex: 0 0 auto; width: 7px; height: 7px; margin-right: 2px; align-self: center;
-  border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted);
-  transform: rotate(-45deg); transition: transform 0.15s ease;
-}
-.ugc-tanda[open] > summary::before { transform: rotate(45deg); }
-.ugc-tanda > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.ugc-tanda-title { font-family: var(--font-display); font-size: var(--step-1); font-weight: 600; color: var(--ink); }
-.ugc-tanda > summary .muted { overflow-wrap: anywhere; min-width: 0; }
-.ugc-tanda-body { display: grid; gap: 14px; margin-top: 10px; min-width: 0; }
+.ugc-tanda > summary > .ico { width: 18px; height: 18px; color: var(--muted); transition: transform 0.15s ease; }
+.ugc-tanda[open] > summary > .ico { transform: rotate(90deg); }
+.ugc-tanda > summary:hover .ugc-tanda-title { color: var(--accent); }
+.ugc-tanda-title { font-family: var(--font-display); font-size: var(--step-1); font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
+.ugc-tanda-body { display: grid; gap: 16px; margin-top: 8px; min-width: 0; }
 
-/* Formulario manual debajo de la tanda */
-.ugc-manual { display: grid; gap: 16px; min-width: 0; }
-.ugc-manual-head { display: grid; gap: 4px; padding-top: 18px; border-top: 1px solid var(--line); }
+/* Elegirlo yo */
+.ugc-manual { display: grid; gap: 14px; min-width: 0; }
+.ugc-manual-head { display: grid; gap: 2px; padding-top: 22px; border-top: 1px solid var(--line); }
+.ugc-form { gap: 18px; }
+.ugc-form legend { display: flex; align-items: center; gap: 2px; font-weight: 600; color: var(--ink); font-size: 0.875rem; }
+.ugc-form .pill-radio { padding: 9px 18px; }
+.ugc-form .pill-radio .badge { margin-left: 2px; }
+.ugc-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 12px; }
+.ugc-field { display: grid; gap: 4px; align-content: start; min-width: 0; }
+.ugc-lbl { display: flex; align-items: center; gap: 2px; font-size: var(--step--1); color: var(--muted); font-weight: 500; min-height: 22px; }
+.ugc-field select { width: 100%; font-size: 0.875rem; }
+.ugc-form .more { padding-top: 14px; }
+.ugc-form .form-grid.wide { align-items: start; }
+.ugc-form .form-grid label select, .ugc-form .form-grid textarea { font-size: 0.875rem; }
+.ugc-extra { display: grid; gap: 12px; }
+.ugc-extra > label { display: grid; gap: 4px; font-size: var(--step--1); color: var(--muted); font-weight: 500; }
+.ugc-extra input { width: 100%; }
+.ugc-extra .note { overflow-wrap: anywhere; }
+.ugc-win .ico { width: 15px; height: 15px; vertical-align: -3px; color: var(--good); }
+.ugc-form > .note .ico { width: 15px; height: 15px; vertical-align: -3px; }
+.ugc-actions .muted { font-size: 0.875rem; }
+#ugc-out { gap: 16px; }
+#ugc-out:empty { display: none; }
+#ugc-out .out-head { align-items: center; gap: 6px 10px; }
+.ugc-flow .more { padding-top: 14px; }
+.ugc-steps { gap: 8px; max-width: 72ch; color: var(--ink); }
+.ugc-steps li::marker { color: var(--accent); font-weight: 700; }
 
-@media (prefers-reduced-motion: reduce) { .ugc-tanda > summary::before { transition: none; } }
+/* Tarjeta de guion */
+.script { gap: 18px; padding: 22px; }
+.script-head h4 { font-size: var(--step-1); }
+.script-head > div { gap: 8px; }
+.script .sc-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; }
+.script .sc-row .eyebrow { margin: 0; }
+.script .ficha { gap: 8px; padding: 14px 16px; line-height: 1.55; overflow-wrap: anywhere; }
+.script .ficha .btn.link { font-size: 0.8125rem; }
+.script .btn .ico { width: 15px; height: 15px; }
+.script .btn.is-done { color: var(--good); }
+.script .clips { gap: 0; }
+.script .clip { grid-template-columns: 56px minmax(0, 1fr); gap: 16px; padding: 18px 0; border-top: 1px solid var(--line); }
+.script .clip:first-child { border-top: 0; padding-top: 4px; }
+.clip-rail { display: grid; justify-items: center; align-content: start; gap: 6px; }
+.clip-n { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; background: var(--accent-soft); color: var(--accent); font-family: var(--font-display); font-weight: 800; font-size: 0.9375rem; }
+.script .clip-time { padding: 0; font-size: 0.6875rem; color: var(--muted); white-space: nowrap; }
+.script .clip-body { gap: 8px; }
+.script .clip-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-weight: 600; font-size: 0.875rem; color: var(--ink); }
+.script .clip-dialog { font-size: 1.0625rem; font-weight: 500; line-height: 1.45; overflow-wrap: anywhere; }
+.script .clip-action { font-size: 0.875rem; overflow-wrap: anywhere; }
+.clip-extra { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font-size: 0.8125rem; overflow-wrap: anywhere; }
+.clip-extra .eyebrow { margin: 0; }
+.clip-extra > span:last-child { min-width: 0; }
+.script .prompt-box { gap: 8px; padding: 10px 12px 12px; border-radius: var(--r); border-color: var(--line); }
+.script .prompt-box pre { font-size: 0.75rem; line-height: 1.6; color: var(--muted); max-height: 160px; }
+.script-caption { padding-top: 14px; border-top: 1px solid var(--line); }
+
+@media (prefers-reduced-motion: reduce) { .ugc-tanda > summary > .ico { transition: none; } }
 @media (max-width: 560px) {
-  #ugc-auto .auto-head .row-actions, #ugc-auto .auto-head .row-actions .btn, .ugc-plan .row-actions .btn { width: 100%; }
-  .ugc-plan .btn { white-space: normal; }
+  .ugc-auto-row > .row-actions, .ugc-auto-row > .row-actions .btn { width: 100%; }
+  .ugc-actions .btn { flex: 1 1 auto; }
+  .script { padding: 16px; gap: 14px; }
+  .script-head > .btn { width: 100%; }
+  .script .clip { grid-template-columns: 1fr; gap: 10px; padding: 16px 0; }
+  .clip-rail { display: flex; align-items: center; gap: 10px; }
+  .clip-n { width: 30px; height: 30px; border-radius: 10px; }
+  .script .clip-dialog { font-size: 1rem; }
+  .ugc-form .pill-radio { padding: 8px 15px; }
 }
 /* Sin esto, .tool { display: grid } le gana al atributo hidden y la pestaña se ve debajo de otras */
 #panel-guiones[hidden] { display: none; }

@@ -1,4 +1,4 @@
-/* 2 · Panel de ganancia real */
+/* 2 · Ganancia real */
 (function (root) {
   'use strict';
   const VC = root.VC;
@@ -6,7 +6,7 @@
   const O = VC.orders;
   const P = VC.profit;
   const { Store, Shop } = VC.runtime;
-  const { e, $, App, kpi, seg, banner, shopStatusBanner, prefGet, prefSet, toast, storeFail } = VC.ui;
+  const { e, $, App, seg, chip, banner, shopStatusBanner, prefGet, prefSet, toast, storeFail, icon, bubble, pageHead, info } = VC.ui;
 
   const state = {
     rango: prefGet('gan-rango', 'hoy'),
@@ -16,6 +16,12 @@
     loading: false,
     error: null,
   };
+
+  const PLATAFORMAS = [
+    ['tiktok', 'TikTok'],
+    ['meta', 'Meta'],
+    ['otros', 'Otros'],
+  ];
 
   let el;
 
@@ -38,11 +44,20 @@
   function mount(section) {
     el = section;
     el.innerHTML =
-      '<header class="tool-head"><div><h2>Ganancia real</h2><p class="lede">Ventas de Shopify menos producto, envíos, devoluciones, comisiones y anuncios. Los pedidos que todavía no se entregaron se proyectan con tus tasas reales.</p></div>' +
-      '<div class="tool-actions"><button class="btn ghost" data-act="refrescar">Actualizar</button></div></header>' +
-      '<div id="gan-range"></div><div id="gan-status"></div><div id="gan-kpis"></div>' +
-      '<div class="grid-2"><section class="panel" id="gan-spend"></section><section class="panel" id="gan-break"></section></div>' +
-      '<section class="panel" id="gan-chart"></section><section class="panel" id="gan-sources"></section><p class="note" id="gan-rates"></p>';
+      pageHead(
+        'Ganancia',
+        '¿Cuánto te queda de verdad?',
+        '<div id="gan-range"></div><button class="btn ghost icon-only" data-act="refrescar" aria-label="Actualizar pedidos" title="Actualizar">' + icon('refresh') + '</button>'
+      ) +
+      '<div id="gan-dates"></div><div id="gan-status"></div><div id="gan-kpis"></div>' +
+      '<div class="grid-2">' +
+      '<section class="panel gan-spend" id="gan-spend"><div class="panel-head"><div class="panel-title">' +
+      bubble('trending', 'peach') +
+      '<h3>Gasto en anuncios</h3>' +
+      info('Copiá lo que gastaste cada día en cada plataforma, en pesos. Se guarda solo.') +
+      '</div></div><div id="gan-be"></div><div id="gan-spend-rows"></div></section>' +
+      '<section class="panel" id="gan-break"></section></div>' +
+      '<section class="panel" id="gan-chart"></section><section class="panel" id="gan-sources"></section>';
     el.addEventListener('click', onClick);
     el.addEventListener('change', onChange);
     el.addEventListener('input', onInput);
@@ -75,86 +90,182 @@
     renderAll();
   }
 
+  function periodo(from, to) {
+    if (from === to) return U.fmtDay(from, true);
+    return U.fmtDay(from) + ' al ' + U.fmtDay(to);
+  }
+
   function renderAll(keepInputs) {
     if (!el) return;
     const [from, to] = range();
-    $('#gan-range', el).innerHTML =
-      '<div class="toolbar">' +
-      seg(
-        'gan-rango',
-        [
-          { value: 'hoy', label: 'Hoy' },
-          { value: 'ayer', label: 'Ayer' },
-          { value: '7d', label: '7 días' },
-          { value: 'mes', label: 'Este mes' },
-          { value: 'custom', label: 'Elegir fechas' },
-        ],
-        state.rango
-      ) +
-      (state.rango === 'custom'
-        ? '<div class="dates"><label for="gan-desde">Desde <input type="date" id="gan-desde" value="' + from + '"></label><label for="gan-hasta">Hasta <input type="date" id="gan-hasta" value="' + to + '"></label></div>'
-        : '<span class="muted">' + e(from === to ? U.fmtDay(from, true) : U.fmtDay(from) + ' al ' + U.fmtDay(to)) + '</span>') +
-      '</div>';
+    $('#gan-range', el).innerHTML = seg(
+      'gan-rango',
+      [
+        { value: 'hoy', label: 'Hoy' },
+        { value: 'ayer', label: 'Ayer' },
+        { value: '7d', label: '7 días' },
+        { value: 'mes', label: 'Este mes' },
+        { value: 'custom', label: 'Fechas' },
+      ],
+      state.rango
+    );
+    const dates = $('#gan-dates', el);
+    if (state.rango === 'custom') {
+      if (!dates.querySelector('#gan-desde'))
+        dates.innerHTML =
+          '<div class="dates gan-dates"><label for="gan-desde">Desde <input type="date" id="gan-desde" value="' +
+          from +
+          '"></label><label for="gan-hasta">Hasta <input type="date" id="gan-hasta" value="' +
+          to +
+          '"></label></div>';
+    } else dates.innerHTML = '';
 
     const statusEl = $('#gan-status', el);
     const notes = [];
-    if (Shop.mode === 'none') notes.push(shopStatusBanner({ message: 'Esta vista no puede conectarse a Shopify. Abrí el panel desde claude.ai o importá el CSV de pedidos.' }));
+    if (Shop.mode === 'none') notes.push(shopStatusBanner({ message: 'Abrí el panel desde claude.ai para ver tus pedidos, o importá el CSV de Shopify.' }));
     else if (state.error) notes.push(shopStatusBanner(state.error));
-    if (!P.costsReady(App.cfg)) notes.push(banner('warn', '<strong>Falta el costo del producto.</strong> Cargá cuánto te cuesta cada corrector, el envío y la devolución para ver la ganancia de verdad.', '<button class="btn" data-goto="ajustes">Cargar costos</button>'));
+    if (!P.costsReady(App.cfg)) notes.push(banner('warn', '<strong>Faltan tus costos.</strong> Sin ellos la ganancia no es real.', '<button class="btn" data-goto="ajustes">Cargar costos</button>'));
     statusEl.innerHTML = notes.join('');
 
     const rates = O.historicalRates(Shop.orders);
     const res = P.computeProfit({ orders: Shop.orders, gastos: state.gastos, cfg: App.cfg, rates, confirm: App.confirmStates(), from, to });
     const be = P.breakEven(App.cfg, rates);
-    const t = res.total;
     const loadingFirst = (state.loading || Shop.mode === 'pending') && !Shop.loadedAt;
 
-    $('#gan-kpis', el).innerHTML = loadingFirst
-      ? '<div class="kpis"><div class="skeleton kpi-sk"></div><div class="skeleton kpi-sk"></div><div class="skeleton kpi-sk"></div><div class="skeleton kpi-sk"></div></div>'
-      : '<div class="kpis">' +
-        kpi(
-          'Ganancia estimada',
-          '<span class="' + (t.ganancia >= 0 ? 'pos' : 'neg') + '">' + e(U.money(t.ganancia)) + '</span>',
-          'Ya cobrado menos gastos: <span class="mono nowrap">' + e(U.money(t.asegurado.ganancia)) + '</span>',
-          t.ganancia >= 0 ? 'good' : 'bad'
-        ) +
-        kpi('Gasto en anuncios', e(U.money(t.ads)), t.roas != null ? 'ROAS real ' + e(t.roas.toFixed(2).replace('.', ',')) + ' · ' + e(U.money(t.cpaPedido)) + ' por pedido' : t.pedidos ? 'Cargá el gasto del día abajo' : 'Sin gasto cargado') +
-        kpi('Pedidos', e(U.int(t.pedidos)), e(t.anulados) + ' anulados · ' + e(t.entregados) + ' entregados · ' + e(t.abiertos) + ' abiertos' + (t.devueltos ? ' · ' + e(t.devueltos) + ' devueltos' : '')) +
-        kpi(
-          'Costo por entrega',
-          t.cpaEntrega != null ? e(U.money(t.cpaEntrega)) : '—',
-          be && be.cpaEntregaEquilibrio > 0 ? 'Equilibrio: ' + e(U.money(be.cpaEntregaEquilibrio)) + ' por entrega' : 'Anuncios ÷ entregas esperadas',
-          t.cpaEntrega != null && be && be.cpaEntregaEquilibrio > 0 ? (t.cpaEntrega <= be.cpaEntregaEquilibrio ? 'good' : 'bad') : ''
-        ) +
-        '</div>';
-
-    if (!keepInputs || !el.querySelector('#gan-spend input:focus')) renderSpend(res, from, to);
-    renderBreak(res, be);
+    renderKpis(res, be, rates, from, to, loadingFirst);
+    renderBE(res, be);
+    if (!keepInputs || !el.querySelector('#gan-spend-rows input:focus')) renderSpend(res);
+    renderBreak(res);
     renderChart(res);
     renderSources(res);
-    const r = res.rates;
-    const origen = (o) => (o === 'historico' ? 'tu historial' : o === 'manual' ? 'cargada a mano' : 'supuesta, sin historial');
-    $('#gan-rates', el).textContent =
-      'Proyección: de cada 100 pedidos se despachan ' +
-      Math.round(r.confirmacion * 100) +
-      ' (' +
-      origen(r.origenConfirmacion) +
-      (r.origenConfirmacion === 'historico' ? ', ' + rates.muestraConfirmacion + ' pedidos' : '') +
-      ') y de cada 100 despachados se entregan ' +
-      Math.round(r.entrega * 100) +
-      ' (' +
-      origen(r.origenEntrega) +
-      (r.origenEntrega === 'historico' ? ', ' + rates.muestraEntrega + ' envíos' : '') +
-      '). Los pedidos confirmados por WhatsApp cuentan como despachados. Podés cambiar las tasas en Ajustes.';
   }
 
-  function renderSpend(res, from, to) {
+  function kpiCard(ic, tone, label, value, sub, valueTone, extra) {
+    return (
+      '<div class="gk' +
+      (valueTone ? ' is-' + valueTone : '') +
+      '">' +
+      bubble(ic, tone) +
+      '<span class="gk-label">' +
+      e(label) +
+      (extra || '') +
+      '</span><span class="gk-value">' +
+      value +
+      '</span><span class="gk-sub">' +
+      sub +
+      '</span></div>'
+    );
+  }
+
+  function proyeccion(res, rates) {
+    const r = res.rates;
+    const origen = (o, n, que) => (o === 'historico' ? 'según tu historial, ' + n + ' ' + que : o === 'manual' ? 'cargada por vos' : 'estimada, sin historial');
+    return (
+      'Los pedidos sin entregar se proyectan: de cada 100 se despachan <strong>' +
+      Math.round(r.confirmacion * 100) +
+      '</strong> (' +
+      e(origen(r.origenConfirmacion, rates.muestraConfirmacion, 'pedidos')) +
+      ') y de esos se entregan <strong>' +
+      Math.round(r.entrega * 100) +
+      '</strong> (' +
+      e(origen(r.origenEntrega, rates.muestraEntrega, 'envíos')) +
+      '). Los confirmados por WhatsApp cuentan como despachados. Las tasas se cambian en Ajustes.<br><br>Ya cobrado, menos gastos: <strong>' +
+      e(U.money(res.total.asegurado.ganancia)) +
+      '</strong>.'
+    );
+  }
+
+  function renderKpis(res, be, rates, from, to, loadingFirst) {
+    const box = $('#gan-kpis', el);
+    if (loadingFirst) {
+      box.innerHTML = '<div class="gan-kpis"><div class="skeleton kpi-sk"></div><div class="skeleton kpi-sk"></div><div class="skeleton kpi-sk"></div><div class="skeleton kpi-sk"></div></div>';
+      return;
+    }
+    const t = res.total;
+    const costos = P.costsReady(App.cfg);
+    const pedidosSub = [
+      t.entregados ? t.entregados + (t.entregados === 1 ? ' entregado' : ' entregados') : '',
+      t.abiertos ? t.abiertos + (t.abiertos === 1 ? ' abierto' : ' abiertos') : '',
+      t.anulados ? t.anulados + (t.anulados === 1 ? ' anulado' : ' anulados') : '',
+      t.devueltos ? t.devueltos + (t.devueltos === 1 ? ' devuelto' : ' devueltos') : '',
+    ]
+      .filter(Boolean)
+      .slice(0, 2)
+      .join(' · ');
+    const eqEntrega = be && be.cpaEntregaEquilibrio > 0 ? be.cpaEntregaEquilibrio : null;
+    box.innerHTML =
+      '<div class="gan-kpis">' +
+      kpiCard(
+        'wallet',
+        !costos ? '' : t.ganancia >= 0 ? 'good' : 'bad',
+        'Ganancia estimada',
+        e(U.money(t.ganancia)),
+        e(periodo(from, to)),
+        !costos ? '' : t.ganancia >= 0 ? 'good' : 'bad',
+        info(proyeccion(res, rates), 'Cómo se calcula')
+      ) +
+      kpiCard('trending', 'peach', 'Anuncios', e(U.money(t.ads)), t.roas != null ? 'ROAS ' + e(t.roas.toFixed(2).replace('.', ',')) : t.pedidos ? 'Sin cargar' : 'Sin gasto') +
+      kpiCard('box', '', 'Pedidos', e(U.int(t.pedidos)), e(pedidosSub || 'Sin pedidos')) +
+      kpiCard(
+        'truck',
+        'source',
+        'Costo por entrega',
+        t.cpaEntrega != null ? e(U.money(t.cpaEntrega)) : '—',
+        eqEntrega ? 'Máximo ' + e(U.money(eqEntrega)) : 'Sin datos',
+        t.cpaEntrega != null && eqEntrega ? (t.cpaEntrega <= eqEntrega ? 'good' : 'bad') : ''
+      ) +
+      '</div>';
+  }
+
+  // Cuánto se puede pagar por pedido en TikTok o Meta
+  function renderBE(res, be) {
+    const box = $('#gan-be', el);
+    const t = res.total;
+    if (!be) {
+      box.innerHTML = '<p class="note">' + icon('clock') + ' Cuando tengas entregas, te digo cuánto podés pagar por pedido.</p>';
+      return;
+    }
+    if (!P.costsReady(App.cfg)) {
+      box.innerHTML = '';
+      return;
+    }
+    if (be.cpaEquilibrio <= 0) {
+      box.innerHTML = banner('bad', 'Con estos costos cada pedido pierde plata aun sin anuncios.', '<button class="btn ghost sm" data-goto="ajustes">Revisar costos</button>');
+      return;
+    }
+    const ahora = t.cpaPedido != null && t.ads > 0 ? t.cpaPedido : null;
+    box.innerHTML =
+      '<div class="gan-be"><span class="gb-label">Podés pagar hasta</span><span class="gb-num">' +
+      e(U.money(be.cpaEquilibrio)) +
+      '</span><span class="gb-sub">por pedido sin perder plata ' +
+      info(
+        'Para quedarte con un 30% de margen: <strong>' +
+          e(U.money(be.cpaObjetivo)) +
+          '</strong> por pedido.<br><br>Ticket promedio ' +
+          e(U.money(be.ticket)) +
+          ', ' +
+          e(be.unidades.toFixed(1).replace('.', ',')) +
+          ' unidades por pedido. Cada entrega te deja ' +
+          e(U.money(be.margenEntrega)) +
+          ' antes de anuncios.',
+        'Cómo se calcula'
+      ) +
+      '</span>' +
+      (ahora != null
+        ? '<span class="gb-now">' +
+          chip('Estás pagando ' + U.money(ahora), ahora <= be.cpaEquilibrio ? 'good' : 'bad') +
+          '</span>'
+        : '') +
+      '</div>';
+  }
+
+  function renderSpend(res) {
     const days = res.days.slice().reverse();
     const many = days.length > 31;
     const rows = (many ? days.slice(0, 31) : days)
       .map((d) => {
         const g = state.gastos[d.day] || {};
-        const inp = (k) =>
+        const inp = (k, label) =>
           '<input type="text" inputmode="numeric" class="num-input" id="gasto-' +
           d.day +
           '-' +
@@ -165,44 +276,43 @@
           k +
           '" value="' +
           (g[k] ? e(U.int(g[k])) : '') +
-          '" placeholder="0" aria-label="Gasto en ' +
-          k +
+          '" placeholder="' +
+          label +
+          '" aria-label="Gasto en ' +
+          label +
           ' el ' +
           e(U.fmtDay(d.day)) +
           '">';
         return (
-          '<tr><th scope="row">' +
+          '<div class="sp-row"><span class="sp-day">' +
           e(U.fmtDay(d.day, true)) +
-          '</th><td>' +
-          inp('tiktok') +
-          '</td><td>' +
-          inp('meta') +
-          '</td><td>' +
-          inp('otros') +
-          '</td><td class="num ' +
+          '</span><span class="sp-ins">' +
+          PLATAFORMAS.map(([k, label]) => inp(k, label)).join('') +
+          '</span><span class="sp-gan mono ' +
           (d.ganancia >= 0 ? 'pos' : 'neg') +
-          '">' +
+          '" title="Ganancia del día">' +
           e(U.moneyShort(d.ganancia)) +
-          '</td></tr>'
+          '</span></div>'
         );
       })
       .join('');
-    $('#gan-spend', el).innerHTML =
-      '<h3>Gasto en anuncios</h3><p class="muted small">Copiá el gasto de cada plataforma (en pesos). Se guarda solo.</p>' +
-      '<div class="table-wrap"><table class="table spend"><thead><tr><th>Día</th><th>TikTok</th><th>Meta</th><th>Otros</th><th class="num">Ganancia</th></tr></thead><tbody>' +
+    $('#gan-spend-rows', el).innerHTML =
+      '<div class="sp-list"><div class="sp-row sp-headrow" aria-hidden="true"><span class="sp-day">Día</span><span class="sp-ins">' +
+      PLATAFORMAS.map(([, label]) => '<span>' + label + '</span>').join('') +
+      '</span><span class="sp-gan">Ganancia</span></div>' +
       rows +
-      '</tbody></table></div>' +
-      (many ? '<p class="muted small">Se muestran los últimos 31 días del rango.</p>' : '');
+      '</div>' +
+      (many ? '<p class="note">Se ven los últimos 31 días.</p>' : '');
   }
 
-  function renderBreak(res, be) {
+  function renderBreak(res) {
     const t = res.total;
     const items = [
       ['Ventas esperadas', t.ventas, 'base'],
-      ['Costo del producto', -t.producto],
+      ['Producto', -t.producto],
       ['Envíos', -t.envios],
       ['Devoluciones', -t.devoluciones],
-      ['Comisión de cobro', -t.comisiones],
+      ['Comisión', -t.comisiones],
       ['Otros por pedido', -t.otros],
       ['Costos fijos', -t.fijos],
       ['Anuncios', -t.ads],
@@ -212,25 +322,23 @@
     const list = items
       .map((x) => '<li><span class="wf-label">' + e(x[0]) + '</span><span class="wf-track">' + bar(x[1], x[2] === 'base' ? 'base' : 'cost') + '</span><span class="wf-val mono">' + e(U.money(x[1])) + '</span></li>')
       .join('');
-    const g = '<li class="wf-total"><span class="wf-label">Ganancia</span><span class="wf-track">' + bar(t.ganancia, t.ganancia >= 0 ? 'pos' : 'neg') + '</span><span class="wf-val mono ' + (t.ganancia >= 0 ? 'pos' : 'neg') + '">' + e(U.money(t.ganancia)) + '</span></li>';
-    let beHtml = '';
-    if (be && P.costsReady(App.cfg)) {
-      beHtml =
-        be.cpaEquilibrio > 0
-          ? '<div class="be"><div><span class="be-num mono">' +
-            e(U.money(be.cpaEquilibrio)) +
-            '</span><span class="be-txt">es lo máximo que podés pagar por pedido en TikTok o Meta sin perder plata.</span></div><div><span class="be-num mono">' +
-            e(U.money(be.cpaObjetivo)) +
-            '</span><span class="be-txt">es el costo por pedido para quedarte con el 30% de margen.</span></div><p class="muted small">Con ticket promedio de ' +
-            e(U.money(be.ticket)) +
-            ' y ' +
-            e(be.unidades.toFixed(1).replace('.', ',')) +
-            ' unidades por pedido entregado: cada entrega te deja ' +
-            e(U.money(be.margenEntrega)) +
-            ' antes de anuncios.</p></div>'
-          : banner('bad', 'Con estos costos cada pedido pierde plata aun sin anuncios. Revisá el precio o los costos en Ajustes.')
-    } else if (!be) beHtml = '<p class="muted small">Cuando tengas pedidos entregados vamos a calcular cuánto podés pagar por pedido.</p>';
-    $('#gan-break', el).innerHTML = '<h3>De dónde sale la ganancia</h3><ul class="waterfall">' + list + g + '</ul>' + beHtml;
+    const g =
+      '<li class="wf-total"><span class="wf-label">Ganancia</span><span class="wf-track">' +
+      bar(t.ganancia, t.ganancia >= 0 ? 'pos' : 'neg') +
+      '</span><span class="wf-val mono ' +
+      (t.ganancia >= 0 ? 'pos' : 'neg') +
+      '">' +
+      e(U.money(t.ganancia)) +
+      '</span></li>';
+    $('#gan-break', el).innerHTML =
+      '<div class="panel-head"><div class="panel-title">' +
+      bubble('wallet', 'good') +
+      '<h3>De dónde sale la ganancia</h3>' +
+      info('Ventas esperadas: lo que vas a cobrar de los pedidos del período, contando los que todavía no se entregaron según tus tasas. Abajo, todo lo que se resta.') +
+      '</div></div><ul class="waterfall">' +
+      list +
+      g +
+      '</ul>';
   }
 
   function renderChart(res) {
@@ -276,7 +384,7 @@
         w.toFixed(1) +
         '" height="' +
         h.toFixed(1) +
-        '" rx="3"></rect><title>' +
+        '" rx="4"></rect><title>' +
         e(U.fmtDay(d.day, true) + ': ' + U.money(v) + ' · ' + d.pedidos + ' pedidos · anuncios ' + U.money(d.ads)) +
         '</title></g>';
       if ((i === iMax && v > 0) || (i === iMin && v < 0)) {
@@ -287,7 +395,9 @@
       if (i % step === 0 || i === res.days.length - 1) bars += '<text class="axis-label" x="' + (x + w / 2).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle">' + e(U.fmtDay(d.day)) + '</text>';
     });
     box.innerHTML =
-      '<h3>Ganancia por día</h3><div class="chart-wrap"><svg class="chart" viewBox="0 0 ' +
+      '<div class="panel-head"><div class="panel-title">' +
+      bubble('chart') +
+      '<h3>Ganancia por día</h3></div></div><div class="chart-wrap"><svg class="chart" viewBox="0 0 ' +
       W +
       ' ' +
       H +
@@ -318,12 +428,19 @@
   function renderSources(res) {
     const box = $('#gan-sources', el);
     const rows = res.sources.filter((s) => s.pedidos || s.ads);
+    const head =
+      '<div class="panel-head"><div class="panel-title">' +
+      bubble('grid', 'source') +
+      '<h3>Por plataforma</h3>' +
+      info('Según la UTM que trae cada pedido. El gasto de “Otros” no se asigna a ninguna plataforma.') +
+      '</div></div>';
     if (!rows.length) {
-      box.innerHTML = '<h3>Por plataforma</h3><p class="muted">Sin pedidos en este rango.</p>';
+      box.innerHTML = head + '<p class="note">Sin pedidos en estas fechas.</p>';
       return;
     }
     box.innerHTML =
-      '<h3>Por plataforma</h3><p class="muted small">Según la UTM que trae cada pedido. El gasto de “Otros” no se asigna a ninguna.</p><div class="table-wrap"><table class="table"><thead><tr><th>Plataforma</th><th class="num">Pedidos</th><th class="num">Anulados</th><th class="num">Ventas esperadas</th><th class="num">Anuncios</th><th class="num">Ganancia</th><th class="num">ROAS</th></tr></thead><tbody>' +
+      head +
+      '<div class="table-wrap"><table class="table gan-src"><thead><tr><th>Plataforma</th><th class="num">Pedidos</th><th class="num hide-sm">Anulados</th><th class="num hide-sm">Ventas</th><th class="num hide-sm">Anuncios</th><th class="num">Ganancia</th><th class="num">ROAS</th></tr></thead><tbody>' +
       rows
         .map(
           (s) =>
@@ -331,11 +448,11 @@
             e(O.SOURCES[s.source] || s.source) +
             '</th><td class="num">' +
             s.pedidos +
-            '</td><td class="num">' +
+            '</td><td class="num hide-sm">' +
             s.anulados +
-            '</td><td class="num">' +
+            '</td><td class="num hide-sm">' +
             e(U.money(s.ventas)) +
-            '</td><td class="num">' +
+            '</td><td class="num hide-sm">' +
             e(U.money(s.ads)) +
             '</td><td class="num ' +
             (s.ganancia - s.fijos >= 0 ? 'pos' : 'neg') +
@@ -357,7 +474,7 @@
     clearTimeout(saveSpend[day]);
     saveSpend[day] = setTimeout(() => {
       const row = {};
-      for (const k of ['tiktok', 'meta', 'otros']) {
+      for (const [k] of PLATAFORMAS) {
         const inp = el.querySelector('#gasto-' + day + '-' + k);
         row[k] = inp ? U.parseMoney(inp.value) || 0 : 0;
       }
@@ -372,7 +489,11 @@
     if (t.id === 'gan-desde' || t.id === 'gan-hasta') {
       state.desde = $('#gan-desde', el).value;
       state.hasta = $('#gan-hasta', el).value;
-      if (state.desde > state.hasta) [state.desde, state.hasta] = [state.hasta, state.desde];
+      if (state.desde > state.hasta) {
+        [state.desde, state.hasta] = [state.hasta, state.desde];
+        $('#gan-desde', el).value = state.desde;
+        $('#gan-hasta', el).value = state.hasta;
+      }
       load();
     } else if (t.dataset.act === 'importar-csv' && t.files && t.files[0]) {
       VC.ui

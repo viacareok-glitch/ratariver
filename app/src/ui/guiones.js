@@ -6,10 +6,11 @@
   const S = VC.scripts;
   const P = VC.autoplan;
   const { Store, AI } = VC.runtime;
-  const { e, $, App, chip, toast, copyText, prefGet, prefSet, storeFail } = VC.ui;
+  const { e, $, $$, App, chip, toast, copyText, prefGet, prefSet, storeFail, icon, bubble, pageHead, info, more, toggle } = VC.ui;
   const A = VC.auto;
 
   const CADA = [24, 48, 72];
+  const CANCELADO = 'Cancelado.'; // texto que deja VC.auto cuando se detiene una tarea
 
   const state = {
     opts: Object.assign(
@@ -29,13 +30,19 @@
   let el;
   let ctl;
 
+  const FLOW_TIPS =
+    '<ol class="steps ugc-steps"><li>Pegá el prompt del clip 1 y generá 2 o 3 tomas. Quedate con la de mejor cara y voz.</li><li>Para el clip 2 usá <strong>Extend</strong> sobre esa toma (o su último cuadro con <strong>Frames to Video</strong>) y pegá el prompt del clip 2.</li><li>Repetí clip por clip. La ficha va completa en cada prompt para que no cambie la ropa ni el lugar.</li><li>Al subir a TikTok, activá la etiqueta de contenido generado con IA.</li></ol>';
+
   function mount(section) {
     el = section;
     el.innerHTML =
-      '<header class="tool-head"><div><h2>Guiones UGC</h2><p class="lede">Guiones partidos en clips de 8 segundos, con la ficha de continuidad y el prompt listo para pegar en Flow. Dejá que se escriban solos con lo que funciona, o elegí vos el ángulo y el personaje.</p></div></header>' +
-      '<section class="panel auto-panel" id="ugc-auto" aria-labelledby="ugc-auto-title"></section><div id="ugc-auto-out"></div>' +
-      '<section class="ugc-manual" aria-labelledby="ugc-manual-title"><div class="ugc-manual-head"><h3 id="ugc-manual-title">Elegirlo yo</h3><p class="muted small">Vos elegís ángulo, personaje, lugar, clips y cantidad. Funciona aparte de la tanda automática.</p></div>' +
-      '<form id="ugc-form" class="panel ugc-form"></form><div id="ugc-out"></div></section>';
+      pageHead('Guiones', 'Videos UGC listos para Flow, clip por clip.') +
+      '<section class="panel auto-panel ugc-auto" id="ugc-auto" aria-labelledby="ugc-auto-title"></section><div id="ugc-auto-out"></div>' +
+      '<section class="ugc-manual" aria-labelledby="ugc-manual-title"><div class="ugc-manual-head"><h3 id="ugc-manual-title">Elegirlo yo</h3><p class="muted small">Vos elegís el ángulo, el personaje y cuántos.</p></div>' +
+      '<form id="ugc-form" class="panel ugc-form"></form><div id="ugc-out"></div></section>' +
+      '<div class="ugc-flow">' +
+      more('Cómo usarlos en Flow', FLOW_TIPS, 'ugc-flow') +
+      '</div>';
     el.addEventListener('click', onClick);
     el.addEventListener('change', onChange);
     el.addEventListener('submit', (ev) => {
@@ -80,7 +87,7 @@
     const box = el && $('#ugc-auto', el);
     if (!box) return;
     if (!box.dataset.ready) {
-      box.innerHTML = '<div id="ugc-auto-head"></div><div id="ugc-auto-prog"></div><div id="ugc-auto-plan"></div><div id="ugc-auto-cfg"></div>';
+      box.innerHTML = '<div id="ugc-auto-head"></div><div id="ugc-auto-prog"></div><div id="ugc-auto-plan"></div>' + (A ? more('Opciones', '<div id="ugc-auto-cfg"></div>', 'ugc-auto-more') : '');
       box.dataset.ready = '1';
     }
     renderAutoHead();
@@ -97,37 +104,46 @@
     const otra = A && A.running && !corriendo ? A.NOMBRES[A.running] || A.running : '';
     const est = (A && A.estado.guiones) || {};
     const d = auto.doc;
-    const meta = [
-      d && d.fecha ? 'Última tanda: ' + U.timeAgo(d.fecha) + ', ' + P.motivoTexto(d.origen, d.motivo) : auto.cargado ? 'Todavía no hay tandas automáticas' : 'Buscando la última tanda…',
-      c.auto ? 'Automático: al abrir el panel, cada ' + cadaTxt(c.cadaHoras) : 'Automático apagado',
-    ];
-    if (A && A.cfg.competencia && A.cfg.competencia.guionesTras) meta.push('También después de un escaneo de la competencia con anuncios nuevos');
+    let meta;
+    if (corriendo) meta = 'Escribiendo la tanda…';
+    else if (d && d.fecha) {
+      const hace = U.timeAgo(d.fecha);
+      meta = (hace === 'recién' ? 'Tanda lista recién' : 'Última tanda ' + hace) + ' · ' + d.guiones.length + (d.guiones.length === 1 ? ' guion' : ' guiones');
+    }
+    else meta = auto.cargado ? 'Todavía no hay tandas' : 'Buscando la última tanda…';
     let accion = '';
     if (A && AI.sample) {
       accion = corriendo
-        ? '<button type="button" class="btn ghost" data-act="tanda-detener">Detener</button>'
-        : '<button type="button" class="btn" data-act="tanda-generar"' + (auto.pedido ? ' disabled' : '') + '>' + (auto.pedido ? 'En cola…' : 'Generar ahora') + '</button>';
+        ? '<button type="button" class="btn ghost" data-act="tanda-detener">' + icon('stop') + 'Detener</button>'
+        : '<button type="button" class="btn" data-act="tanda-generar"' + (auto.pedido ? ' disabled' : '') + '>' + icon('sparkles') + (auto.pedido ? 'En cola…' : 'Generar ahora') + '</button>';
     }
-    let aviso = '';
-    if (!AI.sample)
-      aviso =
-        '<div class="auto-off"><strong>Los guiones automáticos los escribe Claude.</strong> Abrí el panel desde claude.ai o la app de Claude para que se escriban solos. Mientras tanto, en “Elegirlo yo” podés armarlos con plantillas.</div>';
     let estado = '';
-    if (otra) estado = '<p class="small muted">' + (auto.pedido ? 'En cola: la tanda arranca cuando termine la ' + e(otra) + '.' : 'Ahora está corriendo la ' + e(otra) + '. Si tocás “Generar ahora”, queda en cola.') + '</p>';
+    if (!AI.sample)
+      estado =
+        '<div class="note">' +
+        icon('sparkles') +
+        ' Necesita Claude. ' +
+        info('Los guiones automáticos los escribe Claude: abrí el panel desde claude.ai o la app de Claude. Mientras tanto, en “Elegirlo yo” los armás con plantillas.') +
+        '</div>';
+    else if (otra) estado = '<p class="note">' + icon('clock') + ' ' + (auto.pedido ? 'En cola: arranca cuando termine la ' + e(otra) + '.' : 'Ahora corre la ' + e(otra) + '. Si tocás “Generar ahora”, queda en cola.') + '</p>';
+    else if (!corriendo && est.error === CANCELADO) estado = '<p class="note">' + icon('stop') + ' Cancelaste la última tanda.</p>';
     else if (!corriendo && est.error) estado = '<p class="error-text">La última tanda no terminó: ' + e(est.error) + '</p>';
     box.innerHTML =
-      '<div class="auto-head"><div class="ugc-auto-title"><h3 id="ugc-auto-title">Guiones automáticos</h3><div class="auto-meta">' +
-      meta.map((m) => '<span>' + e(m) + '</span>').join('') +
-      '</div></div>' +
+      '<div class="ugc-auto-row">' +
+      bubble('zap', 'peach') +
+      '<div class="ugc-auto-txt"><h3 id="ugc-auto-title">Guiones automáticos</h3><p class="ugc-auto-meta"><span>' +
+      e(meta) +
+      '</span>' +
+      (c.auto ? chip('Solo cada ' + cadaTxt(c.cadaHoras), 'good') : '') +
+      '</p></div>' +
       (accion ? '<div class="row-actions">' + accion + '</div>' : '') +
-      '</div><p class="ugc-auto-lede">Cada tanda elige sola el ángulo (el ganador de tus anuncios o el que más dura en la competencia), rota el personaje y responde la duda que más se repite en tus comentarios.</p>' +
-      aviso +
+      '</div>' +
       estado;
   }
 
   const ST = {
     espera: ['en espera', ''],
-    curso: ['en curso…', ''],
+    curso: ['en curso', ''],
     ok: ['listo', 'ok'],
     error: ['error', 'err'],
   };
@@ -137,16 +153,16 @@
     if (!box) return;
     const corriendo = !!A && A.running === 'guiones';
     const est = (A && A.estado.guiones) || {};
-    if (!auto.pasos.length || (!corriendo && !est.error)) {
+    if (!auto.pasos.length || (!corriendo && (!est.error || est.error === CANCELADO))) {
       box.innerHTML = '';
       return;
     }
     box.innerHTML =
-      '<ul class="auto-progress">' +
+      '<ul class="auto-progress ugc-prog">' +
       auto.pasos
         .map((p) => {
           const st = ST[p.estado] || ST.espera;
-          return '<li><span class="st' + (st[1] ? ' ' + st[1] : '') + '">' + e(st[0]) + '</span><span>' + e(p.label) + (p.det ? ' <span class="muted">· ' + e(p.det) + '</span>' : '') + '</span></li>';
+          return '<li class="is-' + e(p.estado) + '"><span class="st' + (st[1] ? ' ' + st[1] : '') + '">' + e(st[0]) + '</span><span>' + e(p.label) + (p.det ? ' <span class="muted">· ' + e(p.det) + '</span>' : '') + '</span></li>';
         })
         .join('') +
       '</ul>';
@@ -161,11 +177,11 @@
       return;
     }
     box.innerHTML =
-      '<div class="ugc-plan"><span class="eyebrow">Por qué la última tanda salió así</span><ul class="ugc-razones">' +
-      d.razones.map((r) => '<li>' + e(r) + '</li>').join('') +
-      '</ul>' +
-      (d.opts && S.ANGULOS[d.opts.angulo] ? '<div class="row-actions"><button type="button" class="btn ghost" data-act="tanda-al-form">Pasar esta configuración al formulario</button></div>' : '') +
-      '</div>';
+      '<div class="ugc-plan"><div class="ugc-plan-head"><span class="eyebrow">Por qué salió así</span>' +
+      (d.opts && S.ANGULOS[d.opts.angulo] ? '<button type="button" class="btn link" data-act="tanda-al-form">Usar en “Elegirlo yo”</button>' : '') +
+      '</div><ul class="ugc-razones">' +
+      d.razones.map((r) => '<li>' + icon('check') + '<span>' + e(r) + '</span></li>').join('') +
+      '</ul></div>';
   }
 
   function renderAutoCfg() {
@@ -178,22 +194,23 @@
     const act = document.activeElement;
     const keep = act && box.contains(act) && act.dataset ? act.dataset.cfg : '';
     box.innerHTML =
-      '<div class="ugc-auto-cfg auto-toggles"><span class="ugc-auto-when"><label><input type="checkbox" data-cfg="auto"' +
-      (c.auto ? ' checked' : '') +
-      dis +
-      '> Escribir guiones nuevos solos al abrir el panel</label><label>cada <select data-cfg="cadaHoras" aria-label="Cada cuántos días"' +
+      '<div class="ugc-auto-cfg">' +
+      toggle('ugc-auto-solo', !!c.auto, 'Escribirlos solos al abrir el panel', 'data-cfg="auto"' + dis) +
+      '<div class="form-grid"><label>Cada<select data-cfg="cadaHoras"' +
       dis +
       '>' +
       cada.map((h) => '<option value="' + h + '"' + (Number(c.cadaHoras) === h ? ' selected' : '') + '>' + e(cadaTxt(h)) + '</option>').join('') +
-      '</select></label></span><label>Guiones por tanda <select data-cfg="cantidad"' +
+      '</select></label><label>Guiones por tanda<select data-cfg="cantidad"' +
       dis +
       '>' +
       [1, 2, 3, 4, 5].map((n) => '<option value="' + n + '"' + (Number(c.cantidad) === n ? ' selected' : '') + '>' + n + '</option>').join('') +
-      '</select></label><label>Clips por guion <select data-cfg="clips"' +
+      '</select></label><label>Clips por guion<select data-cfg="clips"' +
       dis +
       '>' +
       [3, 4, 5, 6].map((n) => '<option value="' + n + '"' + (Number(c.clips) === n ? ' selected' : '') + '>' + n + ' clips · ' + n * S.CLIP_SECONDS + ' s</option>').join('') +
-      '</select></label></div>';
+      '</select></label></div>' +
+      (A.cfg.competencia && A.cfg.competencia.guionesTras ? '<p class="note">' + icon('eye') + ' También se escriben después de un escaneo de la competencia con anuncios nuevos.</p>' : '') +
+      '</div>';
     if (keep) {
       const opt = $('[data-cfg="' + keep + '"]', box);
       if (opt) opt.focus();
@@ -210,21 +227,20 @@
     }
     const o = d.opts || {};
     const n = d.guiones.length;
-    const datos = [
-      (S.ANGULOS[o.angulo] || {}).label,
-      (S.PERSONAJES[o.personaje] || {}).label,
-      o.clips ? o.clips + ' clips · ' + o.clips * S.CLIP_SECONDS + ' s' : '',
-      d.fecha ? U.timeAgo(d.fecha) : '',
-    ].filter(Boolean);
+    const datos = [(S.ANGULOS[o.angulo] || {}).label, (S.PERSONAJES[o.personaje] || {}).label, o.clips ? o.clips * S.CLIP_SECONDS + ' s' : ''].filter(Boolean);
     box.innerHTML =
       '<details class="ugc-tanda"' +
       (abierta ? ' open' : '') +
-      '><summary><span class="ugc-tanda-title">Tanda automática · ' +
+      '><summary>' +
+      icon('chevronRight') +
+      '<span class="ugc-tanda-title">Última tanda · ' +
       n +
       (n === 1 ? ' guion' : ' guiones') +
-      '</span><span class="muted small">' +
-      e(datos.join(' · ')) +
-      '</span></summary><div class="ugc-tanda-body">' +
+      '</span><span class="chips">' +
+      datos.map((x) => chip(x, 'neutral')).join('') +
+      '</span>' +
+      (d.fecha ? '<span class="muted small">' + e(U.timeAgo(d.fecha)) + '</span>' : '') +
+      '</summary><div class="ugc-tanda-body">' +
       scriptCards(d.guiones, 'auto-') +
       '</div></details>';
     const det = $('details', box);
@@ -314,10 +330,13 @@
     renderForm();
     const f = $('#ugc-form', el);
     if (f && f.scrollIntoView) f.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
-    toast('Listo: la configuración de la tanda quedó en “Elegirlo yo”. Cambiá lo que quieras y escribí.', 'good');
+    toast('Listo: quedó en “Elegirlo yo”. Cambiá lo que quieras.', 'good');
   }
 
   function renderForm() {
+    const form = $('#ugc-form', el);
+    if (!form) return;
+    const abiertos = $$('details[id][open]', form).map((d) => d.id);
     const o = state.opts;
     const ganador = App.ultimoAnalisis && App.ultimoAnalisis.ganador;
     const angOpts = Object.entries(S.ANGULOS)
@@ -326,57 +345,83 @@
     const per = Object.entries(S.PERSONAJES)
       .map(([k, p]) => '<option value="' + k + '"' + (o.personaje === k ? ' selected' : '') + '>' + e(p.label) + '</option>')
       .join('');
-    $('#ugc-form', el).innerHTML =
+    const brief = (S.ANGULOS[o.angulo] || {}).brief;
+    const perDesc = o.personaje !== 'libre' ? (S.PERSONAJES[o.personaje] || S.PERSONAJES.oficinista).es : '';
+    let acciones;
+    if (state.running)
+      acciones =
+        '<button type="button" class="btn ghost" data-act="detener">' +
+        icon('stop') +
+        'Detener</button><span class="muted">' +
+        (state.streamChars ? 'Escribiendo… ' + U.int(state.streamChars) + ' caracteres' : 'Pensando los guiones…') +
+        '</span>';
+    else
+      acciones =
+        (AI.sample ? '<button type="submit" class="btn">' + icon('sparkles') + 'Escribir con Claude</button>' : '') +
+        '<button type="button" class="btn ' +
+        (AI.sample ? 'ghost' : '') +
+        '" data-act="plantillas">' +
+        (AI.sample ? 'Usar plantillas' : 'Generar con plantillas') +
+        '</button>';
+    form.innerHTML =
       (ganador && ganador !== o.angulo && S.ANGULOS[ganador]
-        ? '<p class="note">Tu último análisis de creativos marcó <strong>' + e(S.ANGULOS[ganador].label) + '</strong> como ángulo ganador. <button type="button" class="btn link" data-act="usar-ganador" data-v="' + e(ganador) + '">Usarlo</button></p>'
+        ? '<p class="note ugc-win">' + icon('trending') + ' Gana <strong>' + e(S.ANGULOS[ganador].label) + '</strong> en tus anuncios. <button type="button" class="btn link" data-act="usar-ganador" data-v="' + e(ganador) + '">Usarlo</button></p>'
         : '') +
-      '<fieldset><legend>Ángulo</legend><div class="pill-row">' +
+      '<fieldset><legend><span>Ángulo</span>' +
+      (brief ? info(e(brief), 'Qué cuenta este ángulo') : '') +
+      '</legend><div class="pill-row">' +
       angOpts +
       '<label class="pill-radio' +
       (o.angulo === 'libre' ? ' is-on' : '') +
       '" for="ang-libre"><input type="radio" name="angulo" id="ang-libre" value="libre"' +
       (o.angulo === 'libre' ? ' checked' : '') +
       '>Otro</label></div>' +
-      (o.angulo === 'libre' ? '<label for="ugc-angulo-libre" class="sr-only">Describí el ángulo</label><input id="ugc-angulo-libre" name="anguloLibre" placeholder="Ej.: regalo para el Día de la Madre, choferes que manejan muchas horas…" value="' + e(o.anguloLibre) + '">' : '<p class="muted small">' + e((S.ANGULOS[o.angulo] || {}).brief || '') + '</p>') +
+      (o.angulo === 'libre' ? '<label for="ugc-angulo-libre" class="sr-only">Describí el ángulo</label><input id="ugc-angulo-libre" name="anguloLibre" placeholder="Ej.: regalo para el Día de la Madre" value="' + e(o.anguloLibre) + '">' : '') +
       '</fieldset>' +
-      '<div class="form-grid"><label for="ugc-personaje">Personaje y lugar<select id="ugc-personaje" name="personaje">' +
-      per +
-      '<option value="libre"' +
-      (o.personaje === 'libre' ? ' selected' : '') +
-      '>Otro (lo describo)</option></select></label>' +
-      '<label for="ugc-clips">Clips por guion<select id="ugc-clips" name="clips">' +
-      [3, 4, 5, 6].map((n) => '<option value="' + n + '"' + (Number(o.clips) === n ? ' selected' : '') + '>' + n + ' clips · ' + n * S.CLIP_SECONDS + ' s</option>').join('') +
-      '</select></label><label for="ugc-cantidad">Cantidad de guiones<select id="ugc-cantidad" name="cantidad">' +
-      [1, 2, 3, 4, 5].map((n) => '<option value="' + n + '"' + (Number(o.cantidad) === n ? ' selected' : '') + '>' + n + '</option>').join('') +
-      '</select></label><label for="ugc-idioma">Idioma del prompt<select id="ugc-idioma" name="idiomaPrompt"><option value="en"' +
-      (o.idiomaPrompt === 'en' ? ' selected' : '') +
-      '>Inglés (mejor en Flow)</option><option value="es"' +
-      (o.idiomaPrompt === 'es' ? ' selected' : '') +
-      '>Español</option></select></label></div>' +
+      '<div class="form-grid ugc-grid">' +
+      field('ugc-personaje', 'Personaje', '<select id="ugc-personaje" name="personaje">' + per + '<option value="libre"' + (o.personaje === 'libre' ? ' selected' : '') + '>Otro (lo describo)</option></select>', perDesc ? info(e(perDesc), 'Cómo es el personaje') : '') +
+      field('ugc-clips', 'Clips', '<select id="ugc-clips" name="clips">' + [3, 4, 5, 6].map((n) => '<option value="' + n + '"' + (Number(o.clips) === n ? ' selected' : '') + '>' + n + ' clips · ' + n * S.CLIP_SECONDS + ' s</option>').join('') + '</select>') +
+      field('ugc-cantidad', 'Cantidad', '<select id="ugc-cantidad" name="cantidad">' + [1, 2, 3, 4, 5].map((n) => '<option value="' + n + '"' + (Number(o.cantidad) === n ? ' selected' : '') + '>' + n + (n === 1 ? ' guion' : ' guiones') + '</option>').join('') + '</select>') +
+      field(
+        'ugc-idioma',
+        'Idioma del prompt',
+        '<select id="ugc-idioma" name="idiomaPrompt"><option value="en"' + (o.idiomaPrompt === 'en' ? ' selected' : '') + '>Inglés (mejor en Flow)</option><option value="es"' + (o.idiomaPrompt === 'es' ? ' selected' : '') + '>Español</option></select>'
+      ) +
+      '</div>' +
       (o.personaje === 'libre'
-        ? '<div class="form-grid wide"><label for="ugc-personaje-libre">Describí personaje, ropa y lugar<textarea id="ugc-personaje-libre" name="personajeLibre" rows="2" placeholder="Ej.: Hombre de 50, camionero, remera azul, cabina de camión, luz de mediodía">' +
+        ? '<div class="form-grid wide"><label for="ugc-personaje-libre">Personaje, ropa y lugar<textarea id="ugc-personaje-libre" name="personajeLibre" rows="2" placeholder="Ej.: Hombre de 50, camionero, remera azul, cabina de camión">' +
           e(o.personajeLibre) +
           '</textarea></label><label for="ugc-genero">Habla como<select id="ugc-genero" name="genero"><option value="f"' +
           (o.genero === 'f' ? ' selected' : '') +
           '>Mujer</option><option value="m"' +
           (o.genero === 'm' ? ' selected' : '') +
           '>Hombre</option></select></label></div>'
-        : '<p class="muted small">' + e((S.PERSONAJES[o.personaje] || S.PERSONAJES.oficinista).es) + '</p>') +
-      '<label for="ugc-oferta">Oferta y cierre<input id="ugc-oferta" name="oferta" value="' +
-      e(o.oferta) +
-      '"></label><label for="ugc-extra">Pedido extra (opcional)<input id="ugc-extra" name="extra" placeholder="Ej.: que el gancho sea una pregunta, que aparezca la caja del producto…" value="' +
-      e(o.extra) +
-      '"></label>' +
-      '<p class="muted small">Producto: ' +
-      e(App.msgs.productoGuiones || S.PRODUCTO_DEFAULT) +
-      ' <button type="button" class="btn link" data-goto="ajustes">Cambiar</button></p>' +
-      '<div class="row-actions">' +
-      (state.running
-        ? '<button type="button" class="btn ghost" data-act="detener">Detener</button><span class="muted">' + (state.streamChars ? 'Escribiendo… ' + U.int(state.streamChars) + ' caracteres' : 'Pensando los guiones… puede tardar hasta un minuto.') + '</span>'
-        : (AI.sample ? '<button type="submit" class="btn">Escribir guiones con Claude</button>' : '') + '<button type="button" class="btn ghost" data-act="plantillas">' + (AI.sample ? 'Usar plantillas (sin IA)' : 'Generar con plantillas') + '</button>') +
+        : '') +
+      more(
+        'Oferta y pedido extra',
+        '<div class="ugc-extra"><label for="ugc-oferta">Oferta y cierre<input id="ugc-oferta" name="oferta" value="' +
+          e(o.oferta) +
+          '"></label><label for="ugc-extra">Pedido extra<input id="ugc-extra" name="extra" placeholder="Ej.: que el gancho sea una pregunta" value="' +
+          e(o.extra) +
+          '"></label><p class="note">Producto: ' +
+          e(App.msgs.productoGuiones || S.PRODUCTO_DEFAULT) +
+          ' <button type="button" class="btn link" data-goto="ajustes">Cambiar</button></p></div>',
+        'ugc-form-more'
+      ) +
+      '<div class="row-actions ugc-actions">' +
+      acciones +
       '</div>' +
       (state.error ? '<p class="error-text">' + e(state.error) + '</p>' : '') +
-      (!AI.sample ? '<p class="muted small">Abrí el panel desde claude.ai para que Claude escriba guiones a medida. Mientras tanto, las plantillas arman guiones básicos.</p>' : '');
+      (!AI.sample ? '<p class="note">' + icon('info') + ' Sin Claude se arman con plantillas.</p>' : '');
+    for (const id of abiertos) {
+      const d = form.querySelector('#' + id);
+      if (d) d.open = true;
+    }
+  }
+
+  // Campo del formulario: etiqueta (con ayuda opcional) arriba del control
+  function field(id, label, control, ayuda) {
+    return '<div class="ugc-field"><span class="ugc-lbl"><label for="' + id + '">' + e(label) + '</label>' + (ayuda || '') + '</span>' + control + '</div>';
   }
 
   function readForm() {
@@ -450,20 +495,24 @@
 
   function renderOut() {
     const out = $('#ugc-out', el);
+    if (!out) return;
     if (!state.guiones.length) {
-      out.innerHTML =
-        '<section class="panel tips"><h3>Cómo usarlos en Flow</h3><ol class="steps"><li>Pegá el prompt del clip 1 y generá 2 o 3 tomas. Elegí la que tenga mejor cara y voz: esa define el personaje.</li><li>Para el clip 2 usá <strong>Extend</strong> sobre esa toma, o tomá su último cuadro como imagen inicial (<strong>Frames to Video</strong>), y pegá el prompt del clip 2.</li><li>Repetí clip por clip. La ficha de continuidad va completa en cada prompt para que no cambie la ropa ni el lugar.</li><li>Al subir a TikTok, activá la etiqueta de contenido generado con IA.</li></ol></section>';
+      out.innerHTML = '';
       return;
     }
     const head =
       '<div class="out-head"><h3>' +
       state.guiones.length +
       (state.guiones.length === 1 ? ' guion' : ' guiones') +
-      '</h3><span class="muted small">' +
-      (state.origen === 'claude' ? 'Escritos por Claude' : 'Armados con plantillas') +
-      (state.fecha ? ' · ' + e(U.timeAgo(state.fecha)) : '') +
-      '</span></div>';
+      '</h3>' +
+      chip(state.origen === 'claude' ? 'Claude' : 'Plantillas', state.origen === 'claude' ? 'source' : 'neutral') +
+      (state.fecha ? '<span class="muted small">' + e(U.timeAgo(state.fecha)) + '</span>' : '') +
+      '</div>';
     out.innerHTML = head + scriptCards(state.guiones, '');
+  }
+
+  function copyBtn(act, label, attrs, cls) {
+    return '<button type="button" class="btn ' + (cls || 'ghost sm') + '" data-act="' + act + '"' + attrs + '>' + icon('copy') + '<span class="lbl">' + e(label) + '</span></button>';
   }
 
   /*
@@ -472,68 +521,73 @@
    */
   function scriptCards(list, pre) {
     return list
-      .map(
-        (g, gi) =>
+      .map((g, gi) => {
+        const ga = ' data-g="' + gi + '"';
+        return (
           '<article class="script"><header class="script-head"><div><h4>' +
           e(g.titulo) +
           '</h4><div class="chips">' +
           (g.gancho ? chip(g.gancho, 'source') : '') +
-          chip(g.clips.length * S.CLIP_SECONDS + ' s', 'neutral') +
+          chip(g.clips.length * S.CLIP_SECONDS + ' s · ' + g.clips.length + ' clips', 'neutral') +
           '</div>' +
           (g.nota ? '<p class="muted small">' + e(g.nota) + '</p>' : '') +
-          '</div><button class="btn ghost" data-act="' +
-          pre +
-          'copiar-guion" data-g="' +
-          gi +
-          '">Copiar guion completo</button></header>' +
-          '<div class="ficha"><div class="panel-head"><span class="eyebrow">Ficha de continuidad</span><button class="btn link" data-act="' +
-          pre +
-          'copiar-ficha" data-g="' +
-          gi +
-          '">Copiar</button></div><p class="selectable">' +
+          '</div>' +
+          copyBtn(pre + 'copiar-guion', 'Copiar todo', ga) +
+          '</header>' +
+          '<div class="ficha"><div class="sc-row"><span class="eyebrow">Ficha de continuidad</span>' +
+          copyBtn(pre + 'copiar-ficha', 'Copiar', ga, 'link') +
+          '</div><p class="selectable">' +
           e(g.ficha) +
           '</p></div><ol class="clips">' +
           g.clips
             .map(
               (c, ci) =>
-                '<li class="clip"><div class="clip-time mono">' +
+                '<li class="clip"><div class="clip-rail"><span class="clip-n">' +
+                c.n +
+                '</span><span class="clip-time mono">' +
                 c.desde +
                 '–' +
                 c.hasta +
-                ' s</div><div class="clip-body"><div class="clip-meta"><strong>Clip ' +
-                c.n +
-                '</strong> · ' +
+                ' s</span></div><div class="clip-body"><div class="clip-meta">' +
                 e(c.plano) +
-                '</div><p class="clip-action">' +
-                e(c.accion) +
-                '</p><p class="clip-dialog">“' +
+                (c.largo ? ' ' + chip('Largo para 8 s · ' + c.palabras + ' palabras', 'warn') : '') +
+                '</div><p class="clip-dialog">“' +
                 e(c.dialogo) +
-                '” <span class="' +
-                (c.largo ? 'warn-text' : 'muted') +
-                ' small">' +
-                c.palabras +
-                ' palabras' +
-                (c.largo ? ' · puede no entrar en 8 s' : '') +
-                '</span></p>' +
-                (c.texto_pantalla ? '<p class="small"><span class="eyebrow">Texto en pantalla</span> ' + e(c.texto_pantalla) + '</p>' : '') +
-                '<div class="prompt-box"><div class="panel-head"><span class="eyebrow">Prompt para Flow</span><button class="btn link" data-act="' +
-                pre +
-                'copiar-prompt" data-g="' +
-                gi +
-                '" data-c="' +
-                ci +
-                '">Copiar prompt</button></div><pre class="selectable">' +
+                '”</p><p class="clip-action">' +
+                e(c.accion) +
+                '</p>' +
+                (c.texto_pantalla ? '<p class="clip-extra"><span class="eyebrow">En pantalla</span>' + e(c.texto_pantalla) + '</p>' : '') +
+                '<div class="prompt-box"><div class="sc-row"><span class="eyebrow">Prompt para Flow</span>' +
+                copyBtn(pre + 'copiar-prompt', 'Copiar', ga + ' data-c="' + ci + '"', 'soft sm') +
+                '</div><pre class="selectable">' +
                 e(c.prompt) +
                 '</pre></div>' +
-                (c.continuidad ? '<p class="small continuity"><span class="eyebrow">Empalme</span> ' + e(c.continuidad) + '</p>' : '') +
+                (c.continuidad ? '<p class="clip-extra continuity"><span class="eyebrow">Empalme</span>' + e(c.continuidad) + '</p>' : '') +
                 '</div></li>'
             )
             .join('') +
           '</ol>' +
-          (g.caption ? '<p class="small"><span class="eyebrow">Caption</span> <span class="selectable">' + e(g.caption) + '</span></p>' : '') +
+          (g.caption ? '<p class="clip-extra script-caption"><span class="eyebrow">Caption</span><span class="selectable">' + e(g.caption) + '</span></p>' : '') +
           '</article>'
-      )
+        );
+      })
       .join('');
+  }
+
+  // Copia y muestra "Copiado" sin perder el ícono del botón
+  function copiar(text, btn) {
+    copyText(text).then((ok) => {
+      const lbl = btn && btn.querySelector('.lbl');
+      if (!ok || !lbl) return;
+      if (!lbl.dataset.prev) lbl.dataset.prev = lbl.textContent;
+      lbl.textContent = 'Copiado';
+      btn.classList.add('is-done');
+      clearTimeout(btn._t);
+      btn._t = setTimeout(() => {
+        lbl.textContent = lbl.dataset.prev;
+        btn.classList.remove('is-done');
+      }, 1600);
+    });
   }
 
   function onClick(ev) {
@@ -563,14 +617,14 @@
         renderForm();
         break;
       case 'copiar-guion':
-        if (g) copyText(S.scriptAsText(g), t);
+        if (g) copiar(S.scriptAsText(g), t);
         break;
       case 'copiar-ficha':
-        if (g) copyText(g.ficha, t);
+        if (g) copiar(g.ficha, t);
         break;
       case 'copiar-prompt': {
         const c = g && g.clips[Number(t.dataset.c)];
-        if (c) copyText(c.prompt, t);
+        if (c) copiar(c.prompt, t);
         break;
       }
       case 'tanda-generar':

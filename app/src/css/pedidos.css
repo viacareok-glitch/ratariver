@@ -1,1 +1,160 @@
-/* pedidos */
+/* pedidos: Ganancia, Reseñas y Clientes */
+
+/* Las ayudas "?" se abren pegadas al borde izquierdo de su tarjeta, para no salirse de la pantalla */
+:is(#panel-ganancia, #panel-resenas, #panel-clientes) :is(.panel, .order-card) { position: relative; }
+:is(#panel-ganancia, #panel-resenas, #panel-clientes) .info { position: static; }
+:is(#panel-ganancia, #panel-resenas, #panel-clientes) .info-pop { top: auto; left: 12px; margin-top: 8px; width: min(340px, calc(100vw - 64px)); }
+
+/* ---------- Ganancia ---------- */
+.gan-dates { padding: 2px 0; }
+
+.gan-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.gan-kpis .kpi-sk { height: 128px; }
+.gk {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'ico label' 'value value' 'sub sub';
+  position: relative; align-items: center; align-content: start; gap: 2px 10px; min-width: 0; padding: 16px 18px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-sm);
+}
+.gk .ico-bubble { grid-area: ico; width: 34px; height: 34px; border-radius: 11px; margin-bottom: 10px; }
+.gk .ico-bubble .ico { width: 18px; height: 18px; }
+.gk-label { grid-area: label; display: flex; align-items: center; gap: 2px; min-width: 0; margin-bottom: 10px; color: var(--muted); font-size: var(--step--1); font-weight: 600; }
+.gk-label .info > summary { width: 20px; height: 20px; }
+.gk-value { grid-area: value; font-family: var(--font-display); font-size: 1.625rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.gk-sub { grid-area: sub; color: var(--muted); font-size: var(--step--1); }
+.gk.is-good .gk-value { color: var(--good); }
+.gk.is-bad .gk-value { color: var(--bad); }
+
+/* Cuánto podés pagar por pedido */
+.gan-be { position: relative; display: grid; justify-items: start; gap: 2px; padding: 16px 18px; border-radius: var(--r); background: var(--accent-soft); }
+.gb-label { color: var(--accent); font-size: var(--step--1); font-weight: 700; }
+.gb-num { font-family: var(--font-display); font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--ink); }
+.gb-sub { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: 0.875rem; }
+.gb-now { margin-top: 8px; }
+.gb-now .chip { font-size: 0.8125rem; padding: 4px 12px; }
+
+/* Gasto por día */
+.sp-list { display: grid; }
+.sp-row { display: grid; grid-template-columns: minmax(80px, 1fr) minmax(0, 3fr) minmax(56px, auto); align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+.sp-headrow { border-top: 0; padding: 0 0 6px; color: var(--faint); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+.sp-ins { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; min-width: 0; }
+.sp-headrow .sp-ins span { text-align: right; padding-right: 12px; }
+.sp-ins .num-input { min-width: 0; }
+.sp-ins .num-input::placeholder { font-family: var(--font-body); }
+.sp-day { font-size: 0.875rem; font-weight: 600; white-space: nowrap; }
+.sp-gan { text-align: right; font-size: 0.8125rem; white-space: nowrap; }
+.sp-headrow .sp-day, .sp-headrow .sp-gan { font-size: inherit; font-weight: inherit; }
+#gan-be:empty { display: none; }
+
+.gan-src th, .gan-src td { white-space: nowrap; }
+
+/* ---------- Reseñas ---------- */
+.res-card .oc-top { align-items: center; }
+.res-card .oc-top .chips { justify-content: flex-end; }
+.res-quote { display: grid; gap: 6px; margin: 2px 0 0; padding: 12px 14px; border-radius: var(--r); background: var(--surface-2); }
+.res-quote blockquote { margin: 0; font-size: 0.9375rem; line-height: 1.5; overflow-wrap: anywhere; }
+.res-quote figcaption { color: var(--muted); font-size: var(--step--1); font-weight: 600; }
+.res-quote figcaption:empty { display: none; }
+.res-stars { display: inline-flex; gap: 2px; }
+.res-stars .ico { width: 16px; height: 16px; fill: currentColor; stroke-width: 1.5; color: var(--line-strong); }
+.res-stars .ico.is-on { color: var(--warn); }
+
+.res-form { display: grid; gap: 12px; padding: 16px; border-radius: var(--r); background: var(--surface-2); }
+.rf-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
+.rf-title { font-family: var(--font-display); font-weight: 700; }
+.rf-field { display: grid; gap: 5px; min-width: 0; color: var(--muted); font-size: var(--step--1); font-weight: 600; }
+.rf-field input, .rf-field textarea { width: 100%; color: var(--ink); font-size: 0.9375rem; font-weight: 400; }
+.rf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 10px; }
+.rf-checks { display: flex; flex-wrap: wrap; gap: 10px 24px; }
+
+/* Estrellas para elegir: van de 5 a 1 en el código y se dan vuelta con row-reverse */
+.rv-stars { display: inline-flex; flex-direction: row-reverse; gap: 2px; }
+.rv-stars input { position: absolute; opacity: 0; width: 1px; height: 1px; min-height: 0; margin: 0; padding: 0; border: 0; }
+.rv-stars label { display: inline-grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; cursor: pointer; color: var(--line-strong); transition: color 0.1s, transform 0.1s; }
+.rv-stars label .ico { width: 26px; height: 26px; fill: currentColor; stroke-width: 1.5; }
+.rv-stars input:checked ~ label { color: var(--warn); }
+.rv-stars:hover input ~ label { color: var(--line-strong); }
+.rv-stars:hover label:hover, .rv-stars:hover label:hover ~ label { color: var(--warn); }
+.rv-stars label:hover { transform: scale(1.08); }
+.rv-stars input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+#res-export > .more { min-width: 0; }
+#res-csv { max-width: 100%; }
+.res-foot .more { border-top: 0; padding-top: 0; }
+.res-opts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
+
+/* Tarjeta en una sola fila cuando hay lugar: datos a la izquierda, botones a la derecha */
+@media (min-width: 1100px) {
+  .res-card { grid-template-columns: minmax(0, 1fr) auto; column-gap: 20px; }
+  .res-card > .oc-top, .res-card > .oc-meta { grid-column: 1; }
+  .res-card > .oc-top { justify-content: flex-start; }
+  .res-card > .oc-actions { grid-column: 2; grid-row: 1 / span 2; align-self: center; margin: 0; padding: 0; border: 0; }
+  .res-card > .res-quote, .res-card > .res-form { grid-column: 1 / -1; }
+}
+
+@media (min-width: 1100px) {
+  .cli-card:not(.has-decide) { grid-template-columns: minmax(0, 1fr) auto; column-gap: 20px; }
+  .cli-card:not(.has-decide) > .oc-top, .cli-card:not(.has-decide) > .oc-meta, .cli-card:not(.has-decide) > .cli-msg { grid-column: 1 / -1; }
+  .cli-card:not(.has-decide) > .cli-offer { grid-column: 1; grid-row: 3; }
+  .cli-card:not(.has-decide) > .oc-actions { grid-column: 2; grid-row: 3; align-self: center; margin: 0; padding: 0; border: 0; }
+}
+
+/* Solo el botón de actualizar: queda al lado del título también en el celular */
+:is(#panel-resenas, #panel-clientes) .tool-head { flex-wrap: nowrap; align-items: flex-start; }
+:is(#panel-resenas, #panel-clientes) .tool-head > div:first-child { flex: 1 1 0; }
+:is(#panel-resenas, #panel-clientes) .tool-actions { width: auto; flex: none; }
+
+/* ---------- Clientes ---------- */
+.cli-ofertas-panel { padding: 14px 20px; }
+.cli-ofertas-panel > .more { min-width: 0; border-top: 0; padding-top: 0; }
+.cli-ofertas-panel > .more > summary { color: var(--ink); font-size: 0.9375rem; }
+.cli-ofertas-panel > .more[open] > summary { margin-bottom: 16px; }
+.cli-of-body { display: grid; gap: 16px; min-width: 0; }
+.cli-of-body > .form-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+.cli-code { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.cli-code .num-input.short { width: 56px; min-height: 34px; padding: 4px 8px; border: 0; background: transparent; }
+.cli-tpl-head { display: flex; align-items: center; gap: 4px; padding-top: 14px; border-top: 1px solid var(--line); }
+
+.cli-card .oc-who { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-width: 0; }
+.cli-card .oc-top { align-items: flex-start; flex-wrap: nowrap; }
+.cli-card .oc-total { white-space: nowrap; }
+.cli-offer { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; min-width: 0; }
+.cli-offer-label { color: var(--muted); font-size: var(--step--1); font-weight: 600; }
+.cli-of .seg-btn .ico { width: 14px; height: 14px; color: var(--peach); }
+.cli-msg > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: var(--accent); font-size: var(--step--1); font-weight: 600; }
+.cli-msg > summary::-webkit-details-marker { display: none; }
+.cli-msg > summary .ico { width: 15px; height: 15px; transition: transform 0.15s; }
+.cli-msg[open] > summary .ico { transform: rotate(90deg); }
+.cli-msg .preview { margin-top: 8px; max-width: 64ch; }
+
+@media (max-width: 1180px) {
+  .gan-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
+  #panel-ganancia .tool-actions { flex-wrap: nowrap; }
+  #gan-range { flex: 1 1 auto; min-width: 0; }
+  #gan-range .seg { display: flex; }
+  #gan-range .seg-btn { padding-inline: 10px; }
+}
+
+@media (max-width: 560px) {
+  /* Los números pasan a ser una lista dentro de una sola tarjeta */
+  .gan-kpis { grid-template-columns: 1fr; gap: 0; padding: 2px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); }
+  .gan-kpis .kpi-sk { height: 56px; margin: 6px 0; }
+  .gk { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: 'ico label value' 'ico sub value'; gap: 0 12px; padding: 12px 0; background: none; border: 0; border-radius: 0; box-shadow: none; }
+  .gk + .gk { border-top: 1px solid var(--line); }
+  .gk .ico-bubble { margin: 0; }
+  .gk-label { margin: 0; color: var(--ink); font-size: 0.875rem; }
+  .gk-value { font-size: 1.25rem; text-align: right; }
+  .gb-num { font-size: 1.75rem; }
+
+  .sp-row { grid-template-columns: 1fr auto; grid-template-areas: 'day gan' 'ins ins'; gap: 6px 10px; padding: 10px 0; }
+  .sp-day { grid-area: day; }
+  .sp-gan { grid-area: gan; }
+  .sp-ins { grid-area: ins; }
+  .sp-headrow { padding-bottom: 0; }
+  .sp-headrow .sp-day, .sp-headrow .sp-gan { display: none; }
+
+  .gan-src .hide-sm { display: none; }
+  .gan-src th, .gan-src td { padding-inline: 6px; }
+}

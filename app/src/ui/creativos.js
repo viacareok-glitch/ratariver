@@ -7,7 +7,7 @@
   const P = VC.profit;
   const O = VC.orders;
   const { Store, Shop, AI } = VC.runtime;
-  const { e, $, App, chip, banner, emptyState, toast, copyText, storeFail } = VC.ui;
+  const { e, $, $$, App, chip, banner, toast, copyText, storeFail, icon, bubble, pageHead, info, more } = VC.ui;
 
   const XLSX_URL = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
 
@@ -32,6 +32,7 @@
     overrides: {},
     cpaMax: null,
     ejemplo: false,
+    filtro: null,
     ia: { running: false, text: '', error: '' },
   };
   let el;
@@ -40,7 +41,7 @@
   function mount(section) {
     el = section;
     el.innerHTML =
-      '<header class="tool-head"><div><h2>Analizador de creativos</h2><p class="lede">Subí el reporte de anuncios de TikTok o Meta. Te dice qué apagar, qué mantener, qué escalar y qué ángulo vende mejor, usando tu CPA máximo real.</p></div></header>' +
+      pageHead('Creativos', 'Subí el reporte y te digo qué apagar y qué escalar.') +
       '<div id="cr-drop"></div><div id="cr-body"></div>';
     el.addEventListener('click', onClick);
     el.addEventListener('change', onChange);
@@ -124,9 +125,10 @@
     state.map = A.detectMapping(headers);
     state.plataforma = A.detectPlatform(headers);
     state.ejemplo = ejemplo;
+    state.filtro = null;
     state.ia = { running: false, text: '', error: '' };
     recompute();
-    if (!state.map.nombre || !state.map.gasto) toast('No reconocimos todas las columnas. Revisalas en “Columnas detectadas”.', 'warn');
+    if (!state.map.nombre || !state.map.gasto) toast('Faltan columnas: revisalas en “Columnas detectadas”.', 'warn');
     else saveSummary();
   }
 
@@ -151,143 +153,275 @@
     return (A.ANGLES[k] && A.ANGLES[k].label) || 'Sin ángulo';
   }
 
+  const ACC_ICON = { escalar: 'trending', mantener: 'check', revisar: 'refresh', esperar: 'clock', apagar: 'stop', sin_cpa: 'info' };
+
+  function exportHelp() {
+    return (
+      '<div class="cr-howto"><div><h4>TikTok Ads</h4><ol class="steps"><li>Campañas → pestaña <strong>Anuncios</strong>.</li><li>Rango: últimos 3 a 7 días.</li><li>Columnas: costo, impresiones, clics, pagos completados y vistas de 2 s y al 100%.</li><li>Exportar → CSV o Excel.</li></ol></div>' +
+      '<div><h4>Meta Ads</h4><ol class="steps"><li>Administrador → pestaña <strong>Anuncios</strong>.</li><li>Elegí el rango de fechas.</li><li>Columnas: importe gastado, impresiones, clics en el enlace, compras, vistas de 3 s y ThruPlays.</li><li>Informes → Exportar → CSV.</li></ol></div></div>' +
+      '<p class="note">Poné el ángulo en el nombre del anuncio y lo detecto solo: <span class="mono">dolor</span>, <span class="mono">medico</span>, <span class="mono">estetica</span> o <span class="mono">gym</span>.</p>'
+    );
+  }
+
+  // Ids de los <details> abiertos, para no cerrarlos al redibujar
+  function openIds(box) {
+    return $$('details[id][open]', box).map((d) => d.id);
+  }
+
+  function reopen(box, ids) {
+    for (const id of ids) {
+      const d = box.querySelector('#' + id);
+      if (d) d.open = true;
+    }
+  }
+
+  // Si un "change" llega mientras se redibuja (al sacar un campo con foco), se redibuja después
+  let dibujando = false;
+  let otraVez = false;
+
   function render() {
     if (!el) return;
-    $('#cr-drop', el).innerHTML =
-      '<label class="dropzone' +
-      (state.file ? ' is-compact' : '') +
-      '" for="cr-file"><input type="file" id="cr-file" accept=".csv,.xlsx,.xls,text/csv"><span class="dz-title">' +
-      (state.file ? 'Cambiar reporte' : 'Arrastrá el reporte acá o tocá para elegirlo') +
-      '</span><span class="dz-sub">CSV o Excel exportado de TikTok Ads Manager o del Administrador de anuncios de Meta, a nivel anuncio.</span></label>';
-    const body = $('#cr-body', el);
-    if (!state.file) {
-      body.innerHTML =
-        '<div class="grid-2"><section class="panel"><h3>Cómo exportar de TikTok</h3><ol class="steps"><li>Ads Manager → Campañas → pestaña <strong>Anuncios</strong>.</li><li>Elegí el rango de fechas (los últimos 3 a 7 días).</li><li>Columnas: Costo, Impresiones, Clics (destino), Pago completado, Reproducciones de video de 2 segundos y al 100%.</li><li>Exportar → CSV o Excel.</li></ol></section>' +
-        '<section class="panel"><h3>Cómo exportar de Meta</h3><ol class="steps"><li>Administrador de anuncios → pestaña <strong>Anuncios</strong>.</li><li>Elegí el rango de fechas.</li><li>Columnas: Importe gastado, Impresiones, Clics en el enlace, Compras, Reproducciones de video de 3 segundos y ThruPlays.</li><li>Informes → Exportar datos de la tabla → CSV.</li></ol></section></div>' +
-        '<p class="note">Para que el ángulo se detecte solo, poné la palabra en el nombre del anuncio: <span class="mono">dolor</span>, <span class="mono">medico</span>, <span class="mono">estetica</span> o <span class="mono">gym</span> (por ejemplo <span class="mono">dolor_confesion_v2</span>). Si no, lo elegís a mano.</p>' +
-        '<div class="row-actions"><button class="btn ghost" data-act="ejemplo">Ver con un reporte de ejemplo</button></div>';
+    if (dibujando) {
+      otraVez = true;
       return;
     }
+    dibujando = true;
+    try {
+      dibujar();
+    } finally {
+      dibujando = false;
+    }
+    if (otraVez) {
+      otraVez = false;
+      setTimeout(render, 0);
+    }
+  }
+
+  function dibujar() {
+    const drop = $('#cr-drop', el);
+    const body = $('#cr-body', el);
+    if (!state.file) {
+      drop.innerHTML =
+        '<label class="dropzone cr-drop" for="cr-file"><input type="file" id="cr-file" accept=".csv,.xlsx,.xls,text/csv">' +
+        bubble('upload') +
+        '<span class="dz-title">Soltá el reporte acá</span><span class="dz-sub">o tocá para elegirlo · CSV o Excel de TikTok o Meta</span></label>';
+      body.innerHTML =
+        '<div class="row-actions cr-start"><button class="btn soft" data-act="ejemplo">' +
+        icon('play') +
+        'Ver un ejemplo</button></div>' +
+        more('Cómo exportar el reporte', exportHelp(), 'cr-howto');
+      return;
+    }
+    const keep = openIds(el);
     const sug = suggestedCpa();
     const an = analysis();
     const counts = {};
     for (const a of an.ads) counts[a.decision.accion] = (counts[a.decision.accion] || 0) + 1;
-    const plat = state.plataforma === 'tiktok' ? 'TikTok' : state.plataforma === 'meta' ? 'Meta' : 'Plataforma desconocida';
+    if (state.filtro && !counts[state.filtro]) state.filtro = null;
+    const plat = state.plataforma === 'tiktok' ? 'TikTok' : state.plataforma === 'meta' ? 'Meta' : 'Otra plataforma';
+    const faltaCol = !state.map.nombre || !state.map.gasto;
 
-    let html = '';
-    if (state.ejemplo) html += banner('info', '<strong>Datos de ejemplo.</strong> No son tus anuncios: subí tu reporte para ver tus números.');
-    html +=
-      '<div class="toolbar cr-meta"><div class="chips">' +
-      chip(plat, 'source') +
-      chip(state.file, 'neutral') +
-      chip(an.ads.length + ' anuncios', 'neutral') +
-      '</div><label class="field-inline" for="cr-cpa">CPA máximo por pedido <input type="text" inputmode="numeric" id="cr-cpa" class="num-input" value="' +
+    // Barra del reporte: archivo (se puede cambiar o soltar otro), CPA máximo y columnas
+    let cpaHint = '';
+    if (sug.value && state.cpaMax != null && state.cpaMax !== sug.value) cpaHint = '<button class="btn link" data-act="cpa-sugerido">Usar ' + e(U.money(sug.value)) + '</button>';
+    else if (sug.origen && state.cpaMax == null) cpaHint = '<span class="muted small">de ' + e(sug.origen) + '</span>';
+    drop.innerHTML =
+      '<section class="panel cr-bar"><div class="cr-bar-row"><label class="dropzone is-compact cr-file" for="cr-file"><input type="file" id="cr-file" accept=".csv,.xlsx,.xls,text/csv">' +
+      bubble('upload') +
+      '<span class="cr-file-txt"><span class="dz-title">' +
+      e(state.file) +
+      (state.ejemplo ? ' ' + chip('Ejemplo', 'peach') : '') +
+      '</span><span class="dz-sub">' +
+      e(plat + ' · ' + an.ads.length + (an.ads.length === 1 ? ' anuncio' : ' anuncios')) +
+      ' · <span class="cr-change">Cambiar</span></span></span></label><div class="cr-cpa"><span class="cr-cpa-label"><label for="cr-cpa">CPA máximo</label>' +
+      info('Lo máximo que podés pagar en anuncios por pedido sin perder plata. Ya descuenta los pedidos que se anulan y los que vuelven: la plataforma cuenta el pedido, no la entrega.') +
+      '</span><input type="text" inputmode="numeric" id="cr-cpa" class="num-input" value="' +
       (an.max ? e(U.int(an.max)) : '') +
-      '" placeholder="ej. 25.000"></label>' +
-      (sug.value && state.cpaMax != null && state.cpaMax !== sug.value ? '<button class="btn link" data-act="cpa-sugerido">Usar ' + e(U.money(sug.value)) + ' (' + e(sug.origen) + ')</button>' : sug.origen ? '<span class="muted small">Calculado en ' + e(sug.origen) + '</span>' : '') +
-      '</div>';
-    if (!an.max) html += banner('warn', 'Sin CPA máximo no se puede decidir. Cargá tus costos en Ajustes o escribí acá cuánto podés pagar como máximo por pedido.', '<button class="btn" data-goto="ajustes">Cargar costos</button>');
-    if (!state.map.nombre || !state.map.gasto) html += banner('bad', 'No encontramos la columna del nombre del anuncio o la del gasto. Elegilas en “Columnas detectadas”.');
-    else if (!state.map.compras) html += banner('warn', 'No encontramos una columna de compras o conversiones: solo se puede juzgar por CTR y retención.');
+      '" placeholder="25.000">' +
+      cpaHint +
+      '</div></div>' +
+      more('Columnas detectadas', colsHtml(), 'cr-cols') +
+      '</section>';
+    if (faltaCol) {
+      const d = $('#cr-cols', drop);
+      if (d) d.open = true;
+    }
 
-    html +=
-      '<div class="decision-strip">' +
-      ['escalar', 'mantener', 'revisar', 'esperar', 'apagar']
-        .map((k) => '<div class="dstat tone-' + A.ACCIONES[k].tone + '"><span class="stat-value">' + (counts[k] || 0) + '</span><span class="stat-label">' + e(A.ACCIONES[k].label) + '</span></div>')
-        .join('') +
-      '</div>';
+    if (faltaCol) {
+      body.innerHTML = banner('bad', 'No encontré la columna del <strong>nombre</strong> o del <strong>gasto</strong>. Elegila en “Columnas detectadas”.');
+      reopen(el, keep);
+      return;
+    }
+    let html = '';
+    if (!state.map.compras) html += banner('warn', 'No hay columna de compras: decido solo por CTR y retención.');
+    if (!an.max) html += banner('warn', 'Falta tu <strong>CPA máximo</strong> para decidir.', '<button class="btn" data-goto="ajustes">Cargar costos</button>');
+
+    // Cuántos anuncios van a cada acción (tocar una tarjeta filtra la lista)
+    if (an.max && an.ads.length) {
+      html +=
+        '<div class="cr-tiles" role="group" aria-label="Filtrar por acción">' +
+        ['escalar', 'mantener', 'revisar', 'esperar', 'apagar']
+          .map((k) => {
+            const acc = A.ACCIONES[k];
+            const on = state.filtro === k;
+            return (
+              '<button type="button" class="cr-tile tone-' +
+              acc.tone +
+              (on ? ' is-on' : '') +
+              (counts[k] ? '' : ' is-zero') +
+              '" data-act="filtro" data-v="' +
+              k +
+              '" aria-pressed="' +
+              on +
+              '"' +
+              (counts[k] ? '' : ' disabled') +
+              '><span class="cr-tile-n">' +
+              (counts[k] || 0) +
+              '</span><span class="cr-tile-l">' +
+              icon(ACC_ICON[k]) +
+              e(acc.label) +
+              '</span></button>'
+            );
+          })
+          .join('') +
+        '</div>';
+    }
 
     // Ángulos
     const g = an.ganador;
-    let winTxt = 'Todavía no hay datos suficientes para elegir un ángulo ganador.';
+    let winTxt = '<span class="muted">Todavía no hay datos para elegir un ganador.</span>';
     if (g && g.criterio === 'cpa')
-      winTxt = '<strong>Ángulo ganador: ' + e(angleLabel(g.angulo)) + '.</strong> Vende a ' + e(U.money(g.cpa)) + ' por pedido' + (g.vsPromedio != null && g.vsPromedio < 0 ? ', ' + e(U.pct(-g.vsPromedio)) + ' más barato que el promedio' : '') + '. Hacé más variantes de ese ángulo.';
-    else if (g) winTxt = '<strong>Señal temprana: ' + e(angleLabel(g.angulo)) + '.</strong> Todavía sin ventas suficientes, pero tiene el mejor CTR (' + e(U.pct(g.ctr, 2)) + ').';
-    html +=
-      '<section class="panel"><h3>Ángulos</h3><p>' +
-      winTxt +
-      '</p><div class="table-wrap"><table class="table"><thead><tr><th>Ángulo</th><th class="num">Anuncios</th><th class="num">Gasto</th><th class="num">Ventas</th><th class="num">CPA</th><th class="num">CTR</th><th class="num">Gancho 2-3 s</th></tr></thead><tbody>' +
-      an.angles
-        .map(
-          (x) =>
-            '<tr' +
-            (g && x.angulo === g.angulo ? ' class="is-winner"' : '') +
-            '><th scope="row">' +
-            e(angleLabel(x.angulo)) +
-            (g && x.angulo === g.angulo ? ' ' + chip('Ganador', 'good') : '') +
-            '</th><td class="num">' +
-            x.anuncios +
-            '</td><td class="num">' +
-            e(U.money(x.gasto)) +
-            '</td><td class="num">' +
-            e(U.int(x.compras)) +
-            '</td><td class="num">' +
-            e(x.cpa != null ? U.money(x.cpa) : '—') +
-            '</td><td class="num">' +
-            e(U.pct(x.ctr, 2)) +
-            '</td><td class="num">' +
-            e(U.pct(x.hookRate)) +
-            '</td></tr>'
-        )
-        .join('') +
-      '</tbody></table></div></section>';
+      winTxt =
+        'Gana <strong>' +
+        e(angleLabel(g.angulo)) +
+        '</strong>: ' +
+        e(U.money(g.cpa)) +
+        ' por venta' +
+        (g.vsPromedio != null && g.vsPromedio < 0 ? ', ' + e(U.pct(-g.vsPromedio)) + ' más barato' : '') +
+        '. Hacé más variantes.';
+    else if (g) winTxt = 'Señal temprana: <strong>' + e(angleLabel(g.angulo)) + '</strong> tiene el mejor CTR (' + e(U.pct(g.ctr, 2)) + '), todavía sin ventas.';
+    if (an.angles.length) {
+      html +=
+        '<section class="panel"><div class="panel-head"><div class="panel-title">' +
+        bubble('trending', 'good') +
+        '<div><h3>Ángulos</h3><p class="small cr-win">' +
+        winTxt +
+        '</p></div></div>' +
+        (g && A.ANGLES[g.angulo] ? '<button class="btn soft sm" data-goto="guiones">' + icon('video') + 'Hacer guiones</button>' : '') +
+        '</div><div class="cr-angles">' +
+        an.angles
+          .map((x) => {
+            const win = g && x.angulo === g.angulo;
+            return (
+              '<article class="cr-angle' +
+              (win ? ' is-winner' : '') +
+              '"><div class="cr-angle-top"><h4>' +
+              e(angleLabel(x.angulo)) +
+              '</h4>' +
+              (win ? chip('Ganador', 'good') : '<span class="muted small">' + x.anuncios + (x.anuncios === 1 ? ' anuncio' : ' anuncios') + '</span>') +
+              '</div><div class="cr-angle-cpa"><span class="cr-big">' +
+              e(x.cpa != null ? U.money(x.cpa) : '—') +
+              '</span><span class="muted small">por venta</span></div>' +
+              nums([
+                ['Gasto', U.money(x.gasto)],
+                ['Ventas', U.int(x.compras)],
+                ['CTR', U.pct(x.ctr, 2)],
+                ['Gancho', U.pct(x.hookRate)],
+              ]) +
+              '</article>'
+            );
+          })
+          .join('') +
+        '</div></section>';
+    }
 
     // Anuncios
+    const lista = state.filtro ? an.ads.filter((a) => a.decision.accion === state.filtro) : an.ads;
+    const angKeys = Object.keys(A.ANGLES).concat('otro');
     html +=
-      '<section class="panel"><h3>Qué hacer con cada anuncio</h3><div class="table-wrap"><table class="table ads"><thead><tr><th>Anuncio</th><th>Acción</th><th class="num">Gasto</th><th class="num">Ventas</th><th class="num">CPA</th><th class="num">CTR</th><th class="num">Gancho</th></tr></thead><tbody>' +
-      an.ads
-        .map((a, i) => {
-          const acc = A.ACCIONES[a.decision.accion];
-          return (
-            '<tr><td class="ad-cell"><div class="ad-name">' +
-            e(a.nombre) +
-            '</div><label class="sr-only" for="ang-' +
-            i +
-            '">Ángulo</label><select id="ang-' +
-            i +
-            '" class="mini-select" data-ad="' +
-            e(a.nombre) +
-            '">' +
-            Object.keys(A.ANGLES)
-              .concat('otro')
-              .map((k) => '<option value="' + k + '"' + (k === a.angulo ? ' selected' : '') + '>' + e(angleLabel(k)) + '</option>')
-              .join('') +
-            '</select><div class="ad-why">' +
-            e(a.decision.motivo) +
-            '</div></td><td>' +
-            chip(acc.label, acc.tone) +
-            '</td><td class="num">' +
-            e(U.money(a.gasto)) +
-            '</td><td class="num">' +
-            e(U.int(a.compras)) +
-            '</td><td class="num">' +
-            e(a.cpa != null ? U.money(a.cpa) : '—') +
-            '</td><td class="num">' +
-            e(U.pct(a.ctr, 2)) +
-            '</td><td class="num">' +
-            e(U.pct(a.hookRate)) +
-            '</td></tr>'
-          );
-        })
-        .join('') +
-      '</tbody></table></div><p class="muted small">Contra entrega: la plataforma cuenta el pedido, no la entrega. El CPA máximo ya descuenta los pedidos que se anulan y los que vuelven.</p></section>';
-
-    // Claude
-    html +=
-      '<section class="panel" id="cr-ia"><div class="panel-head"><h3>Lectura de Claude</h3>' +
-      (AI.sample
-        ? '<div class="row-actions">' + (state.ia.running ? '<button class="btn ghost" data-act="ia-stop">Detener</button>' : '<button class="btn" data-act="ia">' + (state.ia.text ? 'Volver a analizar' : 'Pedir lectura y nuevos ganchos') + '</button>') + (state.ia.text && !state.ia.running ? '<button class="btn ghost" data-act="ia-copiar">Copiar</button>' : '') + '</div>'
-        : '') +
+      '<section class="panel"><div class="panel-head"><div class="panel-title">' +
+      bubble('grid') +
+      '<h3>' +
+      (state.filtro ? e(A.ACCIONES[state.filtro].label) : 'Cada anuncio') +
+      '</h3>' +
+      chip(String(lista.length), 'neutral') +
       '</div>' +
-      (AI.sample
-        ? '<div class="ia-out' + (state.ia.running && !state.ia.text ? ' is-thinking' : '') + '">' + (state.ia.text ? e(state.ia.text) : state.ia.running ? 'Pensando…' : '<span class="muted">Claude lee la tabla, explica por qué gana el ángulo y te propone 5 ganchos nuevos para testear.</span>') + '</div>' + (state.ia.error ? '<p class="error-text">' + e(state.ia.error) + '</p>' : '')
-        : '<p class="muted">Abrí el panel desde claude.ai para pedirle a Claude una lectura del reporte.</p>') +
+      (state.filtro ? '<button class="btn link" data-act="filtro" data-v="">Ver todos</button>' : '') +
+      '</div>' +
+      (lista.length
+        ? '<ul class="cr-ads">' +
+          lista
+            .map((a) => {
+              const acc = A.ACCIONES[a.decision.accion];
+              const i = an.ads.indexOf(a);
+              return (
+                '<li class="cr-ad tone-' +
+                acc.tone +
+                '"><div class="cr-ad-main"><div class="cr-ad-head">' +
+                chip(acc.label, acc.tone) +
+                '<span class="ad-name">' +
+                e(a.nombre) +
+                '</span></div>' +
+                (a.decision.accion !== 'sin_cpa' ? '<p class="ad-why">' + e(a.decision.motivo) + '</p>' : '') +
+                '<label class="cr-ad-ang" for="ang-' +
+                i +
+                '">Ángulo<select id="ang-' +
+                i +
+                '" class="mini-select" data-ad="' +
+                e(a.nombre) +
+                '">' +
+                angKeys.map((k) => '<option value="' + k + '"' + (k === a.angulo ? ' selected' : '') + '>' + e(angleLabel(k)) + '</option>').join('') +
+                '</select></label></div>' +
+                nums([
+                  ['Gasto', U.money(a.gasto)],
+                  ['Ventas', U.int(a.compras)],
+                  ['CPA', a.cpa != null ? U.money(a.cpa) : '—'],
+                  ['CTR', U.pct(a.ctr, 2)],
+                  ['Gancho', U.pct(a.hookRate)],
+                ]) +
+                '</li>'
+              );
+            })
+            .join('') +
+          '</ul>'
+        : '<p class="muted">No hay anuncios para mostrar.</p>') +
       '</section>';
 
-    // Mapeo de columnas
-    const fields = { nombre: 'Nombre del anuncio', gasto: 'Gasto', impresiones: 'Impresiones', clics: 'Clics', compras: 'Compras / conversiones', valor: 'Valor de compras', hook: 'Vistas de 2-3 s', completas: 'Vistas completas' };
+    // Claude
+    let iaAct = '';
+    if (AI.sample) {
+      if (state.ia.running) iaAct = '<button class="btn ghost" data-act="ia-stop">' + icon('stop') + 'Detener</button>';
+      else if (state.ia.text) iaAct = '<button class="btn ghost sm" data-act="ia-copiar">' + icon('copy') + '<span class="lbl">Copiar</span></button><button class="btn ghost sm" data-act="ia">' + icon('refresh') + 'De nuevo</button>';
+      else iaAct = '<button class="btn" data-act="ia">' + icon('sparkles') + 'Pedir lectura</button>';
+    }
     html +=
-      '<details class="panel"><summary>Columnas detectadas</summary><div class="map-grid">' +
+      '<section class="panel" id="cr-ia"><div class="panel-head"><div class="panel-title">' +
+      bubble('sparkles', 'source') +
+      '<div><h3>Lectura de Claude</h3>' +
+      (state.ia.text || state.ia.running ? '' : '<p class="small muted">Qué está pasando y 5 ganchos nuevos para probar.</p>') +
+      '</div></div>' +
+      (iaAct ? '<div class="row-actions">' + iaAct + '</div>' : '') +
+      '</div>' +
+      (AI.sample
+        ? state.ia.text || state.ia.running
+          ? '<div class="ia-out' + (state.ia.running && !state.ia.text ? ' is-thinking' : '') + '">' + (state.ia.text ? e(state.ia.text) : 'Pensando…') + '</div>'
+          : ''
+        : '<div class="note">' + icon('sparkles') + ' Necesita Claude. ' + info('Abrí el panel desde claude.ai o la app de Claude para pedirle una lectura del reporte.') + '</div>') +
+      (state.ia.error ? '<p class="error-text">' + e(state.ia.error) + '</p>' : '') +
+      '</section>';
+
+    body.innerHTML = html;
+    reopen(el, keep);
+  }
+
+  function nums(list) {
+    return '<dl class="cr-nums">' + list.map(([k, v]) => '<div><dt>' + e(k) + '</dt><dd>' + e(v) + '</dd></div>').join('') + '</dl>';
+  }
+
+  function colsHtml() {
+    const fields = { nombre: 'Nombre del anuncio', gasto: 'Gasto', impresiones: 'Impresiones', clics: 'Clics', compras: 'Compras', valor: 'Valor de compras', hook: 'Vistas de 2-3 s', completas: 'Vistas completas' };
+    return (
+      '<div class="map-grid">' +
       Object.entries(fields)
         .map(
           ([k, label]) =>
@@ -304,8 +438,20 @@
             '</select></label>'
         )
         .join('') +
-      '</div></details>';
-    body.innerHTML = html;
+      '</div>'
+    );
+  }
+
+  // Copia y muestra "Copiado" sin perder el ícono del botón
+  function copiar(text, btn) {
+    copyText(text).then((ok) => {
+      const lbl = btn && btn.querySelector('.lbl');
+      if (!ok || !lbl) return;
+      if (!lbl.dataset.prev) lbl.dataset.prev = lbl.textContent;
+      lbl.textContent = 'Copiado';
+      clearTimeout(btn._t);
+      btn._t = setTimeout(() => (lbl.textContent = lbl.dataset.prev), 1600);
+    });
   }
 
   function summaryRows(an) {
@@ -388,7 +534,11 @@
       render();
     } else if (act === 'ia') askClaude();
     else if (act === 'ia-stop') ctl && ctl.abort();
-    else if (act === 'ia-copiar') copyText(state.ia.text, t);
+    else if (act === 'ia-copiar') copiar(state.ia.text, t);
+    else if (act === 'filtro') {
+      state.filtro = t.dataset.v && t.dataset.v !== state.filtro ? t.dataset.v : null;
+      render();
+    }
   }
 
   function onChange(ev) {

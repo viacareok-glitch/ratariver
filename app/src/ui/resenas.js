@@ -5,12 +5,12 @@
   const U = VC.util;
   const O = VC.orders;
   const { Store, Shop } = VC.runtime;
-  const { e, $, App, chip, waButton, seg, emptyState, shopStatusBanner, toast, copyText, prefGet, prefSet, storeFail } = VC.ui;
+  const { e, $, App, chip, waButton, seg, emptyState, shopStatusBanner, toast, copyText, prefGet, prefSet, storeFail, icon, bubble, pageHead, info, more, toggle } = VC.ui;
 
   const R_ESTADOS = {
-    pedida: { label: 'Reseña pedida', tone: 'warn' },
+    pedida: { label: 'Pedida', tone: 'warn' },
     recordada: { label: 'Recordatorio enviado', tone: 'warn' },
-    recibida: { label: 'Reseña recibida', tone: 'good' },
+    recibida: { label: 'Recibida', tone: 'good' },
     no: { label: 'No quiere', tone: 'neutral' },
   };
   const HANDLE = 'corrector-postura-viacare';
@@ -21,9 +21,21 @@
   function mount(section) {
     el = section;
     el.innerHTML =
-      '<header class="tool-head"><div><h2>Reseñas reales</h2><p class="lede">Cuando un pedido se entrega, escribile al cliente para pedirle su opinión y una foto usando el corrector. Guardá lo que te manda y publicalo con su permiso.</p></div>' +
-      '<div class="tool-actions"><button class="btn ghost" data-act="refrescar">Actualizar</button></div></header>' +
-      '<div id="res-status"></div><div id="res-summary"></div><div id="res-filters"></div><div id="res-list" class="order-list"></div><section class="panel" id="res-export"></section>';
+      pageHead(
+        'Reseñas',
+        'Pedí su opinión a quien ya recibió su pedido.',
+        '<button class="btn ghost icon-only" data-act="refrescar" aria-label="Actualizar pedidos" title="Actualizar">' + icon('refresh') + '</button>'
+      ) +
+      '<div id="res-status"></div><div id="res-summary"></div><div id="res-filters"></div><div id="res-list" class="order-list"></div><section class="panel" id="res-export"></section>' +
+      '<div class="res-foot">' +
+      more(
+        'Opciones',
+        '<div class="res-opts"><label class="field-inline" for="res-dias">Pedirla a los <select id="res-dias">' +
+          [2, 3, 4, 5, 7, 10].map((d) => '<option value="' + d + '">' + d + ' días</option>').join('') +
+          '</select> de entregado</label><button class="btn link" data-goto="ajustes">Editar el mensaje</button></div>',
+        'res-opciones'
+      ) +
+      '</div>';
     el.addEventListener('click', onClick);
     el.addEventListener('change', onChange);
     el.addEventListener('submit', onSubmit);
@@ -69,8 +81,11 @@
   function render() {
     if (!el) return;
     const statusEl = $('#res-status', el);
-    if (Shop.mode === 'none') statusEl.innerHTML = shopStatusBanner({ message: 'Esta vista no puede conectarse a Shopify. Abrí el panel desde claude.ai o importá el CSV de pedidos.' });
+    if (Shop.mode === 'none') statusEl.innerHTML = shopStatusBanner({ message: 'Abrí el panel desde claude.ai para ver tus pedidos, o importá el CSV de Shopify.' });
     else statusEl.innerHTML = state.error ? shopStatusBanner(state.error) : '';
+
+    const dias = $('#res-dias', el);
+    if (dias && document.activeElement !== dias) dias.value = String(Number(App.msgs.diasResena) || 4);
 
     const L = lists();
     const loadingFirst = (state.loading || Shop.mode === 'pending') && !Shop.loadedAt;
@@ -78,46 +93,29 @@
     const conFoto = L.recibidas.filter((o) => (App.resenas.get(o.key) || {}).foto);
     const pedidasTot = [...App.resenas.values()].filter((r) => r.estado !== 'no').length;
     $('#res-summary', el).innerHTML = loadingFirst
-      ? '<div class="summary-strip is-loading">Cargando pedidos entregados…</div>'
+      ? '<div class="summary-strip is-loading">Cargando entregas…</div>'
       : '<div class="summary-strip">' +
-        stat(L.pedir.length, 'entregados sin pedir', L.pedir.length ? 'warn' : '') +
+        stat(L.pedir.length, 'para pedir', L.pedir.length ? 'warn' : '') +
         stat(L.pedidas.length, 'esperando respuesta') +
-        stat(L.recibidas.length, 'reseñas recibidas', L.recibidas.length ? 'good' : '') +
-        stat(conFoto.length, 'con foto') +
+        stat(L.recibidas.length, conFoto.length ? 'recibidas · ' + conFoto.length + ' con foto' : 'recibidas', L.recibidas.length ? 'good' : '') +
         stat(pedidasTot ? U.pct(L.recibidas.length / pedidasTot) : '—', 'responden') +
         '</div>';
 
-    $('#res-filters', el).innerHTML =
-      '<div class="toolbar">' +
-      seg(
-        'res-filtro',
-        [
-          { value: 'pedir', label: 'Para pedir', count: L.pedir.length },
-          { value: 'pedidas', label: 'Pedidas', count: L.pedidas.length },
-          { value: 'recibidas', label: 'Recibidas', count: L.recibidas.length },
-          { value: 'todas', label: 'Todos los entregados', count: L.todas.length },
-        ],
-        state.filtro
-      ) +
-      '<label class="field-inline" for="res-dias">Pedir a los <select id="res-dias">' +
-      [2, 3, 4, 5, 7, 10].map((d) => '<option value="' + d + '"' + (d === Number(App.msgs.diasResena) ? ' selected' : '') + '>' + d + ' días</option>').join('') +
-      '</select> de entregado</label></div>';
+    $('#res-filters', el).innerHTML = seg(
+      'res-filtro',
+      [
+        { value: 'pedir', label: 'Para pedir', count: L.pedir.length },
+        { value: 'pedidas', label: 'Pedidas', count: L.pedidas.length },
+        { value: 'recibidas', label: 'Recibidas', count: L.recibidas.length },
+        { value: 'todas', label: 'Todas', count: L.todas.length },
+      ],
+      state.filtro
+    );
 
     const list = L[state.filtro] || [];
     const listEl = $('#res-list', el);
     if (loadingFirst) listEl.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div>';
-    else if (!list.length)
-      listEl.innerHTML = emptyState(
-        'Nada por acá',
-        e(
-          {
-            pedir: 'No hay pedidos entregados sin pedirles reseña en los últimos 60 días.',
-            pedidas: 'No hay reseñas pedidas esperando respuesta.',
-            recibidas: 'Todavía no cargaste reseñas. Cuando un cliente te responda, tocá “Cargar reseña” en su pedido.',
-            todas: 'No hay pedidos entregados en los últimos 60 días.',
-          }[state.filtro]
-        )
-      );
+    else if (!list.length) listEl.innerHTML = emptyText(L);
     else listEl.innerHTML = list.map(card).join('');
 
     renderExport(conPermiso);
@@ -125,6 +123,23 @@
 
   function stat(value, label, tone) {
     return '<div class="stat' + (tone ? ' tone-' + tone : '') + '"><span class="stat-value">' + e(value) + '</span><span class="stat-label">' + e(label) + '</span></div>';
+  }
+
+  function emptyText(L) {
+    const sinEntregas = ['Sin entregas', 'No hubo entregas en los últimos 60 días.', 'box'];
+    const m = {
+      pedir: L.todas.length ? ['Todo al día', 'Ya les pediste reseña a todos.', 'check'] : sinEntregas,
+      pedidas: ['Nadie esperando', 'No hay reseñas pedidas sin respuesta.', 'clock'],
+      recibidas: ['Sin reseñas todavía', 'Cuando te respondan, tocá “Cargar reseña”.', 'star'],
+      todas: sinEntregas,
+    }[state.filtro] || sinEntregas;
+    return emptyState(m[0], e(m[1]), '', m[2]);
+  }
+
+  function stars(n) {
+    let html = '<span class="res-stars" role="img" aria-label="' + n + ' de 5 estrellas">';
+    for (let i = 1; i <= 5; i++) html += icon('star', i <= n ? 'is-on' : '');
+    return html + '</span>';
   }
 
   function card(o) {
@@ -135,47 +150,59 @@
     const ideal = Number(App.msgs.diasResena) || 4;
     const st = R_ESTADOS[r.estado];
     const chips = [
-      st ? chip(st.label, st.tone) : dias < ideal ? chip('Ideal en ' + (ideal - dias) + (ideal - dias === 1 ? ' día' : ' días'), 'neutral') : chip('Listo para pedir', 'info'),
+      st ? chip(st.label, st.tone) : dias < ideal ? chip('Ideal en ' + (ideal - dias) + (ideal - dias === 1 ? ' día' : ' días'), 'neutral') : '',
       r.foto ? chip('Con foto', 'good') : '',
-      r.estado === 'recibida' && !r.permiso ? chip('Sin permiso para publicar', 'warn') : '',
+      r.estado === 'recibida' && !r.permiso ? chip('Sin permiso', 'warn') : '',
     ].join('');
+    const meta = [
+      o.city ? e(o.city) : '',
+      o.name ? '<span class="mono">' + e(o.name) + '</span>' : '',
+      o.ghost ? '' : 'entregado ' + e(U.timeAgo(dAt)),
+      r.pedidaEn && r.estado !== 'recibida' ? 'pedida ' + e(U.timeAgo(r.pedidaEn)) : '',
+    ]
+      .filter(Boolean)
+      .join(' · ');
     const msg = U.fillTemplate(App.msgs.resena, vars);
     const rec = U.fillTemplate(App.msgs.resenaRecordatorio, vars);
     const editing = state.editing === o.key;
+    const k = e(o.key);
+    let wa = '';
+    if (r.estado !== 'recibida' && !o.ghost) {
+      if (!r.estado) wa = waButton(U.waLink(o.phone.wa, msg), 'Pedir reseña', 'wa-resena', o.key, 'wa');
+      else if (r.estado === 'pedida') wa = waButton(U.waLink(o.phone.wa, rec), 'Recordatorio', 'wa-recordatorio', o.key, 'wa') + waButton(U.waLink(o.phone.wa, msg), 'Volver a pedir', 'wa-resena', o.key, 'ghost');
+      else wa = waButton(U.waLink(o.phone.wa, msg), 'Volver a pedir', 'wa-resena', o.key, 'ghost');
+    }
     return (
-      '<article class="order-card' +
+      '<article class="order-card res-card' +
       (r.estado === 'recibida' ? ' is-good' : '') +
-      '"><div class="oc-top"><div class="oc-id"><span class="mono">' +
-      e(o.name) +
-      '</span><span class="muted">' +
-      (o.ghost ? '' : 'Entregado ' + e(U.timeAgo(dAt))) +
-      '</span></div>' +
-      (r.estrellas ? '<div class="stars" aria-label="' + r.estrellas + ' estrellas">' + '★'.repeat(r.estrellas) + '<span class="muted">' + '★'.repeat(5 - r.estrellas) + '</span></div>' : '') +
-      '</div><div class="oc-who"><strong>' +
+      '"><div class="oc-top"><div class="oc-who"><strong>' +
       e(o.fullName || 'Sin nombre') +
-      '</strong>' +
-      (o.city ? ' · ' + e(o.city) : '') +
-      (o.ghost ? '' : ' · ' + e(vars.cantidad)) +
-      '</div>' +
-      (o.phone.display ? '<div class="oc-phone"><span class="mono selectable">' + e(o.phone.display) + '</span>' + (r.pedidaEn ? '<span class="muted">Pedida ' + e(U.timeAgo(r.pedidaEn)) + '</span>' : '') + '</div>' : '') +
-      '<div class="chips">' +
+      '</strong></div><div class="chips">' +
       chips +
+      '</div></div><div class="oc-meta muted small">' +
+      meta +
       '</div>' +
-      (r.texto && !editing ? '<blockquote class="review">“' + e(r.texto) + '”<footer>— ' + e(r.nombre || '') + (r.ciudad ? ', ' + e(r.ciudad) : '') + '</footer></blockquote>' : '') +
+      (r.texto && !editing
+        ? '<figure class="res-quote">' +
+          stars(Number(r.estrellas) || 5) +
+          '<blockquote>“' +
+          e(r.texto) +
+          '”</blockquote><figcaption>' +
+          e([r.nombre, r.ciudad].filter(Boolean).join(', ')) +
+          '</figcaption></figure>'
+        : '') +
       (editing
         ? form(o, r)
         : '<div class="oc-actions"><div class="row-actions">' +
-          (r.estado !== 'recibida' && !o.ghost
-            ? waButton(U.waLink(o.phone.wa, msg), r.estado ? 'Volver a pedir' : 'Pedir reseña', 'wa-resena', o.key, r.estado ? 'ghost' : 'wa') +
-              (r.estado === 'pedida' ? waButton(U.waLink(o.phone.wa, rec), 'Recordatorio', 'wa-recordatorio', o.key, 'ghost') : '')
-            : '') +
-          '</div><div class="row-actions decide"><button class="btn ghost" data-act="cargar" data-key="' +
-          e(o.key) +
+          wa +
+          '</div><div class="row-actions decide"><button class="btn ghost sm" data-act="cargar" data-key="' +
+          k +
           '">' +
+          icon('star') +
           (r.estado === 'recibida' ? 'Editar reseña' : 'Cargar reseña') +
           '</button>' +
-          (r.estado !== 'recibida' && r.estado !== 'no' ? '<button class="btn link" data-act="no-quiere" data-key="' + e(o.key) + '">No quiere</button>' : '') +
-          (r.estado ? '<button class="btn link" data-act="deshacer" data-key="' + e(o.key) + '">Deshacer</button>' : '') +
+          (r.estado !== 'recibida' && r.estado !== 'no' ? '<button class="btn link" data-act="no-quiere" data-key="' + k + '">No quiere</button>' : '') +
+          (r.estado ? '<button class="btn link" data-act="deshacer" data-key="' + k + '">Deshacer</button>' : '') +
           '</div></div>') +
       '</article>'
     );
@@ -183,55 +210,78 @@
 
   function form(o, r) {
     const k = e(o.key);
-    const defName = r.nombre || (U.firstName(o.firstName) + (o.lastName ? ' ' + U.capitalizeName(o.lastName).charAt(0) + '.' : ''));
+    const defName = r.nombre || U.firstName(o.firstName) + (o.lastName ? ' ' + U.capitalizeName(o.lastName).charAt(0) + '.' : '');
+    const actual = Number(r.estrellas) || 5;
+    let picker = '<div class="rv-stars" role="radiogroup" aria-label="Estrellas">';
+    // De 5 a 1: con row-reverse se ven de 1 a 5 y el "~" pinta las anteriores
+    for (let n = 5; n >= 1; n--)
+      picker +=
+        '<input type="radio" id="rv-st-' +
+        k +
+        '-' +
+        n +
+        '" name="estrellas" value="' +
+        n +
+        '"' +
+        (n === actual ? ' checked' : '') +
+        '><label for="rv-st-' +
+        k +
+        '-' +
+        n +
+        '" title="' +
+        n +
+        (n === 1 ? ' estrella' : ' estrellas') +
+        '">' +
+        icon('star') +
+        '<span class="sr-only">' +
+        n +
+        (n === 1 ? ' estrella' : ' estrellas') +
+        '</span></label>';
+    picker += '</div>';
     return (
-      '<form class="review-form" data-key="' +
+      '<form class="res-form" data-key="' +
       k +
-      '"><div class="form-grid"><label for="rv-estrellas-' +
+      '"><div class="rf-row"><span class="rf-title">Cargar reseña</span>' +
+      picker +
+      '</div><label class="rf-field" for="rv-texto-' +
       k +
-      '">Estrellas<select id="rv-estrellas-' +
+      '">Lo que escribió<textarea id="rv-texto-' +
       k +
-      '" name="estrellas">' +
-      [5, 4, 3, 2, 1].map((n) => '<option value="' + n + '"' + (Number(r.estrellas || 5) === n ? ' selected' : '') + '>' + n + '</option>').join('') +
-      '</select></label><label for="rv-nombre-' +
+      '" name="texto" rows="3" required placeholder="Copialo tal cual">' +
+      e(r.texto || '') +
+      '</textarea></label><div class="rf-grid"><label class="rf-field" for="rv-nombre-' +
       k +
       '">Nombre a mostrar<input id="rv-nombre-' +
       k +
       '" name="nombre" value="' +
       e(defName) +
-      '"></label><label for="rv-ciudad-' +
+      '"></label><label class="rf-field" for="rv-ciudad-' +
       k +
       '">Ciudad<input id="rv-ciudad-' +
       k +
       '" name="ciudad" value="' +
       e(r.ciudad || o.city || '') +
-      '"></label></div><label for="rv-texto-' +
-      k +
-      '">Lo que escribió (copialo tal cual)<textarea id="rv-texto-' +
-      k +
-      '" name="texto" rows="3" required>' +
-      e(r.texto || '') +
-      '</textarea></label><div class="checks"><label for="rv-foto-' +
-      k +
-      '"><input type="checkbox" id="rv-foto-' +
-      k +
-      '" name="foto"' +
-      (r.foto ? ' checked' : '') +
-      '> Mandó foto</label><label for="rv-permiso-' +
-      k +
-      '"><input type="checkbox" id="rv-permiso-' +
-      k +
-      '" name="permiso"' +
-      (r.permiso ? ' checked' : '') +
-      '> Dio permiso para publicarla</label></div><div class="row-actions"><button class="btn" type="submit">Guardar reseña</button><button class="btn link" type="button" data-act="cancelar-form">Cancelar</button></div></form>'
+      '"></label></div><div class="rf-checks">' +
+      toggle('rv-foto-' + o.key, !!r.foto, 'Mandó foto', 'name="foto"') +
+      toggle('rv-permiso-' + o.key, !!r.permiso, 'Puedo publicarla', 'name="permiso"') +
+      '</div><div class="row-actions"><button class="btn" type="submit">Guardar</button><button class="btn link" type="button" data-act="cancelar-form">Cancelar</button></div></form>'
     );
   }
 
   function renderExport(list) {
     const box = $('#res-export', el);
+    const head = (extra) =>
+      '<div class="panel-head"><div class="panel-title">' +
+      bubble('upload', 'good') +
+      '<h3>Para publicar</h3>' +
+      (list.length ? chip(String(list.length), 'good') : '') +
+      info('Las reseñas con permiso, en CSV para importar en tu app de reseñas. Revisá que las columnas coincidan. Las fotos las bajás de WhatsApp y las subís a mano.') +
+      '</div>' +
+      (extra || '') +
+      '</div>';
     if (!list.length) {
-      box.innerHTML =
-        '<h3>Para publicar</h3><p class="muted">Las reseñas con permiso aparecen acá para copiarlas a tu app de reseñas. Las fotos las guardás desde WhatsApp y las subís a mano.</p>';
+      box.innerHTML = head() + '<p class="note">Las reseñas con permiso aparecen acá, listas para copiar.</p>';
+      delete box.dataset.csv;
       return;
     }
     const rows = list.map((o) => {
@@ -251,12 +301,12 @@
     });
     const headers = ['product_handle', 'rating', 'title', 'body', 'reviewer_name', 'reviewer_location', 'review_date', 'foto', 'pedido'];
     const csv = U.toCSV(headers, rows);
+    const prev = $('#res-csv-more', box);
+    const wasOpen = !!(prev && prev.open);
     box.innerHTML =
-      '<div class="panel-head"><h3>Para publicar (' +
-      list.length +
-      ')</h3><button class="btn" data-act="copiar-csv">Copiar CSV</button></div><p class="muted small">Reseñas con permiso. Revisá que las columnas coincidan con las que pide tu app de reseñas antes de importarlas.</p><pre class="code-block selectable" id="res-csv">' +
-      e(csv) +
-      '</pre>';
+      head('<button class="btn" data-act="copiar-csv">' + icon('copy') + '<span>Copiar CSV</span></button>') +
+      more('Ver el CSV', '<pre class="code-block selectable" id="res-csv">' + e(csv) + '</pre>', 'res-csv-more');
+    if (wasOpen) $('#res-csv-more', box).open = true;
     box.dataset.csv = csv;
   }
 
@@ -275,6 +325,14 @@
     } catch (err) {
       storeFail(err);
     }
+  }
+
+  async function copiarCSV(btn) {
+    const ok = await copyText($('#res-export', el).dataset.csv || '');
+    const label = btn.querySelector('span');
+    if (!ok || !label) return;
+    label.textContent = 'Copiado';
+    setTimeout(() => (label.textContent = 'Copiar CSV'), 1600);
   }
 
   function onClick(ev) {
@@ -306,6 +364,10 @@
       case 'cargar':
         state.editing = key;
         render();
+        {
+          const ta = el.querySelector('.res-form textarea');
+          if (ta) ta.focus();
+        }
         break;
       case 'cancelar-form':
         state.editing = null;
@@ -320,13 +382,13 @@
         Store.remove('resenas/' + key).catch(storeFail);
         break;
       case 'copiar-csv':
-        copyText($('#res-export', el).dataset.csv || '', t);
+        copiarCSV(t);
         break;
     }
   }
 
   function onSubmit(ev) {
-    const f = ev.target.closest('.review-form');
+    const f = ev.target.closest('.res-form');
     if (!f) return;
     ev.preventDefault();
     const fd = new FormData(f);

@@ -7,7 +7,7 @@
   const C = VC.customers;
   const OF = VC.offers;
   const { Store, Shop } = VC.runtime;
-  const { e, $, App, chip, waButton, seg, emptyState, shopStatusBanner, toast, prefGet, prefSet, storeFail } = VC.ui;
+  const { e, $, App, chip, waButton, emptyState, shopStatusBanner, toast, prefGet, prefSet, storeFail, icon, pageHead, info, more, seg } = VC.ui;
 
   const R_ESTADOS = {
     enviado: { label: 'Oferta enviada', tone: 'warn' },
@@ -21,6 +21,7 @@
     cfg: Object.assign({}, C.DEFAULT_CFG),
     contactos: new Map(),
     elegida: {}, // wa → oferta elegida a mano
+    verMsg: new Set(), // wa con el mensaje desplegado
     loading: false,
     error: null,
     codigo: { pct: 15, running: false, msg: '' },
@@ -30,14 +31,34 @@
   function mount(section) {
     el = section;
     el.innerHTML =
-      '<header class="tool-head"><div><h2>Clientes para reactivar</h2><p class="lede">Gente que ya te compró y pagó. Escribiles con una oferta: venderle de nuevo a alguien que confía en vos cuesta mucho menos que conseguir un cliente nuevo.</p></div>' +
-      '<div class="tool-actions"><button class="btn ghost" data-act="refrescar">Actualizar</button></div></header>' +
-      '<div id="cli-status"></div><div id="cli-summary"></div><details class="panel" id="cli-ofertas"></details><div id="cli-filters"></div><div id="cli-list" class="order-list"></div>';
+      pageHead(
+        'Clientes',
+        'Volvé a venderle a quien ya te compró.',
+        '<button class="btn ghost icon-only" data-act="refrescar" aria-label="Actualizar pedidos" title="Actualizar">' + icon('refresh') + '</button>'
+      ) +
+      '<div id="cli-status"></div><div id="cli-summary"></div>' +
+      '<section class="panel cli-ofertas-panel">' +
+      more('Ofertas y mensajes', '<div id="cli-ofertas"></div>', 'cli-ofertas-more') +
+      '</section><div id="cli-filters"></div><div id="cli-list" class="order-list"></div>';
     el.addEventListener('click', onClick);
     el.addEventListener('change', onChange);
     el.addEventListener('input', onInput);
+    // "toggle" no burbujea: se escucha en captura para recordar qué mensajes están abiertos
+    el.addEventListener(
+      'toggle',
+      (ev) => {
+        const d = ev.target;
+        if (!d.classList || !d.classList.contains('cli-msg')) return;
+        if (d.open) state.verMsg.add(d.dataset.wa);
+        else state.verMsg.delete(d.dataset.wa);
+      },
+      true
+    );
     Shop.onChange(render);
-    App.on((w) => (w === 'resenas' || w === 'cfg' || w === 'msgs' || w === 'tienda') && render());
+    App.on((w) => {
+      if (w === 'cfg' || w === 'tienda') renderOfertas();
+      if (w === 'resenas' || w === 'cfg' || w === 'msgs' || w === 'tienda') render();
+    });
     Store.get('config/reactivar').then((d) => {
       if (d) state.cfg = Object.assign({}, C.DEFAULT_CFG, d, { mensajes: Object.assign({}, d.mensajes || {}) });
       renderOfertas();
@@ -92,20 +113,19 @@
   function render() {
     if (!el) return;
     const st = $('#cli-status', el);
-    if (Shop.mode === 'none') st.innerHTML = shopStatusBanner({ message: 'Esta vista no puede conectarse a Shopify. Abrí el panel desde claude.ai o importá el CSV de pedidos.' });
+    if (Shop.mode === 'none') st.innerHTML = shopStatusBanner({ message: 'Abrí el panel desde claude.ai para ver tus pedidos, o importá el CSV de Shopify.' });
     else st.innerHTML = state.error ? shopStatusBanner(state.error) : '';
 
     const L = lists();
     const loadingFirst = (state.loading || Shop.mode === 'pending') && !Shop.loadedAt;
     const recuperado = U.sum(L.volvieron, (c) => (c.volvio ? c.volvio.total : 0));
     const respondieron = L.all.filter((c) => c.contacto && ['respondio', 'compro'].includes(c.contacto.estado)).length;
+    const escritos = L.escritos.length + L.volvieron.length;
     $('#cli-summary', el).innerHTML = loadingFirst
       ? '<div class="summary-strip is-loading">Cargando clientes…</div>'
       : '<div class="summary-strip">' +
-        stat(L.all.length, 'clientes que pagaron') +
-        stat(L.escribir.length, 'listos para escribir', L.escribir.length ? 'warn' : '') +
-        stat(L.escritos.length + L.volvieron.length, 'ya escritos') +
-        stat(respondieron, 'respondieron') +
+        stat(L.escribir.length, 'para escribir', L.escribir.length ? 'warn' : '') +
+        stat(escritos, respondieron ? 'escritos · ' + respondieron + (respondieron === 1 ? ' respondió' : ' respondieron') : 'escritos') +
         stat(L.volvieron.length, 'volvieron a comprar', L.volvieron.length ? 'good' : '') +
         stat(recuperado ? U.moneyShort(recuperado) : '—', 'vendido de nuevo') +
         '</div>';
@@ -124,18 +144,7 @@
     const list = L[state.filtro] || L.all;
     const box = $('#cli-list', el);
     if (loadingFirst) box.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div>';
-    else if (!list.length)
-      box.innerHTML = emptyState(
-        'Nada por acá',
-        e(
-          {
-            escribir: L.all.length ? 'Ya les escribiste a todos los clientes listos. Los que compraron hace menos de ' + state.cfg.minDias + ' días aparecen cuando pase ese tiempo.' : 'Todavía no hay clientes con pedidos entregados y cobrados.',
-            escritos: 'Todavía no le mandaste ninguna oferta a un cliente.',
-            volvieron: 'Cuando un cliente al que le escribiste haga un pedido nuevo, aparece acá solo.',
-            all: 'Todavía no hay clientes con pedidos entregados y cobrados.',
-          }[state.filtro]
-        )
-      );
+    else if (!list.length) box.innerHTML = emptyText(L);
     else box.innerHTML = list.map(card).join('');
   }
 
@@ -143,97 +152,147 @@
     return '<div class="stat' + (tone ? ' tone-' + tone : '') + '"><span class="stat-value">' + e(v) + '</span><span class="stat-label">' + e(label) + '</span></div>';
   }
 
+  function emptyText(L) {
+    const sinClientes = ['Sin clientes todavía', 'Aparecen cuando un pedido se entrega y se cobra.', 'users'];
+    const m = {
+      escribir: L.all.length ? ['Todo al día', 'Cada cliente aparece ' + (Number(state.cfg.minDias) || 20) + ' días después de su compra.', 'check'] : sinClientes,
+      escritos: ['Sin ofertas enviadas', 'Todavía no le escribiste a ningún cliente.', 'send'],
+      volvieron: ['Nadie volvió todavía', 'Cuando alguien vuelva a comprar, aparece acá solo.', 'gift'],
+      all: sinClientes,
+    }[state.filtro] || sinClientes;
+    return emptyState(m[0], e(m[1]), '', m[2]);
+  }
+
+  function ofertaPills(c, actual) {
+    const sugerida = C.suggestOffer(c);
+    return (
+      '<div class="seg cli-of" role="group" aria-label="Oferta para ' +
+      e(c.nombre || 'el cliente') +
+      '">' +
+      Object.entries(C.OFERTAS)
+        .map(
+          ([k, o]) =>
+            '<button type="button" class="seg-btn' +
+            (k === actual ? ' is-on' : '') +
+            '" aria-pressed="' +
+            (k === actual) +
+            '" data-act="elegir-oferta" data-key="' +
+            e(c.wa) +
+            '" data-value="' +
+            k +
+            '" title="' +
+            e(o.label) +
+            (k === sugerida ? ' (sugerida)' : '') +
+            '">' +
+            (k === sugerida ? icon('sparkles') : '') +
+            e(o.corto || o.label) +
+            (k === sugerida ? '<span class="sr-only"> (sugerida)</span>' : '') +
+            '</button>'
+        )
+        .join('') +
+      '</div>'
+    );
+  }
+
+  function faltan(c) {
+    const n = Math.max(1, (Number(state.cfg.minDias) || 20) - c.dias);
+    return 'Escribile en ' + n + (n === 1 ? ' día' : ' días');
+  }
+
   function card(c) {
     const of = ofertaDe(c);
     const ct = c.contacto;
     const msg = C.message(c, of, state.cfg, App.datos());
     const chips = [
-      c.volvio ? chip('Volvió a comprar: ' + c.volvio.name, 'good') : ct && R_ESTADOS[ct.estado] ? chip(R_ESTADOS[ct.estado].label, R_ESTADOS[ct.estado].tone) : c.listo ? chip('Listo para escribir', 'info') : '',
-      c.abierto ? chip('Tiene un pedido abierto', 'neutral') : '',
-      !c.listo && !c.abierto && !ct ? chip('Compró hace ' + c.dias + ' días', 'neutral') : '',
-      c.resena ? chip('Reseña ' + '★'.repeat(Number(c.resena.estrellas) || 5), 'good') : '',
+      c.volvio ? chip('Volvió a comprar: ' + c.volvio.name, 'good') : ct && R_ESTADOS[ct.estado] ? chip(R_ESTADOS[ct.estado].label, R_ESTADOS[ct.estado].tone) : '',
+      c.abierto ? chip('Pedido abierto', 'neutral') : '',
+      !c.listo && !c.abierto && !ct ? chip(faltan(c), 'neutral') : '',
+      c.resena ? chip('Reseña ' + (Number(c.resena.estrellas) || 5) + '/5', 'good') : '',
       c.compras > 1 ? chip(c.compras + ' compras', 'source') : '',
     ].join('');
-    const ofSel =
-      '<label class="field-inline small" for="of-' +
-      e(c.wa) +
-      '">Oferta <select id="of-' +
-      e(c.wa) +
-      '" data-oferta="' +
-      e(c.wa) +
-      '">' +
-      Object.entries(C.OFERTAS)
-        .map(([k, o]) => '<option value="' + k + '"' + (k === of ? ' selected' : '') + '>' + e(o.label) + (k === C.suggestOffer(c) ? ' (sugerida)' : '') + '</option>')
-        .join('') +
-      '</select></label>';
+    const meta = [c.ciudad, c.unidades + (c.unidades === 1 ? ' unidad' : ' unidades'), 'compró ' + U.timeAgo(c.ultimaCompra), ct && ct.enviadoEn ? 'escrito ' + U.timeAgo(ct.enviadoEn) : '']
+      .filter(Boolean)
+      .map(e)
+      .join(' · ');
+    const w = e(c.wa);
     return (
-      '<article class="order-card' +
+      '<article class="order-card cli-card' +
       (c.volvio ? ' is-good' : '') +
-      '"><div class="oc-top"><div class="oc-id"><strong>' +
+      (ct && !c.volvio ? ' has-decide' : '') +
+      '"><div class="oc-top"><div class="oc-who"><strong>' +
       e(c.nombre || 'Sin nombre') +
-      '</strong><span class="muted">' +
-      e([c.ciudad, c.provincia].filter(Boolean).join(', ')) +
-      '</span></div><div class="oc-total mono">' +
+      '</strong>' +
+      (chips ? '<span class="chips">' + chips + '</span>' : '') +
+      '</div><div class="oc-total" title="Total que te compró">' +
       e(U.money(c.gastado)) +
-      '</div></div><div class="oc-addr">' +
-      e(c.unidades + (c.unidades === 1 ? ' unidad' : ' unidades') + ' · última compra ' + U.timeAgo(c.ultimaCompra) + ' · ' + c.ultimoPedido) +
-      (ct && ct.enviadoEn ? ' · oferta enviada ' + e(U.timeAgo(ct.enviadoEn)) : '') +
-      '</div><div class="oc-phone"><span class="mono selectable">' +
-      e(c.phone.display) +
-      '</span></div><div class="chips">' +
-      chips +
+      '</div></div><div class="oc-meta muted small">' +
+      meta +
       '</div>' +
-      (!c.volvio ? '<div class="msg-row">' + ofSel + '<details class="msg-preview"><summary>Ver mensaje</summary><p class="preview">' + e(msg) + '</p></details></div>' : '') +
       (!c.volvio
-        ? '<div class="oc-actions"><div class="row-actions">' +
+        ? '<div class="cli-offer"><span class="cli-offer-label">Oferta</span>' +
+          ofertaPills(c, of) +
+          '</div><details class="cli-msg" data-wa="' +
+          w +
+          '"' +
+          (state.verMsg.has(c.wa) ? ' open' : '') +
+          '><summary>' +
+          icon('chevronRight') +
+          'Ver mensaje</summary><p class="preview selectable">' +
+          e(msg) +
+          '</p></details>' +
+          '<div class="oc-actions"><div class="row-actions">' +
           waButton(U.waLink(c.phone.wa, msg), ct ? 'Volver a escribir' : 'Enviar oferta', 'wa-oferta', c.wa, ct ? 'ghost' : 'wa') +
-          '</div><div class="row-actions decide">' +
+          '</div>' +
           (ct
-            ? decide('respondio', 'Respondió', c, 'warn') + decide('compro', 'Compró', c, 'good') + decide('no', 'No le interesa', c, 'bad') + '<button class="btn link" data-act="deshacer" data-key="' + e(c.wa) + '">Deshacer</button>'
+            ? '<div class="row-actions decide" role="group" aria-label="¿Qué respondió?">' +
+              decide('respondio', 'Respondió', c, 'warn', 'message') +
+              decide('compro', 'Compró', c, 'good', 'check') +
+              decide('no', 'No le interesa', c, 'bad', 'x') +
+              '<button class="btn link" data-act="deshacer" data-key="' +
+              w +
+              '">Deshacer</button></div>'
             : '') +
-          '</div></div>'
+          '</div>'
         : '') +
       '</article>'
     );
   }
 
-  function decide(v, label, c, tone) {
+  function decide(v, label, c, tone, ic) {
     const on = c.contacto && c.contacto.estado === v;
-    return '<button class="btn decide-btn tone-' + tone + (on ? ' is-on' : '') + '" aria-pressed="' + !!on + '" data-act="marcar" data-estado="' + v + '" data-key="' + e(c.wa) + '">' + e(label) + '</button>';
+    return '<button class="btn sm decide-btn tone-' + tone + (on ? ' is-on' : '') + '" aria-pressed="' + !!on + '" data-act="marcar" data-estado="' + v + '" data-key="' + e(c.wa) + '">' + icon(ic) + e(label) + '</button>';
   }
 
   function renderOfertas() {
     const box = $('#cli-ofertas', el);
     if (!box) return;
-    const wasOpen = box.open;
     const f = state.cfg;
-    const rates = O.historicalRates(Shop.orders);
-    // Un cliente que responde la oferta ya confirmó: tasa de confirmación 100%
-    const ev = OF.evaluate({ unidades: 1, precio: Number(f.precioOferta) || 0 }, Object.assign({}, App.cfg, { tasaConfirmacion: 100 }), rates, 0, 0);
-    const deja = VC.profit.costsReady(App.cfg) ? 'Con tus costos, cada segunda unidad a ' + U.money(f.precioOferta) + ' te deja ' + U.money(ev.esperado) + ' en promedio (sin publicidad).' : 'Cargá tus costos en Ajustes para ver cuánto te deja cada oferta.';
     box.innerHTML =
-      '<summary>Ofertas y mensajes</summary><div class="form-grid">' +
-      field('precioOferta', 'Precio de la segunda unidad (familia)', U.int(f.precioOferta), 'numeric') +
+      '<div class="cli-of-body"><div class="form-grid">' +
+      field('precioOferta', 'Precio de la 2ª unidad', U.int(f.precioOferta), 'numeric') +
+      field('minDias', 'Escribir a los (días)', f.minDias, 'numeric') +
       field('beneficioAmigo', 'Beneficio para el amigo', f.beneficioAmigo) +
-      field('premio', 'Premio para el cliente que recomienda', f.premio) +
+      field('premio', 'Premio por recomendar', f.premio) +
       field('ofertaLibre', 'Oferta de recompra', f.ofertaLibre) +
-      field('codigo', 'Código de descuento (opcional)', f.codigo) +
-      field('minDias', 'Escribir a partir de (días de la compra)', f.minDias, 'numeric') +
-      '</div><p class="muted small">' +
-      e(deja) +
+      field('codigo', 'Código de descuento', f.codigo) +
+      '</div><p class="note" id="cli-deja">' +
+      dejaHtml() +
       '</p>' +
       (Shop.mode === 'live'
-        ? '<div class="row-actions code-row"><label class="field-inline" for="cli-pct">Crear el código en Shopify con <input id="cli-pct" class="num-input short" inputmode="numeric" value="' +
+        ? '<div class="cli-code"><label class="field-inline" for="cli-pct">Crear el código en Shopify con <span class="input-unit inline"><input id="cli-pct" class="num-input short" inputmode="numeric" value="' +
           e(state.codigo.pct) +
-          '"> % de descuento</label><button class="btn ghost" data-act="crear-codigo"' +
+          '"><span class="unit">%</span></span></label><button class="btn ghost sm" data-act="crear-codigo"' +
           (state.codigo.running ? ' disabled' : '') +
           '>' +
           (state.codigo.running ? 'Creando…' : 'Crear código') +
-          '</button></div><p class="muted small">Revisá que tu formulario de pago contra entrega acepte cupones. Si no, aplicá el precio a mano cuando el cliente confirme.' +
-          (state.codigo.msg ? ' <strong>' + e(state.codigo.msg) + '</strong>' : '') +
-          '</p>'
+          '</button>' +
+          info('Usa el código de arriba. Revisá que tu formulario de pago contra entrega acepte cupones; si no, aplicá el precio a mano cuando el cliente confirme.') +
+          '</div>' +
+          (state.codigo.msg ? '<p class="note"><strong>' + e(state.codigo.msg) + '</strong></p>' : '')
         : '') +
-      '<div class="templates">' +
+      '<div class="cli-tpl-head"><h4>Mensajes</h4>' +
+      info('Podés usar: <span class="mono">{nombre} {tienda} {precio} {precio_oferta} {beneficio_amigo} {premio} {oferta_libre} {codigo_txt}</span>') +
+      '</div><div class="templates">' +
       Object.entries(C.OFERTAS)
         .map(
           ([k, o]) =>
@@ -250,8 +309,17 @@
             '</textarea></label></div>'
         )
         .join('') +
-      '</div><p class="muted small">Variables: <span class="mono">{nombre} {tienda} {precio} {precio_oferta} {beneficio_amigo} {premio} {oferta_libre} {codigo_txt}</span></p>';
-    box.open = wasOpen;
+      '</div></div>';
+  }
+
+  // Lo que deja la segunda unidad al precio de oferta
+  function dejaHtml() {
+    const f = state.cfg;
+    if (!VC.profit.costsReady(App.cfg)) return icon('wallet') + ' Cargá tus costos en Ajustes para ver cuánto te deja cada oferta.';
+    const rates = O.historicalRates(Shop.orders);
+    // Un cliente que responde la oferta ya confirmó: tasa de confirmación 100%
+    const ev = OF.evaluate({ unidades: 1, precio: Number(f.precioOferta) || 0 }, Object.assign({}, App.cfg, { tasaConfirmacion: 100 }), rates, 0, 0);
+    return icon('wallet') + ' Cada 2ª unidad a <strong>' + e(U.money(f.precioOferta)) + '</strong> te deja <strong>' + e(U.money(ev.esperado)) + '</strong> en promedio, sin anuncios.';
   }
 
   function field(k, label, v, mode) {
@@ -287,6 +355,10 @@
         break;
       case 'permisos':
         VC.runtime.managePermissions();
+        break;
+      case 'elegir-oferta':
+        state.elegida[wa] = t.dataset.value;
+        render();
         break;
       case 'wa-oferta': {
         const c = lists().all.find((x) => x.wa === wa);
@@ -351,11 +423,9 @@
 
   function onChange(ev) {
     const t = ev.target;
-    if (t.dataset.oferta) {
-      state.elegida[t.dataset.oferta] = t.value;
-      render();
-    } else if (t.dataset.cfg === 'precioOferta') {
-      renderOfertas();
+    if (t.dataset.cfg === 'precioOferta') {
+      const d = $('#cli-deja', el);
+      if (d) d.innerHTML = dejaHtml();
     } else if (t.dataset.act === 'importar-csv' && t.files && t.files[0]) {
       VC.ui
         .readFileText(t.files[0])

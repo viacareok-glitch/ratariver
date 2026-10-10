@@ -4,7 +4,7 @@
   const VC = root.VC;
   const CM = VC.comments;
   const { Store, AI } = VC.runtime;
-  const { e, $, App, chip, banner, toast, copyText, storeFail } = VC.ui;
+  const { e, $, App, chip, toast, copyText, storeFail, icon, bubble, pageHead, info, more } = VC.ui;
 
   const state = {
     texto: '',
@@ -20,8 +20,8 @@
   function mount(section) {
     el = section;
     el.innerHTML =
-      '<header class="tool-head"><div><h2>Respuestas a comentarios</h2><p class="lede">Pegá los comentarios de tus anuncios de TikTok y te armo una respuesta corta para cada uno, con tu tono y tus datos reales. Responder rápido genera confianza y más alcance.</p></div></header>' +
-      '<div id="cm-warn"></div><section class="panel" id="cm-input"></section><div id="cm-summary"></div><div id="cm-list" class="order-list"></div><section class="panel" id="cm-lib"></section>';
+      pageHead('Comentarios', 'Pegá los comentarios y te armo una respuesta para cada uno.') +
+      '<div id="cm-warn"></div><section class="panel" id="cm-input"></section><div id="cm-summary"></div><div id="cm-list" class="cm-list"></div><section class="panel" id="cm-lib"></section>';
     el.addEventListener('click', onClick);
     el.addEventListener('input', onInput);
     App.on((w) => w === 'tienda' && renderWarn());
@@ -41,24 +41,37 @@
 
   function renderWarn() {
     const d = App.tienda;
-    const faltan = [!d.demora && 'cuánto tarda el envío', !d.talles && 'qué talles cubre'].filter(Boolean);
+    const faltan = [!d.demora && 'demora del envío', !d.talles && 'talles'].filter(Boolean);
     $('#cm-warn', el).innerHTML = faltan.length
-      ? banner('info', 'Para responder mejor, completá en Ajustes ' + e(faltan.join(' y ')) + '. Mientras tanto las respuestas no mencionan esos datos.', '<button class="btn ghost" data-goto="ajustes">Completar datos</button>')
+      ? '<p class="note cm-alert">' + icon('alert') + ' Faltan datos: ' + e(faltan.join(' y ')) + '. <button class="btn link" data-goto="ajustes">Completar</button></p>'
       : '';
   }
 
   function renderInput() {
-    $('#cm-input', el).innerHTML =
-      '<label for="cm-texto">Comentarios (uno por línea; podés pegar la lista tal como la copiás de TikTok)<textarea id="cm-texto" rows="6" placeholder="¿Es incómodo?&#10;¿Hacen envíos a Córdoba?&#10;¿Sirve de verdad?">' +
+    const box = $('#cm-input', el);
+    const abierto = !!$('#cm-tono-more[open]', box);
+    box.innerHTML =
+      '<div class="panel-head"><div class="panel-title">' +
+      bubble('message') +
+      '<h3><label for="cm-texto">Pegá los comentarios</label></h3>' +
+      info('Uno por línea. Podés pegar la lista tal como la copiás de TikTok. Responder rápido genera confianza y más alcance.') +
+      '</div></div>' +
+      '<textarea id="cm-texto" rows="6" placeholder="¿Es incómodo?&#10;¿Hacen envíos a Córdoba?&#10;¿Sirve de verdad?">' +
       e(state.texto) +
-      '</textarea></label>' +
-      (AI.sample ? '<label for="cm-tono">Tono (opcional)<input id="cm-tono" placeholder="Ej.: más canchero, sin emojis, tuteo…" value="' + e(state.tono) + '"></label>' : '') +
+      '</textarea>' +
       '<div class="row-actions">' +
       (state.running
-        ? '<button class="btn ghost" data-act="detener">Detener</button><span class="muted">Escribiendo respuestas…</span>'
-        : (AI.sample ? '<button class="btn" data-act="claude">Responder con Claude</button>' : '') + '<button class="btn ' + (AI.sample ? 'ghost' : '') + '" data-act="plantillas">Responder con plantillas</button>') +
+        ? '<button class="btn ghost" data-act="detener">' + icon('stop') + 'Detener</button><span class="cm-run">Escribiendo respuestas…</span>'
+        : (AI.sample ? '<button class="btn" data-act="claude">' + icon('sparkles') + 'Responder con Claude</button>' : '') +
+          '<button class="btn ' +
+          (AI.sample ? 'ghost' : '') +
+          '" data-act="plantillas">' +
+          (AI.sample ? 'Usar plantillas' : 'Responder') +
+          '</button>') +
       '</div>' +
-      (state.error ? '<p class="error-text">' + e(state.error) + '</p>' : '');
+      (state.error ? '<p class="error-text">' + e(state.error) + '</p>' : '') +
+      (AI.sample ? more('Tono', '<label class="sr-only" for="cm-tono">Tono</label><input id="cm-tono" placeholder="Ej.: más canchero, sin emojis, tuteo…" value="' + e(state.tono) + '">', 'cm-tono-more') : '');
+    if (abierto) $('#cm-tono-more', box).open = true;
   }
 
   function renderList() {
@@ -72,45 +85,59 @@
     const counts = new Map();
     for (const it of state.items) counts.set(it.tipo, (counts.get(it.tipo) || 0) + 1);
     const top = [...counts.entries()].filter(([k]) => !['positivo', 'otro'].includes(k)).sort((a, b) => b[1] - a[1]);
-    const videoTip = top.length && top[0][1] >= 2 ? '<p class="note">La duda que más se repite es <strong>' + e(CM.tipo(top[0][0]).label.toLowerCase()) + '</strong> (' + top[0][1] + ' comentarios). Respondela con un video: <button class="btn link" data-goto="guiones">armar guion</button></p>' : '';
+    const videoTip =
+      top.length && top[0][1] >= 2
+        ? '<div class="cm-tip">' +
+          icon('video') +
+          '<span>Lo que más preguntan: <strong>' +
+          e(CM.tipo(top[0][0]).label.toLowerCase()) +
+          '</strong> (' +
+          top[0][1] +
+          '). Respondelo con un video.</span><button class="btn soft sm" data-goto="guiones">Armar guion</button></div>'
+        : '';
     sum.innerHTML = '<div class="chips">' + [...counts.entries()].map(([k, n]) => chip(CM.tipo(k).label + ' · ' + n, CM.tipo(k).tone)).join('') + '</div>' + videoTip;
     box.innerHTML = state.items
       .map((it, i) => {
         const t = CM.tipo(it.tipo);
         const len = it.respuesta.length;
         return (
-          '<article class="order-card comment-card"><div class="cm-q">“' +
+          '<article class="cm-card"><div class="cm-top"><p class="cm-q">“' +
           e(it.comentario) +
-          '”</div><div class="chips">' +
+          '”</p><div class="chips">' +
           chip(t.label, t.tone) +
-          (it.video ? chip('Conviene responder con video', 'source') : '') +
-          (it.ocultar ? chip('Ocultar o ignorar', 'bad') : '') +
-          (it.origen === 'claude' ? chip('Claude', 'neutral') : '') +
-          '</div><label class="sr-only" for="cm-r-' +
+          (it.video ? chip('Mejor con video', 'source') : '') +
+          (it.ocultar ? chip('Ocultar', 'bad') : '') +
+          '</div></div><label class="sr-only" for="cm-r-' +
           i +
           '">Respuesta</label><textarea id="cm-r-' +
           i +
           '" data-i="' +
           i +
-          '" rows="2" maxlength="' +
+          '" rows="' +
+          (len > 90 ? 3 : 2) +
+          '" maxlength="' +
           CM.MAX +
           '">' +
           e(it.respuesta) +
-          '</textarea><div class="cm-foot"><span class="small ' +
-          (len > CM.MAX ? 'warn-text' : 'muted') +
+          '</textarea><div class="cm-foot"><span class="cm-count' +
+          (len > CM.MAX ? ' is-over' : '') +
           '" id="cm-n-' +
           i +
           '">' +
           len +
           '/' +
           CM.MAX +
-          '</span><div class="row-actions"><button class="btn" data-act="copiar" data-i="' +
+          '</span><div class="row-actions"><button class="btn sm" data-act="copiar" data-i="' +
           i +
-          '">Copiar</button><button class="btn ghost" data-act="otra" data-i="' +
+          '">' +
+          icon('copy') +
+          '<span class="lbl">Copiar</span></button><button class="btn ghost sm" data-act="otra" data-i="' +
           i +
-          '">Otra versión</button><button class="btn link" data-act="guardar" data-i="' +
+          '">' +
+          icon('refresh') +
+          'Otra</button><button class="btn link" data-act="guardar" data-i="' +
           i +
-          '">Guardar en biblioteca</button></div></div></article>'
+          '">Guardar</button></div></div></article>'
         );
       })
       .join('');
@@ -120,8 +147,16 @@
     const box = $('#cm-lib', el);
     if (!box) return;
     const list = [...state.biblioteca.entries()].map(([id, r]) => Object.assign({ id }, r));
+    const head =
+      '<div class="panel-head"><div class="panel-title">' +
+      bubble('star', 'peach') +
+      '<div><h3>Biblioteca</h3>' +
+      (list.length ? '' : '<p class="small muted">Guardá las respuestas que te gusten para reusarlas.</p>') +
+      '</div>' +
+      (list.length ? chip(String(list.length), 'neutral') : '') +
+      '</div></div>';
     if (!list.length) {
-      box.innerHTML = '<h3>Biblioteca de respuestas</h3><p class="muted">Guardá las respuestas que más te gusten para reusarlas. Quedan ordenadas por tipo de comentario.</p>';
+      box.innerHTML = head;
       return;
     }
     const by = new Map();
@@ -130,9 +165,8 @@
       by.get(r.tipo).push(r);
     }
     box.innerHTML =
-      '<h3>Biblioteca de respuestas (' +
-      list.length +
-      ')</h3><div class="lib">' +
+      head +
+      '<div class="lib">' +
       [...by.entries()]
         .map(
           ([tipo, rs]) =>
@@ -144,17 +178,39 @@
                 (r) =>
                   '<div class="lib-item"><p class="selectable">' +
                   e(r.respuesta) +
-                  '</p><div class="row-actions"><button class="btn link" data-act="lib-copiar" data-id="' +
+                  '</p><div class="row-actions"><button class="btn ghost sm icon-only" data-act="lib-copiar" data-id="' +
                   e(r.id) +
-                  '">Copiar</button><button class="btn link" data-act="lib-borrar" data-id="' +
+                  '" aria-label="Copiar" title="Copiar">' +
+                  icon('copy') +
+                  '</button><button class="btn ghost sm icon-only cm-lib-del" data-act="lib-borrar" data-id="' +
                   e(r.id) +
-                  '">Borrar</button></div></div>'
+                  '" aria-label="Borrar" title="Borrar">' +
+                  icon('trash') +
+                  '</button></div></div>'
               )
               .join('') +
             '</div>'
         )
         .join('') +
       '</div>';
+  }
+
+  // Copia y muestra "Copiado" sin perder el ícono del botón
+  function copiar(text, btn) {
+    copyText(text).then((ok) => {
+      if (!ok || !btn) return;
+      const lbl = btn.querySelector('.lbl');
+      if (lbl) {
+        if (!lbl.dataset.prev) lbl.dataset.prev = lbl.textContent;
+        lbl.textContent = 'Copiado';
+        clearTimeout(btn._t);
+        btn._t = setTimeout(() => (lbl.textContent = lbl.dataset.prev), 1600);
+      } else {
+        btn.classList.add('is-done');
+        toast('Copiado.', 'good');
+        setTimeout(() => btn.classList.remove('is-done'), 1600);
+      }
+    });
   }
 
   function plantillas() {
@@ -216,7 +272,7 @@
       const n = $('#cm-n-' + t.dataset.i, el);
       if (n) {
         n.textContent = t.value.length + '/' + CM.MAX;
-        n.className = 'small ' + (t.value.length > CM.MAX ? 'warn-text' : 'muted');
+        n.classList.toggle('is-over', t.value.length > CM.MAX);
       }
     }
   }
@@ -236,7 +292,7 @@
         if (ctl) ctl.abort();
         break;
       case 'copiar':
-        copyText(it.respuesta, t);
+        copiar(it.respuesta, t);
         break;
       case 'otra': {
         it.variante = (it.variante || 0) + 1;
@@ -255,7 +311,7 @@
         break;
       }
       case 'lib-copiar':
-        copyText((state.biblioteca.get(t.dataset.id) || {}).respuesta || '', t);
+        copiar((state.biblioteca.get(t.dataset.id) || {}).respuesta || '', t);
         break;
       case 'lib-borrar':
         state.biblioteca.delete(t.dataset.id);

@@ -1,4 +1,4 @@
-/* Buscador del próximo producto */
+/* Productos: qué vender junto al corrector */
 (function (root) {
   'use strict';
   const VC = root.VC;
@@ -10,17 +10,18 @@
   const R = VC.research;
   const W = VC.winners;
   const { Store, Shop, AI, Browser } = VC.runtime;
-  const { e, $, App, chip, banner, toast, storeFail } = VC.ui;
+  const { e, $, $$, App, chip, banner, toast, storeFail, icon, bubble, pageHead, info, more, toggle } = VC.ui;
   const A = VC.auto;
 
   const ESCALAS = [
-    ['demanda', 'Demanda', 'más es mejor'],
-    ['competencia', 'Competencia', '5 = mucha'],
-    ['afinidad', 'Afinidad con tu cliente', 'más es mejor'],
-    ['video', 'Se luce en video', 'más es mejor'],
-    ['riesgo', 'Riesgo (devoluciones, talles, fallas)', '5 = alto'],
+    ['demanda', 'Demanda'],
+    ['competencia', 'Competencia (5 = mucha)'],
+    ['afinidad', 'Afinidad con tu cliente'],
+    ['video', 'Se luce en video'],
+    ['riesgo', 'Riesgo (5 = alto)'],
   ];
   const CADA = [24, 72, 168];
+  const CANCELADO = 'Cancelado.';
 
   const state = {
     items: PR.CANDIDATOS.map((c) => Object.assign({ precio: null, costo: null }, c)),
@@ -39,10 +40,32 @@
   function mount(section) {
     el = section;
     el.innerHTML =
-      '<header class="tool-head"><div><h2>Próximo producto</h2><p class="lede">Compará qué sumar al corrector. Cargá el precio al que lo venderías y lo que te cuesta: el panel calcula cuánto deja con tus tasas reales y lo puntúa por demanda, competencia y afinidad con tu cliente.</p></div>' +
-      '<div class="tool-actions"><button class="btn ghost" data-act="agregar">Agregar producto</button></div></header>' +
-      '<section class="panel auto-panel" id="pr-auto"></section>' +
-      '<div id="pr-warn"></div><section class="panel" id="pr-params"></section><div id="pr-ranking"></div><section class="panel" id="pr-ia"></section><div id="pr-list" class="product-list"></div>';
+      pageHead('Productos', 'Qué vender junto al corrector.', '<button class="btn ghost" data-act="agregar">' + icon('plus') + 'Agregar producto</button>') +
+      '<div id="pr-warn"></div>' +
+      '<section class="panel auto-panel pr-auto" id="pr-auto" aria-labelledby="pr-auto-title"></section>' +
+      '<section class="panel pr-rank"><div class="panel-head"><div class="panel-title">' +
+      bubble('trending', 'good') +
+      '<h3>Ranking</h3>' +
+      info(
+        'Puntaje de 0 a 100: margen ' +
+          PR.PESOS.margen +
+          ' %, demanda ' +
+          PR.PESOS.demanda +
+          ' %, competencia ' +
+          PR.PESOS.competencia +
+          ' %, afinidad ' +
+          PR.PESOS.afinidad +
+          ' %, video ' +
+          PR.PESOS.video +
+          ' % y riesgo ' +
+          PR.PESOS.riesgo +
+          ' %. Sin precio y costo, el margen no cuenta.<br><br>“Publicidad por pedido” es lo que calculás pagar en anuncios por cada venta del producto nuevo. Los precios de referencia salen de Mercado Libre (relevados en ' +
+          e(PR.REF_FECHA) +
+          ' o de tu última medición).'
+      ) +
+      '</div><div id="pr-params"></div></div><div id="pr-ranking"></div></section>' +
+      '<section class="panel pr-ia" id="pr-ia"></section>' +
+      '<div id="pr-list" class="pr-list"></div>';
     el.addEventListener('input', onInput);
     el.addEventListener('change', onChange);
     el.addEventListener('click', onClick);
@@ -75,22 +98,21 @@
     return O.historicalRates(Shop.orders);
   }
 
+  // ¿Estás escribiendo o eligiendo algo en este bloque? Entonces no se redibuja entero
+  function editando(box) {
+    const a = document.activeElement;
+    return !!(a && box && box.contains(a) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName));
+  }
+
   function renderAll() {
     if (!el) return;
     renderAuto();
-    $('#pr-warn', el).innerHTML = P.costsReady(App.cfg) ? '' : banner('warn', 'Cargá en Ajustes el costo de envío y de devolución: se usan para calcular el margen de cualquier producto.', '<button class="btn ghost" data-goto="ajustes">Ir a Ajustes</button>');
-    if (!$('#pr-params', el).contains(document.activeElement)) {
-      const medidos = state.items.some((p) => p.medido);
-      $('#pr-params', el).innerHTML =
-        '<div class="form-grid"><label for="pr-cpa">Costo en publicidad por pedido (estimado para el producto nuevo)<span class="input-unit"><span class="unit">$</span><input id="pr-cpa" inputmode="numeric" value="' +
-        e(U.int(cpa())) +
-        '"></span></label></div><p class="muted small">' +
-        (medidos
-          ? 'Precios de referencia: del 25 % al 75 % de los precios de las publicaciones medidas en Mercado Libre. Cada medición ajusta demanda y competencia; afinidad, video y riesgo quedan como los dejes.'
-          : 'Precios de referencia: publicaciones de Mercado Libre Argentina (' +
-            PR.REF_FECHA +
-            '). Los puntajes vienen con una estimación inicial: ajustalos con lo que veas en Mercado Libre, Google Trends y la Biblioteca de anuncios.') +
-        '</p>';
+    $('#pr-warn', el).innerHTML = P.costsReady(App.cfg)
+      ? ''
+      : banner('warn', '<strong>Faltan tus costos.</strong> Sin envío y devolución no se puede calcular cuánto deja cada producto.', '<button class="btn" data-goto="ajustes">Cargar costos</button>');
+    const pb = $('#pr-params', el);
+    if (!editando(pb)) {
+      pb.innerHTML = '<label class="pr-cpa" for="pr-cpa">Publicidad por pedido<span class="input-unit"><span class="unit">$</span><input id="pr-cpa" inputmode="numeric" value="' + e(U.int(cpa())) + '"></span></label>';
     }
     renderRanking();
     renderIA();
@@ -103,126 +125,146 @@
 
   function renderRanking() {
     const list = scored().sort((a, b) => b.completo - a.completo || b.puntaje - a.puntaje);
-    const box = $('#pr-ranking', el);
-    box.innerHTML =
-      '<section class="panel"><h3>Ranking</h3><ol class="ranking">' +
+    $('#pr-ranking', el).innerHTML =
+      '<ol class="pr-rk">' +
       list
         .map((s, i) => {
           const v = W.veredicto(s.p.vende);
           return (
-            '<li><span class="rk-pos mono">' +
+            '<li><span class="pr-rk-pos">' +
             (i + 1) +
-            '</span><span class="rk-name">' +
+            '</span><span class="pr-rk-name"><button type="button" class="pr-rk-go" data-act="ver" data-id="' +
+            e(s.p.id) +
+            '">' +
             e(s.p.nombre) +
-            (v ? ' ' + chip(v.label, v.tone) : '') +
-            (s.completo ? '' : ' <span class="muted small">(falta precio o costo)</span>') +
+            '</button>' +
+            (v ? chip(v.label, v.tone) : '') +
+            (s.completo ? '' : '<span class="pr-rk-miss">sin precio</span>') +
             '</span><span class="wf-track"><span class="wf-bar ' +
             (i === 0 && s.completo ? 'pos' : 'base') +
             '" style="width:' +
             Math.max(2, s.puntaje) +
-            '%"></span></span><span class="wf-val mono">' +
+            '%"></span></span><span class="pr-rk-val">' +
             s.puntaje +
             '</span></li>'
           );
         })
         .join('') +
-      '</ol><p class="muted small">Puntaje de 0 a 100: margen ' +
-      PR.PESOS.margen +
-      '%, demanda ' +
-      PR.PESOS.demanda +
-      '%, competencia ' +
-      PR.PESOS.competencia +
-      '%, afinidad ' +
-      PR.PESOS.afinidad +
-      '%, video ' +
-      PR.PESOS.video +
-      '%, riesgo ' +
-      PR.PESOS.riesgo +
-      '%. Sin precio y costo, el margen no cuenta.</p></section>';
+      '</ol>';
   }
 
   function refText(p) {
-    return p.refMin ? 'Mercado Libre: ' + U.money(p.refMin) + ' a ' + U.money(p.refMax) : 'Sin precio de referencia relevado';
+    return p.refMin ? 'Mercado Libre: ' + U.money(p.refMin) + ' a ' + U.money(p.refMax) : 'Sin precio de referencia';
   }
 
   function renderList() {
     const box = $('#pr-list', el);
-    if (box.contains(document.activeElement)) {
+    if (editando(box)) {
       // Solo actualiza los números para no perder el foco mientras escribís
       for (const s of scored()) updateNumbers(s);
       return;
     }
+    // Conserva abiertos los plegables al redibujar
+    const abiertos = $$('details[open]', box)
+      .map((d) => d.id)
+      .filter(Boolean);
     box.innerHTML = scored()
-      .map((s, i) => {
-        const p = s.p;
-        const sug = state.ia.data && state.ia.data.find((x) => norm(x.nombre) === norm(p.nombre));
-        const inv = state.inv.get(W.docId(p.id));
-        return (
-          '<article class="product-card" id="pc-' +
-          e(p.id) +
-          '"><header class="pc-head"><div><h4>' +
-          e(p.nombre) +
-          '</h4><p class="muted small" data-out="ref">' +
-          e(refText(p)) +
-          '</p></div><div class="pc-score"><span class="stat-value" data-out="puntaje">' +
-          s.puntaje +
-          '</span><span class="stat-label">puntaje</span></div></header>' +
-          (p.nota ? '<p class="small">' + e(p.nota) + '</p>' : '') +
-          '<div class="pr-ml" data-out="ml" data-v="' +
-          e(inv ? inv.fecha : '') +
-          '"' +
-          (inv || Browser.available ? '' : ' hidden') +
-          '>' +
-          mlInner(p) +
-          '</div>' +
-          '<div class="row-actions links"><a class="btn link" href="' +
-          e(PR.mlUrl(p.busqueda || p.nombre)) +
-          '" target="_blank" rel="noopener">Mercado Libre</a><a class="btn link" href="' +
-          e(PR.trendsUrl(p.busqueda || p.nombre)) +
-          '" target="_blank" rel="noopener">Google Trends</a><a class="btn link" href="' +
-          e(CP.adLibraryUrl(p.busqueda || p.nombre)) +
-          '" target="_blank" rel="noopener">Anuncios activos</a>' +
-          (p.custom ? '<button class="btn link" data-act="quitar" data-i="' + i + '">Quitar</button>' : '') +
-          '</div><div class="form-grid">' +
-          (p.custom ? money(i, 'nombre', 'Nombre', p.nombre, true) : '') +
-          money(i, 'precio', 'Precio de venta', p.precio) +
-          money(i, 'costo', 'Costo (proveedor)', p.costo) +
-          money(i, 'envioExtra', 'Envío extra vs. el corrector', p.envioExtra) +
-          '</div><div class="scales">' +
-          ESCALAS.map(
-            ([k, label, hint]) =>
-              '<label for="pr-' +
-              i +
-              '-' +
-              k +
-              '">' +
-              e(label) +
-              ' <span class="muted">(' +
-              e(hint) +
-              ')</span><select id="pr-' +
-              i +
-              '-' +
-              k +
-              '" data-i="' +
-              i +
-              '" data-k="' +
-              k +
-              '">' +
-              [1, 2, 3, 4, 5].map((n) => '<option' + (Number(p[k]) === n ? ' selected' : '') + '>' + n + '</option>').join('') +
-              '</select></label>'
-          ).join('') +
-          '</div><div class="pc-out"><div><span class="eyebrow">Por pedido con anuncios</span><span class="mono" data-out="anuncios">' +
-          (s.eco ? e(U.money(s.eco.conAnuncios)) : '—') +
-          '</span></div><div><span class="eyebrow">Venta a un cliente actual</span><span class="mono" data-out="cliente">' +
-          (s.eco ? e(U.money(s.eco.aCliente)) : '—') +
-          '</span></div><div><span class="eyebrow">Precio ÷ costo</span><span class="mono" data-out="markup">' +
-          (s.eco ? e(s.eco.markup.toFixed(1).replace('.', ',')) + '×' : '—') +
-          '</span></div></div>' +
-          (sug ? suggestion(sug, i) : '') +
-          '</article>'
-        );
-      })
+      .map((s, i) => card(s, i))
       .join('');
+    for (const id of abiertos) {
+      const d = box.querySelector('#' + CSS.escape(id));
+      if (d) d.open = true;
+    }
+  }
+
+  function card(s, i) {
+    const p = s.p;
+    const sug = state.ia.data && state.ia.data.find((x) => norm(x.nombre) === norm(p.nombre));
+    const inv = state.inv.get(W.docId(p.id));
+    return (
+      '<article class="pr-card" id="pc-' +
+      e(p.id) +
+      '"><header class="pr-card-head"><div class="pr-card-title"><h4><span data-out="nombre">' +
+      e(p.nombre) +
+      '</span>' +
+      (p.nota ? info(e(p.nota)) : '') +
+      '</h4><p class="pr-ref" data-out="ref">' +
+      e(refText(p)) +
+      '</p></div><div class="pr-score" title="Puntaje de 0 a 100"><span class="pr-score-num" data-out="puntaje">' +
+      s.puntaje +
+      '</span><span class="pr-score-lbl">puntos</span></div></header>' +
+      '<div class="pr-ml" data-out="ml" data-v="' +
+      e(inv ? inv.fecha : '') +
+      '"' +
+      (inv || Browser.available ? '' : ' hidden') +
+      '>' +
+      mlInner(p) +
+      '</div><div class="pr-inputs">' +
+      (p.custom ? fld(i, 'nombre', 'Nombre', p.nombre, true, 'pr-name') : '') +
+      fld(i, 'precio', 'Precio de venta', p.precio) +
+      fld(i, 'costo', 'Costo', p.costo) +
+      '</div><div class="pr-nums">' +
+      num(
+        'Por pedido',
+        'anuncios',
+        s.eco ? U.money(s.eco.conAnuncios) : '—',
+        s.eco ? (s.eco.conAnuncios >= 0 ? 'pos' : 'neg') : '',
+        info('<strong>Por pedido:</strong> lo que queda por cada pedido que entra por anuncios, con tus anulados y devoluciones. “A un cliente” es venderle por WhatsApp a alguien que ya te compró, sin publicidad.')
+      ) +
+      num('A un cliente', 'cliente', s.eco ? U.money(s.eco.aCliente) : '—') +
+      num('Precio ÷ costo', 'markup', s.eco ? s.eco.markup.toFixed(1).replace('.', ',') + '×' : '—') +
+      '</div>' +
+      (sug ? suggestion(sug, i) : '') +
+      more('Puntajes y más', masInner(p, i), 'pcm-' + p.id) +
+      '</article>'
+    );
+  }
+
+  function num(label, k, val, cls, extra) {
+    return '<div><span class="pr-num-lbl">' + e(label) + (extra || '') + '</span><span class="pr-num mono' + (cls ? ' ' + cls : '') + '" data-out="' + k + '">' + e(val) + '</span></div>';
+  }
+
+  function masInner(p, i) {
+    const q = p.busqueda || p.nombre;
+    return (
+      '<div class="pr-more"><div class="pr-scales">' +
+      ESCALAS.map(
+        ([k, label]) =>
+          '<label for="pr-' +
+          i +
+          '-' +
+          k +
+          '">' +
+          e(label) +
+          '<select id="pr-' +
+          i +
+          '-' +
+          k +
+          '" data-i="' +
+          i +
+          '" data-k="' +
+          k +
+          '">' +
+          [1, 2, 3, 4, 5].map((n) => '<option' + (Number(p[k]) === n ? ' selected' : '') + '>' + n + '</option>').join('') +
+          '</select></label>'
+      ).join('') +
+      fld(i, 'envioExtra', 'Envío extra', p.envioExtra) +
+      '</div><div class="pr-links"><a class="btn link" href="' +
+      e(PR.mlUrl(q)) +
+      '" target="_blank" rel="noopener">Mercado Libre' +
+      icon('external') +
+      '</a><a class="btn link" href="' +
+      e(PR.trendsUrl(q)) +
+      '" target="_blank" rel="noopener">Google Trends' +
+      icon('external') +
+      '</a><a class="btn link" href="' +
+      e(CP.adLibraryUrl(q)) +
+      '" target="_blank" rel="noopener">Anuncios' +
+      icon('external') +
+      '</a>' +
+      (p.custom ? '<button class="btn link pr-quitar" data-act="quitar" data-i="' + i + '">' + icon('trash') + 'Quitar</button>' : '') +
+      '</div></div>'
+    );
   }
 
   function updateNumbers(s) {
@@ -231,11 +273,17 @@
     const set = (k, v) => {
       const n = card.querySelector('[data-out="' + k + '"]');
       if (n) n.textContent = v;
+      return n;
     };
     set('puntaje', s.puntaje);
-    set('anuncios', s.eco ? U.money(s.eco.conAnuncios) : '—');
+    const an = set('anuncios', s.eco ? U.money(s.eco.conAnuncios) : '—');
+    if (an) {
+      an.classList.toggle('pos', !!s.eco && s.eco.conAnuncios >= 0);
+      an.classList.toggle('neg', !!s.eco && s.eco.conAnuncios < 0);
+    }
     set('cliente', s.eco ? U.money(s.eco.aCliente) : '—');
     set('markup', s.eco ? s.eco.markup.toFixed(1).replace('.', ',') + '×' : '—');
+    set('nombre', s.p.nombre);
     // Lo que cambia una medición en Mercado Libre (sin tocar el campo donde estás escribiendo)
     set('ref', refText(s.p));
     const ml = card.querySelector('[data-out="ml"]');
@@ -251,33 +299,33 @@
     }
   }
 
-  /* Bloque "Mercado Libre (hace X)" de una tarjeta */
+  /* Bloque "Mercado Libre · hace X" de una tarjeta */
   function mlInner(p) {
     const inv = state.inv.get(W.docId(p.id));
-    if (!inv || !inv.senales) return Browser.available ? '<p class="muted small">Mercado Libre: todavía sin medir. Tocá “Medir en Mercado Libre ahora” arriba.</p>' : '';
+    if (!inv || !inv.senales) return Browser.available ? '<p class="pr-ml-none">' + icon('search') + 'Todavía sin medir en Mercado Libre</p>' : '';
     const s = inv.senales;
     const v = W.veredicto(s.vende);
     const facts = [];
-    if (s.resultados != null) facts.push(fact(U.int(s.resultados), s.resultados === 1 ? 'resultado' : 'resultados'));
-    if (s.vendidosVisibles != null) facts.push(fact('+' + U.int(s.vendidosVisibles), 'vendidos visibles'));
+    if (s.vendidosVisibles != null) facts.push(fact('+' + U.int(s.vendidosVisibles), 'vendidos'));
     if (s.opiniones != null) facts.push(fact(U.int(s.opiniones), 'opiniones'));
-    facts.push(fact(s.masVendidos || 0, 'con “Más vendido”'));
-    if (s.precioMediana != null) facts.push(fact(U.money(s.precioMediana), 'precio mediana'));
+    if (s.masVendidos) facts.push(fact(s.masVendidos, '“Más vendido”'));
+    if (s.resultados != null) facts.push(fact(U.int(s.resultados), s.resultados === 1 ? 'resultado' : 'resultados'));
+    if (s.precioMediana != null) facts.push(fact(U.money(s.precioMediana), 'precio típico'));
     const pubs = Array.isArray(inv.publicaciones) ? inv.publicaciones : [];
     return (
-      '<div class="pr-ml-head"><span class="eyebrow">Mercado Libre (' +
+      '<div class="pr-ml-head"><span class="pr-ml-src">Mercado Libre · ' +
       e(U.timeAgo(inv.fecha)) +
-      ')</span>' +
+      '</span>' +
       (v ? chip(v.label, v.tone) : '') +
       '</div><ul class="pr-facts">' +
       facts.join('') +
       '</ul>' +
       (pubs.length
-        ? '<details class="pr-pubs"><summary>Publicaciones principales (' +
-          pubs.length +
-          ')</summary><ol>' +
-          pubs.map(pubItem).join('') +
-          '</ol><p class="note">Mercado Libre muestra los vendidos redondeados y por toda la vida de la publicación: son señales de demanda, no ventas exactas.</p></details>'
+        ? more(
+            'Ver publicaciones (' + pubs.length + ')',
+            '<ol class="pr-pubs">' + pubs.map(pubItem).join('') + '</ol><p class="note">Los vendidos son redondeados y de toda la vida de la publicación: son una señal, no ventas exactas.</p>',
+            'pcp-' + p.id
+          )
         : '')
     );
   }
@@ -305,36 +353,17 @@
     );
   }
 
-  function money(i, k, label, v, text) {
-    return (
-      '<label for="pr-' +
-      i +
-      '-' +
-      k +
-      '">' +
-      e(label) +
-      (text ? '' : '<span class="input-unit"><span class="unit">$</span>') +
-      '<input id="pr-' +
-      i +
-      '-' +
-      k +
-      '" data-i="' +
-      i +
-      '" data-k="' +
-      k +
-      '"' +
-      (text ? '' : ' inputmode="numeric" placeholder="0"') +
-      ' value="' +
-      e(text ? v || '' : v ? U.int(v) : '') +
-      '">' +
-      (text ? '' : '</span>') +
-      '</label>'
-    );
+  function fld(i, k, label, v, text, cls) {
+    const id = 'pr-' + i + '-' + k;
+    const input = '<input id="' + id + '" data-i="' + i + '" data-k="' + k + '"' + (text ? '' : ' inputmode="numeric" placeholder="0"') + ' value="' + e(text ? v || '' : v ? U.int(v) : '') + '">';
+    return '<label class="pr-fld' + (cls ? ' ' + cls : '') + '" for="' + id + '">' + e(label) + (text ? input : '<span class="input-unit"><span class="unit">$</span>' + input + '</span>') + '</label>';
   }
 
   function suggestion(x, i) {
     return (
-      '<div class="ia-sug"><span class="eyebrow">Claude sugiere</span><p class="small">Demanda ' +
+      '<div class="pr-sug"><div class="pr-sug-head"><span class="eyebrow">Claude sugiere</span><button class="btn soft sm" data-act="aplicar" data-i="' +
+      i +
+      '">Usar estos puntajes</button></div><p>Demanda ' +
       x.demanda +
       ' · competencia ' +
       x.competencia +
@@ -346,12 +375,10 @@
       x.riesgo +
       (x.precio_sugerido ? ' · precio ' + e(U.money(U.parseMoney(x.precio_sugerido))) : '') +
       '</p>' +
-      (x.angulo ? '<p class="small"><strong>Ángulo:</strong> ' + e(x.angulo) + '</p>' : '') +
-      (x.combo ? '<p class="small"><strong>Combo:</strong> ' + e(x.combo) + '</p>' : '') +
-      (x.dudas ? '<p class="small muted">' + e(x.dudas) + '</p>' : '') +
-      '<button class="btn ghost" data-act="aplicar" data-i="' +
-      i +
-      '">Usar estos puntajes</button></div>'
+      (x.angulo ? '<p><strong>Ángulo:</strong> ' + e(x.angulo) + '</p>' : '') +
+      (x.combo ? '<p><strong>Combo:</strong> ' + e(x.combo) + '</p>' : '') +
+      (x.dudas ? '<p class="muted">' + e(x.dudas) + '</p>' : '') +
+      '</div>'
     );
   }
 
@@ -362,17 +389,27 @@
   function renderIA() {
     const box = $('#pr-ia', el);
     const I = state.ia;
+    const meta = !AI.sample ? 'Necesita Claude.' : I.running ? 'Pensando… puede tardar un minuto.' : I.data ? 'Sus puntajes están en cada producto.' : 'Estima puntajes, precio y ángulo de cada uno.';
+    const accion = !AI.sample
+      ? ''
+      : I.running
+        ? '<button class="btn ghost" data-act="ia-stop">' + icon('stop') + 'Detener</button>'
+        : '<button class="btn soft" data-act="ia">' + icon('sparkles') + (I.data ? 'Preguntar de nuevo' : 'Pedir opinión') + '</button>';
     box.innerHTML =
-      '<div class="panel-head"><h3>Opinión de Claude</h3>' +
-      (AI.sample ? (I.running ? '<button class="btn ghost" data-act="ia-stop">Detener</button>' : '<button class="btn" data-act="ia">' + (I.data ? 'Volver a preguntar' : 'Pedir opinión') + '</button>') : '') +
+      '<div class="pr-row">' +
+      bubble('sparkles', 'source') +
+      '<div class="pr-row-txt"><div class="pr-row-title"><h3>Opinión de Claude</h3>' +
+      info(
+        AI.sample
+          ? 'Claude estima demanda, competencia y afinidad de cada producto y te sugiere precio, ángulo y combo. No entra a internet: confirmá en Mercado Libre antes de comprar stock.'
+          : 'Abrí el panel desde claude.ai o la app de Claude para pedirle su opinión.'
+      ) +
+      '</div><p class="pr-row-meta">' +
+      e(meta) +
+      '</p></div>' +
+      (accion ? '<div class="row-actions">' + accion + '</div>' : '') +
       '</div>' +
-      (AI.sample
-        ? I.running
-          ? '<p class="muted">Pensando… puede tardar un minuto.</p>'
-          : I.reco
-            ? '<p>' + e(I.reco) + '</p><p class="muted small">Estimaciones sin acceso a internet: confirmá precios y demanda en Mercado Libre antes de comprar stock.</p>'
-            : '<p class="muted">Claude estima demanda, competencia y afinidad de cada candidato y te sugiere precio, ángulo y combo. Son estimaciones sin acceso a internet.</p>'
-        : '<p class="muted">Abrí el panel desde claude.ai para pedir la opinión de Claude.</p>') +
+      (I.reco && !I.running ? '<p class="pr-reco">' + e(I.reco) + '</p>' : '') +
       (I.error ? '<p class="error-text">' + e(I.error) + '</p>' : '');
   }
 
@@ -402,7 +439,7 @@
     const box = el && $('#pr-auto', el);
     if (!box) return;
     if (!box.dataset.ready) {
-      box.innerHTML = '<div id="pr-auto-head"></div><div id="pr-auto-prog"></div><div id="pr-auto-cfg"></div><div class="pr-desc"><div id="pr-desc-head"></div><div id="pr-desc-prog"></div><div id="pr-desc-list"></div></div>';
+      box.innerHTML = '<div id="pr-auto-head"></div><div id="pr-auto-prog"></div><div id="pr-desc-prog"></div><div id="pr-desc-list"></div>' + (A ? more('Opciones', '<div id="pr-auto-cfg"></div>', 'pr-auto-more') : '');
       box.dataset.ready = '1';
     }
     renderAutoHead();
@@ -417,51 +454,83 @@
     return n === 24 ? '1 día' : n / 24 + ' días';
   }
 
-  function otraTarea(job) {
-    return A && A.running && A.running !== job ? A.NOMBRES[A.running] || A.running : '';
+  function nota(ic, html) {
+    return '<p class="note">' + icon(ic) + html + '</p>';
   }
 
   function renderAutoHead() {
     const box = el && $('#pr-auto-head', el);
     if (!box) return;
+    const titulo =
+      '<div class="pr-row-title"><h3 id="pr-auto-title">Buscar ganadores</h3>' +
+      info(
+        'Abre en el navegador de Claude la búsqueda de Mercado Libre de cada producto, lee las publicaciones y anota las señales de venta: vendidos, opiniones, el sello MÁS VENDIDO y cuántos compiten. Con eso ajusta demanda, competencia y precios.<br><br>“Descubrir productos” busca productos nuevos para el mismo cliente del corrector que ya muestran ventas.'
+      ) +
+      '</div>';
     if (!A) {
-      box.innerHTML = '<h3>Buscar ganadores</h3><p class="auto-off">La medición automática no cargó. Recargá el panel.</p>';
+      box.innerHTML = '<div class="pr-auto-row">' + bubble('zap', 'peach') + '<div class="pr-auto-txt">' + titulo + '<p class="pr-auto-meta">No cargó. Recargá el panel.</p></div></div>';
       return;
     }
     const c = A.cfg.productos || A.DEFAULTS.productos;
-    const corriendo = A.running === 'productos';
-    const otra = otraTarea('productos');
+    const midiendo = A.running === 'productos';
+    const buscando = A.running === 'descubrir';
     const chk = A.can('productos');
+    const chkD = A.can('descubrir');
     const est = A.estado.productos || {};
+    const estD = A.estado.descubrir || {};
     const ult = A.ultima('productos');
-    const meta = [
-      ult ? 'Última medición: ' + U.timeAgo(ult) + (est.origen === 'auto' ? ' (sola, al abrir el panel)' : '') : 'Todavía no mediste',
-      c.auto ? 'Automático: al abrir el panel, cada ' + diasTxt(c.cadaHoras) : 'Automático apagado',
-    ];
-    let accion = '';
+    const meta = midiendo ? 'Midiendo en Mercado Libre…' : buscando ? 'Buscando productos nuevos…' : ult ? 'Última medición ' + U.timeAgo(ult) : 'Todavía no mediste';
+
+    let acciones = '';
     if (Browser.available) {
-      accion = corriendo
-        ? '<button class="btn ghost" data-act="medir-stop">Detener</button>'
-        : '<button class="btn" data-act="medir"' + (!chk.ok || pedido.productos ? ' disabled' : '') + '>' + (pedido.productos ? 'En cola…' : 'Medir en Mercado Libre ahora') + '</button>';
+      acciones =
+        (midiendo
+          ? '<button class="btn ghost" data-act="medir-stop">' + icon('stop') + 'Detener</button>'
+          : '<button class="btn" data-act="medir"' + (!chk.ok || pedido.productos ? ' disabled' : '') + '>' + icon('search') + (pedido.productos ? 'En cola…' : 'Medir en Mercado Libre') + '</button>') +
+        (buscando
+          ? '<button class="btn ghost" data-act="desc-stop">' + icon('stop') + 'Detener</button>'
+          : '<button class="btn ghost" data-act="descubrir"' + (!chkD.ok || pedido.descubrir ? ' disabled' : '') + '>' + icon('sparkles') + (pedido.descubrir ? 'En cola…' : 'Descubrir productos') + '</button>');
     }
-    let aviso = '';
-    if (!Browser.checked) aviso = '<p class="auto-off">Revisando si el navegador de Claude está disponible…</p>';
+
+    const notas = [];
+    if (!Browser.checked) notas.push(nota('clock', 'Revisando si el navegador de Claude está disponible…'));
     else if (!Browser.available)
-      aviso =
-        '<div class="auto-off"><strong>La medición usa el navegador de Claude en tu PC.</strong> Funciona cuando abrís este panel desde la app de escritorio de Claude, en una sesión de Cowork: ahí abre la búsqueda de cada producto en Mercado Libre, lee las publicaciones y anota las señales de venta. Mientras tanto, usá los links de cada tarjeta y cargá los puntajes a mano.</div>';
-    else if (!chk.ok) aviso = '<p class="auto-off">' + e(chk.motivo) + '</p>';
-    let estado = '';
-    if (otra) estado = '<p class="small muted">' + (pedido.productos ? 'En cola: la medición arranca cuando termine la ' + e(otra) + '.' : 'Ahora está corriendo la ' + e(otra) + '. Si tocás “Medir en Mercado Libre ahora”, queda en cola.') + '</p>';
-    else if (!corriendo && est.error) estado = '<p class="error-text">La última medición no terminó: ' + e(est.error) + '</p>';
-    else if (!corriendo && est.resultado && est.resultado.resumen) estado = '<p class="small">' + e(est.resultado.resumen) + '.</p>';
+      notas.push(
+        nota(
+          'alert',
+          'Necesita la app de escritorio de Claude.' +
+            info('La medición usa el navegador de Claude en tu PC: abrí este panel desde la app de escritorio de Claude, en una sesión de Cowork. Ahí abre la búsqueda de cada producto en Mercado Libre y anota las señales de venta. Mientras tanto, cargá los puntajes a mano en cada producto.')
+        )
+      );
+    else if (!chk.ok) notas.push(nota('alert', e(chk.motivo)));
+    else if (!chkD.ok) notas.push(nota('alert', e(chkD.motivo)));
+    const otra = A.running && !midiendo && !buscando ? A.NOMBRES[A.running] || A.running : '';
+    for (const [job, que] of [
+      ['productos', 'La medición'],
+      ['descubrir', 'La búsqueda'],
+    ]) {
+      if (pedido[job] && A.running && A.running !== job) notas.push(nota('clock', 'En cola: ' + que.toLowerCase() + ' arranca cuando termine la ' + e(A.NOMBRES[A.running] || A.running) + '.'));
+    }
+    if (otra && !pedido.productos && !pedido.descubrir) notas.push(nota('clock', 'Ahora corre la ' + e(otra) + '. Si tocás un botón, queda en cola.'));
+    if (!midiendo && est.error === CANCELADO) notas.push(nota('stop', 'Cancelaste la última medición.'));
+    else if (!midiendo && est.error) notas.push('<p class="error-text">La última medición no terminó: ' + e(est.error) + '</p>');
+    else if (!midiendo && est.resultado && est.resultado.resumen) notas.push(nota('check', e(est.resultado.resumen) + '.'));
+    if (!buscando && estD.error === CANCELADO) notas.push(nota('stop', 'Cancelaste la última búsqueda.'));
+    else if (!buscando && estD.error) notas.push('<p class="error-text">La última búsqueda no terminó: ' + e(estD.error) + '</p>');
+
     box.innerHTML =
-      '<div class="auto-head"><div class="pr-auto-title"><h3>Buscar ganadores</h3><div class="auto-meta">' +
-      meta.map((m) => '<span>' + e(m) + '</span>').join('') +
-      '</div></div>' +
-      (accion ? '<div class="row-actions">' + accion + '</div>' : '') +
-      '</div><p class="pr-auto-lede">Abre en el navegador de Claude la búsqueda de Mercado Libre de cada producto de tu lista, lee las publicaciones principales y anota las señales de venta: “+X vendidos”, opiniones, el sello MÁS VENDIDO y cuántas publicaciones compiten. Con eso ajusta demanda, competencia y el rango de precios de cada tarjeta.</p>' +
-      aviso +
-      estado;
+      '<div class="pr-auto-row">' +
+      bubble('zap', 'peach') +
+      '<div class="pr-auto-txt">' +
+      titulo +
+      '<p class="pr-auto-meta"><span>' +
+      e(meta) +
+      '</span>' +
+      (c.auto ? chip('Solo cada ' + diasTxt(c.cadaHoras), 'good') : '') +
+      '</p></div>' +
+      (acciones ? '<div class="row-actions pr-auto-actions">' + acciones + '</div>' : '') +
+      '</div>' +
+      (notas.length ? '<div class="pr-auto-notes">' + notas.join('') + '</div>' : '');
   }
 
   const ST = {
@@ -474,15 +543,16 @@
 
   function progList(items, texto) {
     return (
-      '<ul class="auto-progress">' +
+      '<div class="pr-prog"><ul class="auto-progress">' +
       items
         .map((it) => {
           const st = ST[it.estado] || ST.espera;
-          return '<li><span class="st' + (st[1] ? ' ' + st[1] : '') + '">' + e(st[0]) + '</span><span>' + e(it.q) + (it.detalle ? ' <span class="muted">· ' + e(it.detalle) + '</span>' : '') + '</span></li>';
+          return '<li class="is-' + e(it.estado) + '"><span class="st' + (st[1] ? ' ' + st[1] : '') + '">' + e(st[0]) + '</span><span>' + e(it.q) + (it.detalle ? ' <span class="muted">· ' + e(it.detalle) + '</span>' : '') + '</span></li>';
         })
         .join('') +
       '</ul>' +
-      (texto ? '<p class="muted small" aria-live="polite">' + e(texto) + '</p>' : '')
+      (texto ? '<p class="note" aria-live="polite">' + e(texto) + '</p>' : '') +
+      '</div>'
     );
   }
 
@@ -491,7 +561,7 @@
     if (!box || !A) return;
     const corriendo = A.running === 'productos';
     const est = A.estado.productos || {};
-    box.innerHTML = vivo.medir.length && (corriendo || est.error) ? progList(vivo.medir, corriendo ? A.progress.productos : '') : '';
+    box.innerHTML = vivo.medir.length && (corriendo || (est.error && est.error !== CANCELADO)) ? progList(vivo.medir, corriendo ? A.progress.productos : '') : '';
   }
 
   function renderAutoCfg() {
@@ -504,14 +574,15 @@
     const act = document.activeElement;
     const keep = act && box.contains(act) && act.dataset ? act.dataset.cfg : '';
     box.innerHTML =
-      '<div class="pr-auto-cfg"><div class="auto-toggles"><span class="pr-auto-when"><label><input type="checkbox" data-cfg="auto"' +
-      (c.auto ? ' checked' : '') +
-      dis +
-      '> Medir solo al abrir el panel</label><label>cada <select data-cfg="cadaHoras" aria-label="Cada cuántos días"' +
+      '<div class="pr-auto-cfg"><div class="pr-auto-when">' +
+      toggle('pr-auto-solo', !!c.auto, 'Medir solo al abrir el panel', 'data-cfg="auto"' + dis) +
+      '<label class="pr-cada">Cada<select data-cfg="cadaHoras" aria-label="Cada cuántos días"' +
       dis +
       '>' +
       horas.map((h) => '<option value="' + h + '"' + (Number(c.cadaHoras) === h ? ' selected' : '') + '>' + e(diasTxt(h)) + '</option>').join('') +
-      '</select></label></span></div><p class="note">Mercado Libre no publica cuánto vende cada vendedor. “+5mil vendidos” es un número redondeado de toda la vida de la publicación, y las opiniones las deja una parte de los compradores: tomalo como señal de demanda, no como ventas exactas.</p></div>';
+      '</select></label></div>' +
+      nota('info', 'Los vendidos de Mercado Libre son redondeados y de toda la vida de la publicación: tomalos como señal, no como ventas exactas.') +
+      '</div>';
     if (keep) {
       const opt = $('[data-cfg="' + keep + '"]', box);
       if (opt) opt.focus();
@@ -519,33 +590,8 @@
   }
 
   function renderDesc() {
-    renderDescHead();
     renderDescProg();
     renderDescList();
-  }
-
-  function renderDescHead() {
-    const box = el && $('#pr-desc-head', el);
-    if (!box) return;
-    const corriendo = A && A.running === 'descubrir';
-    const chk = A ? A.can('descubrir') : { ok: false };
-    const est = (A && A.estado.descubrir) || {};
-    let accion = '';
-    if (A && Browser.available) {
-      accion = corriendo
-        ? '<button class="btn ghost" data-act="desc-stop">Detener</button>'
-        : '<button class="btn ghost" data-act="descubrir"' + (!chk.ok || pedido.descubrir ? ' disabled' : '') + '>' + (pedido.descubrir ? 'En cola…' : 'Descubrir productos nuevos') + '</button>';
-    }
-    const otra = otraTarea('descubrir');
-    let estado = '';
-    if (otra && pedido.descubrir) estado = '<p class="small muted">En cola: arranca cuando termine la ' + e(otra) + '.</p>';
-    else if (!corriendo && est.error) estado = '<p class="error-text">La última búsqueda no terminó: ' + e(est.error) + '</p>';
-    else if (A && Browser.available && !chk.ok) estado = '<p class="small muted">' + e(chk.motivo) + '</p>';
-    box.innerHTML =
-      '<div class="panel-head"><div class="pr-auto-title"><h4>Productos nuevos</h4><p class="muted small">Recorre Mercado Libre buscando productos que compraría el mismo cliente del corrector (espalda, cuello, dormir, home office) y que ya muestran señales de venta.</p></div>' +
-      (accion ? '<div class="row-actions">' + accion + '</div>' : '') +
-      '</div>' +
-      estado;
   }
 
   function renderDescProg() {
@@ -554,31 +600,32 @@
     const corriendo = A.running === 'descubrir';
     const est = A.estado.descubrir || {};
     if (corriendo && !vivo.desc.length) {
-      box.innerHTML = '<p class="muted small" aria-live="polite">' + e(A.progress.descubrir || 'Empezando…') + '</p>';
+      box.innerHTML = '<p class="note" aria-live="polite">' + e(A.progress.descubrir || 'Empezando…') + '</p>';
       return;
     }
-    box.innerHTML = vivo.desc.length && (corriendo || est.error) ? progList(vivo.desc, corriendo ? A.progress.descubrir : '') : '';
+    box.innerHTML = vivo.desc.length && (corriendo || (est.error && est.error !== CANCELADO)) ? progList(vivo.desc, corriendo ? A.progress.descubrir : '') : '';
   }
 
   function renderDescList() {
     const box = el && $('#pr-desc-list', el);
     if (!box) return;
     const d = state.desc;
-    const prods = d && Array.isArray(d.productos) ? d.productos : [];
     if (!d) {
-      box.innerHTML = Browser.available
-        ? '<p class="muted small">Tocá “Descubrir productos nuevos”: tarda unos minutos y te deja hasta 5 candidatos con su evidencia.</p>'
-        : Browser.checked
-          ? '<p class="muted small">También usa el navegador de Claude: abrí el panel desde la app de escritorio de Claude para buscarlos.</p>'
-          : '';
+      box.innerHTML = '';
       return;
     }
+    const prods = Array.isArray(d.productos) ? d.productos : [];
     box.innerHTML =
-      (prods.length ? '<ul class="pr-desc-list">' + prods.map(descCard).join('') + '</ul>' : '<p class="muted small">La última búsqueda no encontró productos nuevos con señales de venta claras.</p>') +
-      '<p class="note">Búsqueda ' +
+      '<div class="pr-desc"><div class="pr-desc-head"><h4>Productos nuevos</h4><span class="pr-desc-when">' +
       e(U.timeAgo(d.fecha)) +
-      (d.modo === 'claude' ? ': Claude eligió qué páginas de Mercado Libre leer' : ': búsquedas de partida en Mercado Libre') +
-      '. Las señales salen de lo que muestran las publicaciones, no son ventas exactas.</p>';
+      '</span>' +
+      info(
+        (d.modo === 'claude' ? 'Claude eligió qué páginas de Mercado Libre leer.' : 'Se midieron búsquedas de partida en Mercado Libre.') +
+          ' Las señales salen de lo que muestran las publicaciones: no son ventas exactas.'
+      ) +
+      '</div>' +
+      (prods.length ? '<ul class="pr-desc-list">' + prods.map(descCard).join('') + '</ul>' : '<p class="note">La última búsqueda no encontró productos nuevos con señales de venta claras.</p>') +
+      '</div>';
   }
 
   function descCard(d, n) {
@@ -586,8 +633,9 @@
     const v = W.veredicto(d.senales ? d.senales.vende : W.vendeDesde(d));
     const facts = [];
     if (d.precioMin || d.precioMax) facts.push('<li><strong>' + e(d.precioMin && d.precioMax && d.precioMin !== d.precioMax ? U.money(d.precioMin) + ' a ' + U.money(d.precioMax) : U.money(d.precioMin || d.precioMax)) + '</strong></li>');
-    if (d.vendidos != null) facts.push('<li><strong>' + e(W.fmtVendidos(d.vendidos)) + '</strong> en una publicación</li>');
+    if (d.vendidos != null) facts.push('<li><strong>' + e(W.fmtVendidos(d.vendidos)) + '</strong></li>');
     if (d.opiniones != null) facts.push('<li><strong>' + e(U.int(d.opiniones)) + '</strong> opiniones</li>');
+    const extra = [d.evidencia ? '<strong>Evidencia:</strong> ' + e(d.evidencia) : '', d.video ? '<strong>En video:</strong> ' + e(d.video) : ''].filter(Boolean).join('<br><br>');
     return (
       '<li class="pr-desc-card"><div class="pr-desc-top"><strong class="pr-desc-name">' +
       e(d.nombre) +
@@ -595,14 +643,16 @@
       (v ? chip(v.label, v.tone) : '') +
       '</div>' +
       (facts.length ? '<ul class="pr-facts">' + facts.join('') + '</ul>' : '') +
-      (d.evidencia ? '<p class="small">' + e(d.evidencia) + '</p>' : '') +
-      (d.por_que ? '<p class="small"><span class="eyebrow">Por qué</span>' + e(d.por_que) + '</p>' : '') +
-      (d.video ? '<p class="small"><span class="eyebrow">En video</span>' + e(d.video) + '</p>' : '') +
-      '<div class="row-actions">' +
-      (ya ? '<span class="muted small">Ya está en tu lista</span>' : '<button class="btn ghost" data-act="desc-agregar" data-n="' + n + '">Agregar a mi lista</button>') +
-      '<a class="btn link" href="' +
+      (d.por_que ? '<p class="pr-desc-why">' + e(d.por_que) + '</p>' : '') +
+      '<div class="pr-desc-actions">' +
+      (ya ? chip('Ya está en tu lista', 'good') : '<button class="btn soft sm" data-act="desc-agregar" data-n="' + n + '">' + icon('plus') + 'Agregar</button>') +
+      '<a class="btn link sm" href="' +
       e(PR.mlUrl(d.busqueda || d.nombre)) +
-      '" target="_blank" rel="noopener">Ver en Mercado Libre</a></div></li>'
+      '" target="_blank" rel="noopener">Mercado Libre' +
+      icon('external') +
+      '</a>' +
+      (extra ? info(extra) : '') +
+      '</div></li>'
     );
   }
 
@@ -617,10 +667,7 @@
       return;
     }
     if (ev.job !== 'productos' && ev.job !== 'descubrir') {
-      if (ev.type === 'start' || ev.type === 'done' || ev.type === 'error') {
-        renderAutoHead();
-        renderDescHead();
-      }
+      if (ev.type === 'start' || ev.type === 'done' || ev.type === 'error') renderAutoHead();
       return;
     }
     if (ev.type === 'start') vivo[ev.job === 'productos' ? 'medir' : 'desc'] = [];
@@ -640,13 +687,9 @@
     if (!A || pedido[job] || A.running === job) return;
     pedido[job] = true;
     renderAutoHead();
-    renderDescHead();
     A.run(job, { origen: 'manual' }).finally(() => {
       pedido[job] = false;
-      if (el) {
-        renderAutoHead();
-        renderDescHead();
-      }
+      if (el) renderAutoHead();
     });
   }
 
@@ -702,6 +745,15 @@
     toast('Sumé “' + item.nombre + '” a tu lista. Cargá precio y costo para ver cuánto deja.', 'good');
   }
 
+  function verTarjeta(id) {
+    const c = el.querySelector('#pc-' + CSS.escape(id));
+    if (!c) return;
+    const quieto = root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    c.scrollIntoView({ behavior: quieto ? 'auto' : 'smooth', block: 'center' });
+    c.classList.add('is-flash');
+    setTimeout(() => c.classList.remove('is-flash'), 1600);
+  }
+
   function onInput(ev) {
     const t = ev.target;
     if (t.id === 'pr-cpa') {
@@ -743,11 +795,19 @@
     if (!t || !el.contains(t)) return;
     const i = Number(t.dataset.i);
     switch (t.dataset.act) {
-      case 'agregar':
+      case 'agregar': {
         state.items.push({ id: 'p' + Date.now().toString(36), nombre: 'Producto nuevo', busqueda: '', custom: true, precio: null, costo: null, envioExtra: 0, demanda: 3, competencia: 3, afinidad: 3, video: 3, riesgo: 3, refMin: null, refMax: null, nota: '' });
         save();
         renderAll();
+        const n = state.items.length - 1;
+        verTarjeta(state.items[n].id);
+        const inp = $('#pr-' + n + '-nombre', el);
+        if (inp) {
+          inp.focus({ preventScroll: true });
+          inp.select();
+        }
         break;
+      }
       case 'quitar': {
         const [fuera] = state.items.splice(i, 1);
         if (fuera && state.inv.has(W.docId(fuera.id))) {
@@ -758,6 +818,9 @@
         renderAll();
         break;
       }
+      case 'ver':
+        verTarjeta(t.dataset.id);
+        break;
       case 'ia':
         askIA();
         break;

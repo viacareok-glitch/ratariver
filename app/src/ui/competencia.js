@@ -1,4 +1,4 @@
-/* Espía de anuncios de la competencia */
+/* Competencia: qué anuncian los competidores en la Biblioteca de anuncios de Meta y qué les funciona */
 (function (root) {
   'use strict';
   const VC = root.VC;
@@ -7,11 +7,13 @@
   const R = VC.research;
   const S = VC.scan;
   const { Store, AI, Browser } = VC.runtime;
-  const { e, $, App, chip, emptyState, toast, copyText, storeFail } = VC.ui;
+  const { e, $, $$, App, chip, emptyState, toast, copyText, storeFail, icon, bubble, pageHead, info, more, toggle, banner } = VC.ui;
   const A = VC.auto;
 
   const LOGIN = 'Meta pide iniciar sesión en el navegador de Claude: entrá una vez a facebook.com en ese navegador';
   const HORAS = [12, 24, 48, 72];
+  const CANCELADO = 'Cancelado.'; // texto que deja VC.auto cuando se detiene una tarea
+  const FILAS = 12; // anuncios guardados visibles antes de "Ver todos"
 
   const state = {
     ads: new Map(),
@@ -21,6 +23,8 @@
     running: false,
     error: '',
     ideas: { text: '', fecha: null, running: false, error: '' },
+    verTodos: false,
+    abierto: { found: false, ideas: false }, // textos largos desplegados
   };
   let el;
   let ctl;
@@ -36,9 +40,14 @@
   function mount(section) {
     el = section;
     el.innerHTML =
-      '<header class="tool-head"><div><h2>Anuncios de la competencia</h2><p class="lede">Un corrector que lleva semanas activo en la Biblioteca de anuncios de Meta es señal de que le rinde: nadie sostiene un anuncio que pierde plata. Escaneá la Biblioteca sola desde tu PC o pegá lo que ves, y te resume ganchos, ángulos, ofertas y precios.</p></div></header>' +
-      '<section class="panel auto-panel" id="cp-auto"></section><section class="panel" id="cp-found"></section><div id="cp-tiendas"></div>' +
-      '<section class="panel" id="cp-links"></section><section class="panel" id="cp-input"></section><div id="cp-summary"></div><section class="panel" id="cp-ideas"></section><section class="panel" id="cp-table"></section>';
+      pageHead('Competencia', 'Qué anuncian y qué les funciona.') +
+      '<section class="panel auto-panel cp-auto" id="cp-auto" aria-labelledby="cp-auto-title"></section>' +
+      '<section class="panel cp-found" id="cp-found" aria-labelledby="cp-found-title"></section>' +
+      '<div id="cp-tiendas"></div>' +
+      '<section class="panel cp-saved" id="cp-table" aria-labelledby="cp-table-title"><div id="cp-saved-head"></div><div id="cp-ideas" hidden></div><div id="cp-saved-body"></div></section>' +
+      '<div class="cp-manual">' +
+      more('Buscar a mano', '<div class="cp-manual-body"><section class="cp-step" id="cp-links"></section><section class="cp-step" id="cp-input"></section><section class="cp-step" id="cp-hand"></section></div>', 'cp-manual') +
+      '</div>';
     el.addEventListener('click', onClick);
     el.addEventListener('change', onChange);
     el.addEventListener('input', (ev) => {
@@ -73,6 +82,7 @@
     if (VC.tools.tiendas) VC.tools.tiendas.mount($('#cp-tiendas', el));
     renderLinks();
     renderInput();
+    renderHand();
     renderData();
   }
 
@@ -84,13 +94,108 @@
     renderData();
   }
 
+  /* ---------- Piezas chicas ---------- */
+
+  function plural(n, uno, varios) {
+    return (n || 0) + ' ' + (n === 1 ? uno : varios);
+  }
+
+  // Chip con número destacado: "12 nuevos"
+  function num(n, label, tone) {
+    return '<span class="chip cp-num tone-' + (tone || 'neutral') + '"><strong>' + e(U.int(n || 0)) + '</strong>' + e(label) + '</span>';
+  }
+
+  function nota(ic, html) {
+    return '<div class="note cp-note">' + icon(ic) + '<span>' + html + '</span></div>';
+  }
+
+  const SEC_ICON = [
+    [/novedad/i, 'sparkles'],
+    [/funciona/i, 'trending'],
+    [/precio/i, 'tag'],
+    [/probar|idea|creativo/i, 'video'],
+    [/hueco/i, 'search'],
+  ];
+
+  /* Parte el texto plano de Claude en secciones (título en una línea y viñetas con guion) */
+  function secciones(text) {
+    const out = [];
+    let cur = null;
+    let lista = false;
+    const nueva = (t) => {
+      cur = { t, h: '' };
+      out.push(cur);
+      lista = false;
+    };
+    const cerrar = () => {
+      if (cur && lista) cur.h += '</ul>';
+      lista = false;
+    };
+    for (const raw of String(text || '').split(/\r?\n/)) {
+      const l = raw.replace(/\*\*/g, '').replace(/^#+\s*/, '').trim();
+      if (!l) {
+        cerrar();
+        continue;
+      }
+      const vin = l.match(/^[-•*–]\s+(.*)$/);
+      if (vin) {
+        if (!cur) nueva('');
+        if (!lista) {
+          cur.h += '<ul>';
+          lista = true;
+        }
+        cur.h += '<li>' + e(vin[1]) + '</li>';
+        continue;
+      }
+      cerrar();
+      if (l.length <= 60 && (/:$/.test(l) || !/[.!?…)"”]$/.test(l))) {
+        nueva(l.replace(/:$/, ''));
+        continue;
+      }
+      if (!cur) nueva('');
+      cur.h += '<p>' + e(l) + '</p>';
+    }
+    cerrar();
+    return out.filter((s) => s.t || s.h);
+  }
+
+  function seccion(s) {
+    const ic = s.t ? (SEC_ICON.find(([re]) => re.test(s.t)) || [])[1] : '';
+    return '<section class="cp-sec">' + (s.t ? '<h4>' + (ic ? icon(ic) : '') + '<span>' + e(s.t) + '</span></h4>' : '') + s.h + '</section>';
+  }
+
+  /* Texto de Claude con buena tipografía; si es largo, muestra las dos primeras partes y "Ver todo" */
+  function prosa(text, key) {
+    const secs = secciones(text);
+    const largo = secs.length > 2 && String(text).length > 700;
+    const abierto = !largo || state.abierto[key];
+    const vis = abierto ? secs : secs.slice(0, 2);
+    return (
+      '<div class="cp-prose' +
+      (secs.length > 1 ? ' is-grid' : '') +
+      '">' +
+      vis.map(seccion).join('') +
+      '</div>' +
+      (largo
+        ? '<button type="button" class="btn link sm cp-fold" data-act="plegar" data-k="' +
+          key +
+          '" aria-expanded="' +
+          !!abierto +
+          '">' +
+          (abierto ? 'Ver menos' : 'Ver todo · ' + (secs.length - 2) + ' más') +
+          icon('chevronDown') +
+          '</button>'
+        : '')
+    );
+  }
+
   /* ---------- Escaneo automático: interfaz ---------- */
 
   function renderAuto() {
     const box = el && $('#cp-auto', el);
     if (!box) return;
     if (!box.dataset.ready) {
-      box.innerHTML = '<div id="cp-auto-head"></div><div id="cp-auto-prog"></div><div id="cp-auto-cfg"></div>';
+      box.innerHTML = '<div id="cp-auto-head"></div><div id="cp-auto-prog"></div>' + (A ? more('Opciones', '<div id="cp-auto-cfg"></div>', 'cp-auto-more') : '');
       box.dataset.ready = '1';
     }
     renderAutoHead();
@@ -107,39 +212,45 @@
     const chk = A.can('competencia');
     const est = A.estado.competencia || {};
     const ult = A.ultima('competencia');
-    const meta = [
-      ult ? 'Último escaneo: ' + U.timeAgo(ult) + (est.origen === 'auto' ? ' (solo, al abrir el panel)' : '') : 'Todavía no escaneaste',
-      c.auto ? 'Automático: al abrir el panel, cada ' + c.cadaHoras + ' h' : 'Automático apagado',
-    ];
+    let meta;
+    if (corriendo) meta = 'Escaneando la Biblioteca…';
+    else if (ult) meta = 'Escaneado ' + U.timeAgo(ult) + (est.resultado && est.resultado.nuevos != null ? ' · ' + plural(est.resultado.nuevos, 'nuevo', 'nuevos') : '');
+    else meta = 'Todavía no escaneaste';
     let accion = '';
     if (Browser.available) {
       accion = corriendo
-        ? '<button class="btn ghost" data-act="auto-detener">Detener</button>'
-        : '<button class="btn" data-act="auto-escanear"' + (!chk.ok || pedido ? ' disabled' : '') + '>' + (pedido ? 'En cola…' : 'Escanear ahora') + '</button>';
+        ? '<button class="btn ghost" data-act="auto-detener">' + icon('stop') + 'Detener</button>'
+        : '<button class="btn" data-act="auto-escanear"' + (!chk.ok || pedido ? ' disabled' : '') + '>' + icon('search') + (pedido ? 'En cola…' : 'Escanear ahora') + '</button>';
     }
     let aviso = '';
-    if (!Browser.checked) aviso = '<p class="auto-off">Revisando si el navegador de Claude está disponible…</p>';
+    if (!Browser.checked) aviso = nota('clock', 'Buscando el navegador de Claude…');
     else if (!Browser.available)
-      aviso =
-        '<div class="auto-off"><strong>El escaneo automático usa el navegador de Claude en tu PC.</strong> Funciona cuando abrís este panel desde la app de escritorio de Claude, en una sesión de Cowork: ahí abre la Biblioteca de anuncios con tus búsquedas, guarda los anuncios nuevos y te cuenta qué encontró. Igual podés dejar configurado qué buscar, y la búsqueda a mano de más abajo funciona en cualquier lado.</div>';
-    else if (!chk.ok) aviso = '<p class="auto-off">' + e(chk.motivo) + '</p>';
-    let estado = '';
-    if (otra) estado = '<p class="small muted">' + (pedido ? 'En cola: el escaneo arranca cuando termine la ' + e(otra) + '.' : 'Ahora está corriendo la ' + e(otra) + '. Si tocás “Escanear ahora”, queda en cola.') + '</p>';
-    else if (!corriendo && est.error) estado = '<p class="error-text">El último escaneo no terminó: ' + e(est.error) + '</p>';
-    else if (!corriendo && est.resultado && est.resultado.resumen) estado = '<p class="small">' + e(est.resultado.resumen) + '.</p>';
+      aviso = nota(
+        'info',
+        'Necesita la app de escritorio de Claude. ' +
+          info('El escaneo abre la Biblioteca de anuncios en el navegador de Claude de tu PC. Funciona si abrís este panel desde la app de escritorio (Cowork). Mientras tanto podés buscar a mano.') +
+          ' <button type="button" class="btn link sm" data-act="abrir-manual">Buscar a mano</button>'
+      );
+    else if (!chk.ok) aviso = nota('info', e(chk.motivo));
+    else if (otra) aviso = nota('clock', pedido ? 'En cola: arranca cuando termine la ' + e(otra) + '.' : 'Ahora corre la ' + e(otra) + '. Si escaneás, queda en cola.');
+    else if (!corriendo && est.error === CANCELADO) aviso = nota('stop', 'Detuviste el último escaneo.');
+    else if (!corriendo && est.error) aviso = '<p class="error-text">No terminó: ' + e(est.error) + '</p>';
     box.innerHTML =
-      '<div class="auto-head"><div class="cp-auto-title"><h3>Escaneo automático</h3><div class="auto-meta">' +
-      meta.map((m) => '<span>' + e(m) + '</span>').join('') +
-      '</div></div>' +
+      '<div class="cp-auto-row">' +
+      bubble('zap', 'peach') +
+      '<div class="cp-auto-txt"><h3 id="cp-auto-title">Escaneo automático</h3><p class="cp-auto-meta"><span>' +
+      e(meta) +
+      '</span>' +
+      (c.auto ? chip('Solo cada ' + c.cadaHoras + ' h', 'good') : '') +
+      '</p></div>' +
       (accion ? '<div class="row-actions">' + accion + '</div>' : '') +
-      '</div><p class="cp-auto-lede">Abre la Biblioteca de anuncios de Meta en el navegador de Claude con cada búsqueda, guarda los anuncios nuevos, suma las tiendas que aparecen para revisarlas y te resume qué les funciona a tus competidores.</p>' +
-      aviso +
-      estado;
+      '</div>' +
+      aviso;
   }
 
   const ST = {
     espera: ['en espera', ''],
-    leyendo: ['leyendo…', ''],
+    leyendo: ['leyendo', ''],
     ok: ['listo', 'ok'],
     sin: ['sin anuncios', 'ok'],
     error: ['error', 'err'],
@@ -151,17 +262,17 @@
     if (!box || !A) return;
     const corriendo = A.running === 'competencia';
     const est = A.estado.competencia || {};
-    if (!vivo.items.length || (!corriendo && !est.error)) {
+    if (!vivo.items.length || (!corriendo && (!est.error || est.error === CANCELADO))) {
       box.innerHTML = '';
       return;
     }
     box.innerHTML =
-      '<ul class="auto-progress">' +
+      '<ul class="auto-progress cp-prog">' +
       vivo.items
         .map((it) => {
           const st = ST[it.estado] || ST.espera;
           const det = it.error ? it.error : it.estado === 'ok' ? plural(it.anuncios, 'anuncio', 'anuncios') + ' · ' + plural(it.nuevos, 'nuevo', 'nuevos') : '';
-          return '<li><span class="st' + (st[1] ? ' ' + st[1] : '') + '">' + e(st[0]) + '</span><span>' + e(it.q) + (det ? ' <span class="muted">· ' + e(det) + '</span>' : '') + '</span></li>';
+          return '<li class="is-' + e(it.estado) + '"><span class="st' + (st[1] ? ' ' + st[1] : '') + '">' + e(st[0]) + '</span><span>' + e(it.q) + (det ? ' <span class="muted">· ' + e(det) + '</span>' : '') + '</span></li>';
         })
         .join('') +
       '</ul>' +
@@ -187,23 +298,20 @@
     const keep = act && act.id === 'cp-q-nueva' && box.contains(act) ? act.value : null;
     const keepCfg = act && box.contains(act) && act.dataset ? act.dataset.cfg : '';
     box.innerHTML =
-      '<div class="cp-auto-cfg"><div class="auto-toggles"><span class="cp-auto-when"><label><input type="checkbox" data-cfg="auto"' +
-      (c.auto ? ' checked' : '') +
-      dis +
-      '> Escanear solo al abrir el panel</label><label>si pasaron <select data-cfg="cadaHoras" aria-label="Cada cuántas horas"' +
+      '<div class="cp-auto-cfg"><div class="cp-cfg-row">' +
+      toggle('cp-auto-solo', !!c.auto, 'Escanear solo al abrir el panel', 'data-cfg="auto"' + dis) +
+      '<label class="cp-cada">Cada <select data-cfg="cadaHoras" aria-label="Cada cuántas horas"' +
       dis +
       '>' +
-      horas.map((h) => '<option value="' + h + '"' + (Number(c.cadaHoras) === h ? ' selected' : '') + '>' + h + '</option>').join('') +
-      '</select> horas</label></span><label><input type="checkbox" data-cfg="guionesTras"' +
-      (c.guionesTras ? ' checked' : '') +
-      dis +
-      '> Después del escaneo, escribir guiones nuevos con lo que encontré</label></div>' +
+      horas.map((h) => '<option value="' + h + '"' + (Number(c.cadaHoras) === h ? ' selected' : '') + '>' + h + ' horas</option>').join('') +
+      '</select></label></div>' +
+      toggle('cp-guiones-tras', !!c.guionesTras, 'Después, escribir guiones nuevos', 'data-cfg="guionesTras"' + dis) +
       '<div class="cp-qs"><div class="cp-qs-head"><span class="eyebrow">Búsquedas · ' +
       qs.length +
       ' de ' +
       S.MAX_BUSQUEDAS +
       '</span>' +
-      (igualDefault ? '' : '<button type="button" class="btn link" data-act="q-default"' + dis + '>Volver a las de siempre</button>') +
+      (igualDefault ? '' : '<button type="button" class="btn link sm" data-act="q-default"' + dis + '>Volver a las de siempre</button>') +
       '</div><div class="chips">' +
       qs
         .map(
@@ -216,18 +324,22 @@
             e(q) +
             '"' +
             (qs.length <= 1 || !A.loaded ? ' disabled' : '') +
-            '>×</button></span>'
+            '>' +
+            icon('x') +
+            '</button></span>'
         )
         .join('') +
       '</div><form id="cp-q-form" class="cp-q-form"><label for="cp-q-nueva" class="sr-only">Agregar una búsqueda</label><input id="cp-q-nueva" maxlength="60" autocomplete="off" placeholder="' +
-      (lleno ? 'Quitá una para agregar otra' : 'Agregar búsqueda, ej. faja lumbar') +
+      (lleno ? 'Quitá una para agregar otra' : 'Ej. faja lumbar') +
       '"' +
       (lleno ? ' disabled' : '') +
       dis +
       '><button class="btn ghost" type="submit"' +
       (lleno ? ' disabled' : '') +
       dis +
-      '>Agregar</button></form></div></div>';
+      '>' +
+      icon('plus') +
+      'Agregar</button></form></div></div>';
     if (keep != null) {
       const inp = $('#cp-q-nueva', box);
       if (inp && !inp.disabled) {
@@ -240,42 +352,38 @@
     }
   }
 
+  /* ---------- Qué encontré ---------- */
+
   function renderFound() {
     const box = el && $('#cp-found', el);
     if (!box) return;
+    const abiertos = $$('details[id][open]', box).map((d) => d.id);
+    const head = (sub, acciones) =>
+      '<div class="panel-head"><div class="panel-title">' +
+      bubble('sparkles') +
+      '<div><div class="cp-title"><h3 id="cp-found-title">Qué encontré</h3>' +
+      info('Meta no publica cuánto vende cada anuncio. Que siga activo ' + CP.GANADOR_DIAS + ' días o más es señal de que le rinde, no un dato de ventas.') +
+      '</div>' +
+      (sub ? '<p class="small muted">' + e(sub) + '</p>' : '') +
+      '</div></div>' +
+      (acciones || '') +
+      '</div>';
     if (!ultimoCargado) {
-      box.innerHTML = '<h3>Qué encontré</h3><p class="muted small">Cargando el último escaneo…</p>';
+      box.innerHTML = head('Cargando el último escaneo…') + '<div class="skeleton cp-sk"></div>';
       return;
     }
     const u = ultimo;
     if (!u) {
-      box.innerHTML =
-        '<h3>Qué encontré</h3>' +
-        emptyState(
-          'Todavía no hay escaneos',
-          'Cuando escanees, acá vas a ver los anuncios nuevos de la competencia, los que llevan ' +
-            CP.GANADOR_DIAS +
-            ' días o más activos (señal de que les rinden), sus precios contra los tuyos y qué probar en ViaCare.'
-        );
+      box.innerHTML = head() + emptyState('Sin escaneos todavía', 'Escaneá y acá vas a ver qué anuncian y qué les funciona.', '', 'eye');
       return;
     }
     const pb = Array.isArray(u.porBusqueda) ? u.porBusqueda : [];
-    box.innerHTML =
-      '<div class="panel-head"><h3>Qué encontré</h3><div class="row-actions"><span class="muted small">Escaneado ' +
-      e(U.timeAgo(u.fecha)) +
-      '</span>' +
-      (u.resumen ? '<button class="btn ghost" data-act="found-copiar">Copiar</button>' : '') +
-      '</div></div><div class="chips">' +
-      chip(plural(u.nuevos || 0, 'anuncio nuevo', 'anuncios nuevos'), u.nuevos ? 'info' : 'neutral') +
-      chip((u.ganadores || 0) + ' activos ' + CP.GANADOR_DIAS + '+ días', u.ganadores ? 'good' : 'neutral') +
-      chip(plural(u.anunciantesNuevos || 0, 'anunciante nuevo', 'anunciantes nuevos'), u.anunciantesNuevos ? 'source' : 'neutral') +
-      chip(plural(u.total || 0, 'anuncio visto', 'anuncios vistos'), 'neutral') +
-      '</div>' +
-      (u.nombresNuevos && u.nombresNuevos.length ? '<p class="small"><span class="eyebrow">Anunciantes nuevos</span>' + e(u.nombresNuevos.join(', ')) + '</p>' : '') +
-      (u.dominiosNuevos && u.dominiosNuevos.length ? '<p class="small"><span class="eyebrow">Tiendas sumadas para revisar</span>' + e(u.dominiosNuevos.join(', ')) + '</p>' : '') +
-      (u.aviso ? '<p class="error-text">' + e(u.aviso) + '</p>' : '') +
+    const errores = pb.filter((b) => b.error).length;
+    const det =
+      (u.nombresNuevos && u.nombresNuevos.length ? '<p class="cp-det-line"><span class="eyebrow">Anunciantes nuevos</span>' + e(u.nombresNuevos.join(', ')) + '</p>' : '') +
+      (u.dominiosNuevos && u.dominiosNuevos.length ? '<p class="cp-det-line"><span class="eyebrow">Tiendas sumadas</span>' + e(u.dominiosNuevos.join(', ')) + '</p>' : '') +
       (pb.length
-        ? '<ul class="auto-progress cp-found-q">' +
+        ? '<ul class="auto-progress cp-prog">' +
           pb
             .map(
               (b) =>
@@ -291,17 +399,29 @@
             )
             .join('') +
           '</ul>'
-        : '') +
+        : '');
+    box.innerHTML =
+      head(
+        'Escaneado ' + U.timeAgo(u.fecha) + (pb.length ? ' · ' + plural(pb.length, 'búsqueda', 'búsquedas') : ''),
+        u.resumen ? '<button type="button" class="btn ghost sm" data-act="found-copiar">' + icon('copy') + 'Copiar</button>' : ''
+      ) +
+      '<div class="chips cp-nums">' +
+      num(u.nuevos, u.nuevos === 1 ? 'nuevo' : 'nuevos', u.nuevos ? 'peach' : '') +
+      num(u.ganadores, (u.ganadores === 1 ? 'activo ' : 'activos ') + CP.GANADOR_DIAS + '+ días', u.ganadores ? 'good' : '') +
+      num(u.anunciantesNuevos, u.anunciantesNuevos === 1 ? 'anunciante nuevo' : 'anunciantes nuevos', u.anunciantesNuevos ? 'source' : '') +
+      num(u.total, u.total === 1 ? 'visto' : 'vistos', '') +
+      '</div>' +
+      (u.aviso ? banner('warn', e(u.aviso)) : '') +
       (u.resumen
-        ? '<div class="findings">' + e(u.resumen) + '</div>'
+        ? '<div class="cp-found-body">' + prosa(u.resumen, 'found') + '</div>'
         : '<p class="muted small">' +
           (!u.total ? 'No apareció ningún anuncio activo con estas búsquedas.' : u.errorResumen ? 'No se pudo escribir el resumen: ' + e(u.errorResumen) : A && A.running === 'competencia' ? 'Escribiendo el resumen…' : 'Sin resumen en este escaneo.') +
           '</p>') +
-      '<p class="note">Meta no publica cuánto vende cada anuncio. Que siga activo ' + CP.GANADOR_DIAS + ' días o más es una señal de que le rinde, no un dato de ventas.</p>';
-  }
-
-  function plural(n, uno, varios) {
-    return (n || 0) + ' ' + (n === 1 ? uno : varios);
+      (det ? more('Detalle' + (errores ? ' · ' + plural(errores, 'búsqueda con error', 'búsquedas con error') : ''), '<div class="cp-det">' + det + '</div>', 'cp-found-det') : '');
+    for (const id of abiertos) {
+      const d = $('#' + id, box);
+      if (d) d.open = true;
+    }
   }
 
   function onAuto(ev) {
@@ -362,44 +482,65 @@
     }, 300);
   }
 
+  /* ---------- Buscar a mano ---------- */
+
+  function paso(n, titulo, extra) {
+    return '<div class="cp-step-head"><span class="cp-step-n" aria-hidden="true">' + n + '</span><h4>' + e(titulo) + '</h4>' + (extra || '') + '</div>';
+  }
+
   function renderLinks() {
     $('#cp-links', el).innerHTML =
-      '<h3>1. Buscá en la Biblioteca de anuncios</h3><p class="muted small">Se abre filtrada por Argentina y anuncios activos. Mirá la fecha “Comenzó a circular el…”: los que llevan ' +
-      CP.GANADOR_DIAS +
-      ' días o más son los que les rinden.</p><div class="row-actions">' +
-      CP.BUSQUEDAS.map((q) => '<a class="btn ghost" href="' + e(CP.adLibraryUrl(q)) + '" target="_blank" rel="noopener">' + e(q) + '</a>').join('') +
-      '<a class="btn ghost" href="' +
+      paso(1, 'Abrí la Biblioteca', info('Se abre filtrada por Argentina y anuncios activos. Mirá “Comenzó a circular el…”: los que llevan ' + CP.GANADOR_DIAS + ' días o más son los que les rinden.')) +
+      '<div class="cp-links">' +
+      CP.BUSQUEDAS.map((q) => '<a class="btn ghost sm" href="' + e(CP.adLibraryUrl(q)) + '" target="_blank" rel="noopener">' + e(q) + icon('external') + '</a>').join('') +
+      '<a class="btn ghost sm" href="' +
       e(CP.tiktokTopAdsUrl()) +
-      '" target="_blank" rel="noopener">TikTok Creative Center</a></div>';
+      '" target="_blank" rel="noopener">TikTok Creative Center' +
+      icon('external') +
+      '</a></div>';
   }
 
   function renderInput() {
-    const box = $('#cp-input', el);
+    const box = el && $('#cp-input', el);
     if (!box) return;
     const canImg = !!state.imgLimits;
+    if (!AI.sample) {
+      box.innerHTML = paso(2, 'Pegá lo que ves') + nota('info', 'Para leer el texto hace falta Claude: abrí el panel desde claude.ai. Mientras tanto, cargalos a mano.');
+      return;
+    }
     box.innerHTML =
-      '<h3>2. Traé lo que encontraste</h3>' +
-      (AI.sample
-        ? '<p class="muted small">En la página de resultados seleccioná todo (Ctrl+A o Cmd+A), copiá y pegalo acá. ' +
-          (canImg ? 'También podés pegar o subir capturas de pantalla (hasta ' + state.imgLimits.maxCount + ').' : '') +
-          '</p><label for="cp-texto" class="sr-only">Texto copiado de la Biblioteca de anuncios</label><textarea id="cp-texto" rows="6" placeholder="Pegá acá el texto de la Biblioteca de anuncios…">' +
-          e(state.texto) +
-          '</textarea>' +
-          (canImg
-            ? '<div class="row-actions"><label class="btn ghost file-btn">Subir capturas<input type="file" id="cp-imgs" accept="' +
-              e(state.imgLimits.mediaTypes.join(',')) +
-              '" multiple hidden></label>' +
-              (state.imagenes.length ? '<span class="muted small">' + state.imagenes.length + ' captura(s) lista(s)</span><button class="btn link" data-act="quitar-imgs">Quitar</button>' : '') +
-              '</div>'
-            : '') +
-          '<div class="row-actions">' +
-          (state.running
-            ? '<button class="btn ghost" data-act="detener">Detener</button><span class="muted">Leyendo los anuncios… puede tardar un minuto.</span>'
-            : '<button class="btn" data-act="extraer">Extraer anuncios</button>') +
-          '</div>' +
-          (state.error ? '<p class="error-text">' + e(state.error) + '</p>' : '')
-        : '<p class="muted small">Abrí el panel desde claude.ai para que Claude lea el texto o las capturas. Mientras tanto, cargalos a mano.</p>') +
-      '<details class="manual"><summary>Cargar un anuncio a mano</summary><form id="cp-form" class="review-form"><div class="form-grid">' +
+      paso(
+        2,
+        'Pegá lo que ves',
+        info('En la página de resultados seleccioná todo (Ctrl+A o Cmd+A), copiá y pegalo acá.' + (canImg ? ' También podés pegar o subir capturas (hasta ' + state.imgLimits.maxCount + ').' : '') + ' Claude saca los anuncios y los guarda.')
+      ) +
+      '<label for="cp-texto" class="sr-only">Texto copiado de la Biblioteca de anuncios</label><textarea id="cp-texto" rows="5" placeholder="Pegá acá el texto de la Biblioteca…">' +
+      e(state.texto) +
+      '</textarea>' +
+      '<div class="row-actions">' +
+      (state.running
+        ? '<button class="btn ghost" data-act="detener">' + icon('stop') + 'Detener</button><span class="muted small">Leyendo los anuncios…</span>'
+        : '<button class="btn" data-act="extraer">' + icon('sparkles') + 'Extraer anuncios</button>') +
+      (canImg && !state.running
+        ? '<label class="btn ghost file-btn">' +
+          icon('upload') +
+          'Subir capturas<input type="file" id="cp-imgs" accept="' +
+          e(state.imgLimits.mediaTypes.join(',')) +
+          '" multiple hidden></label>' +
+          (state.imagenes.length
+            ? chip(plural(state.imagenes.length, 'captura', 'capturas'), 'info') + '<button type="button" class="btn link sm" data-act="quitar-imgs">Quitar</button>'
+            : '')
+        : '') +
+      '</div>' +
+      (state.error ? '<p class="error-text">' + e(state.error) + '</p>' : '');
+  }
+
+  function renderHand() {
+    const box = el && $('#cp-hand', el);
+    if (!box) return;
+    box.innerHTML =
+      paso(3, 'O cargá uno a mano') +
+      '<form id="cp-form" class="cp-form"><div class="form-grid">' +
       inp('anunciante', 'Anunciante') +
       inp('desde', 'Activo desde', 'date') +
       '<label for="cp-f-angulo">Ángulo<select id="cp-f-angulo" name="angulo">' +
@@ -410,97 +551,137 @@
       inp('oferta', 'Oferta') +
       inp('precio', 'Precio') +
       '<label for="cp-f-formato">Formato<select id="cp-f-formato" name="formato"><option>video</option><option>imagen</option><option>carrusel</option></select></label></div>' +
-      '<label for="cp-f-gancho">Gancho (primera frase)<input id="cp-f-gancho" name="gancho" required></label><label for="cp-f-nota">Nota<input id="cp-f-nota" name="nota"></label><div class="row-actions"><button class="btn" type="submit">Guardar anuncio</button></div></form></details>';
+      '<div class="form-grid wide"><label for="cp-f-gancho">Gancho (primera frase)<input id="cp-f-gancho" name="gancho" required></label>' +
+      inp('nota', 'Nota') +
+      '</div><div class="row-actions"><button class="btn ghost" type="submit">' +
+      icon('plus') +
+      'Guardar anuncio</button></div></form>';
   }
 
   function inp(k, label, type) {
     return '<label for="cp-f-' + k + '">' + e(label) + '<input id="cp-f-' + k + '" name="' + k + '"' + (type ? ' type="' + type + '"' : '') + '></label>';
   }
 
+  /* ---------- Anuncios guardados ---------- */
+
   function adsList() {
     return [...state.ads.entries()].map(([id, a]) => Object.assign({ id }, a));
   }
 
   function renderData() {
+    if (!el) return;
     const s = CP.summarize(adsList());
-    const sum = $('#cp-summary', el);
-    const table = $('#cp-table', el);
+    const head = $('#cp-saved-head', el);
+    const body = $('#cp-saved-body', el);
+    const ideasBox = $('#cp-ideas', el);
+    if (!head || !body || !ideasBox) return;
+    const sub = s.total
+      ? plural(s.total, 'anuncio', 'anuncios') + ' · ' + plural(s.anunciantes, 'anunciante', 'anunciantes') + (s.ganadores ? ' · ' + s.ganadores + ' activos ' + CP.GANADOR_DIAS + '+ días' : '')
+      : '';
+    const titulo =
+      '<div class="panel-title">' + bubble('grid', 'source') + '<div><h3 id="cp-table-title">Anuncios guardados</h3>' + (sub ? '<p class="small muted">' + e(sub) + '</p>' : '') + '</div></div>';
     if (!s.total) {
-      sum.innerHTML = '';
-      $('#cp-ideas', el).hidden = true;
-      table.innerHTML = '<h3>Anuncios guardados</h3>' + emptyState('Todavía no hay anuncios', 'Buscá en la Biblioteca, pegá lo que encontraste y tocá “Extraer anuncios”. Quedan guardados acá para comparar.');
+      head.innerHTML = '<div class="panel-head">' + titulo + '</div>';
+      ideasBox.hidden = true;
+      ideasBox.innerHTML = '';
+      body.innerHTML = emptyState('Sin anuncios guardados', 'Escaneá o buscá a mano: quedan acá para comparar.', '', 'grid');
       return;
     }
-    $('#cp-ideas', el).hidden = false;
-    const top = (arr) => arr.slice(0, 4).map(([k, n]) => chip((CP.ANGULOS[k] || k) + ' · ' + n, 'source')).join('');
-    sum.innerHTML =
-      '<div class="summary-strip">' +
-      stat(s.total, 'anuncios guardados') +
-      stat(s.anunciantes, 'anunciantes') +
-      stat(s.ganadores, 'activos hace ' + CP.GANADOR_DIAS + '+ días', s.ganadores ? 'good' : '') +
-      '</div><div class="panel"><div class="kv"><span class="eyebrow">Ángulos</span><div class="chips">' +
-      (top(s.angulos) || '<span class="muted small">—</span>') +
-      '</div></div><div class="kv"><span class="eyebrow">Ofertas</span><div class="chips">' +
-      (s.ofertas.length ? s.ofertas.slice(0, 6).map(([k, n]) => chip(k + ' · ' + n, 'neutral')).join('') : '<span class="muted small">—</span>') +
-      '</div></div></div>';
-    table.innerHTML =
-      '<div class="panel-head"><h3>Anuncios guardados</h3><button class="btn link" data-act="borrar-todo">Borrar todos</button></div><div class="table-wrap"><table class="table comp"><thead><tr><th>Anunciante</th><th class="num">Días</th><th>Ángulo</th><th>Oferta</th><th class="num">Precio</th><th>Gancho</th><th></th></tr></thead><tbody>' +
-      s.ads
-        .map(
-          (a) =>
-            '<tr><th scope="row">' +
-            e(a.anunciante || '—') +
-            (ultimo && S.esNuevo(a, ultimo.fecha) ? ' ' + chip('nuevo', 'info') : '') +
-            '<div class="muted small">' +
-            e([a.formato || '', a.ultimaVez ? 'visto ' + U.timeAgo(a.ultimaVez) : ''].filter(Boolean).join(' · ')) +
-            '</div></th><td class="num">' +
-            (a.dias != null ? chip(a.dias + ' d', a.dias >= CP.GANADOR_DIAS ? 'good' : 'neutral') : '—') +
-            '</td><td>' +
-            e(CP.ANGULOS[a.angulo] || a.angulo || '') +
-            '</td><td>' +
-            e(a.oferta || '—') +
-            '</td><td class="num">' +
-            (a.precio ? e(U.money(a.precio)) : '—') +
-            '</td><td class="hook-cell">“' +
-            e(a.gancho) +
-            '”' +
-            (a.nota ? '<div class="muted small">' + e(a.nota) + '</div>' : '') +
-            '</td><td><div class="cp-acts">' +
-            (a.idBiblioteca
-              ? '<a class="btn link" href="' + e(R.adUrl(a.idBiblioteca)) + '" target="_blank" rel="noopener" aria-label="Ver en la Biblioteca el anuncio de ' + e(a.anunciante || '') + '">Ver</a>'
-              : '') +
-            '<button class="btn link" data-act="borrar" data-id="' +
-            e(a.id) +
-            '" aria-label="Borrar anuncio de ' +
-            e(a.anunciante || '') +
-            '">Borrar</button></div></td></tr>'
-        )
-        .join('') +
-      '</tbody></table></div>';
+    ideasBox.hidden = false;
+    const angulos = s.angulos.slice(0, 4).map(([k, n]) => num(n, CP.ANGULOS[k] || k, 'source')).join('');
+    const ofertas = s.ofertas.slice(0, 4).map(([k, n]) => num(n, k, '')).join('');
+    head.innerHTML =
+      '<div class="panel-head">' +
+      titulo +
+      '<div class="row-actions" id="cp-ideas-act"></div></div>' +
+      (angulos || ofertas
+        ? '<div class="cp-mix">' +
+          (angulos ? '<div class="cp-mix-row"><span class="eyebrow">Ángulos</span><div class="chips">' + angulos + '</div></div>' : '') +
+          (ofertas ? '<div class="cp-mix-row"><span class="eyebrow">Ofertas</span><div class="chips">' + ofertas + '</div></div>' : '') +
+          '</div>'
+        : '');
+    const filas = state.verTodos ? s.ads : s.ads.slice(0, FILAS);
+    body.innerHTML =
+      '<div class="table-wrap"><table class="table cp-table"><thead><tr><th>Anunciante</th><th class="num">Días</th><th>Ángulo</th><th>Oferta</th><th class="num">Precio</th><th>Gancho</th><th><span class="sr-only">Acciones</span></th></tr></thead><tbody>' +
+      filas.map(fila).join('') +
+      '</tbody></table></div><div class="cp-saved-foot">' +
+      (s.ads.length > FILAS
+        ? '<button type="button" class="btn link sm" data-act="ver-todos" aria-expanded="' + state.verTodos + '">' + (state.verTodos ? 'Ver menos' : 'Ver los ' + s.ads.length) + '</button>'
+        : '<span></span>') +
+      '<button type="button" class="btn link sm cp-del-all" data-act="borrar-todo">Borrar todos</button></div>';
     renderIdeas();
   }
 
-  function stat(v, label, tone) {
-    return '<div class="stat' + (tone ? ' tone-' + tone : '') + '"><span class="stat-value">' + e(v) + '</span><span class="stat-label">' + e(label) + '</span></div>';
+  function fila(a) {
+    const angulo = CP.ANGULOS[a.angulo] || a.angulo || '';
+    return (
+      '<tr><th scope="row" class="cp-c-who"><span class="cp-who">' +
+      e(a.anunciante || 'Sin nombre') +
+      (ultimo && S.esNuevo(a, ultimo.fecha) ? chip('nuevo', 'peach') : '') +
+      '</span><span class="cp-who-sub">' +
+      e([a.formato || '', a.ultimaVez ? 'visto ' + U.timeAgo(a.ultimaVez) : ''].filter(Boolean).join(' · ')) +
+      '</span></th><td class="num cp-c-dias">' +
+      (a.dias != null ? chip(a.dias + ' días', a.dias >= CP.GANADOR_DIAS ? 'good' : 'neutral') : '<span class="muted">—</span>') +
+      '</td><td class="cp-c-meta' +
+      (angulo ? '' : ' is-empty') +
+      '">' +
+      e(angulo || '—') +
+      '</td><td class="cp-c-meta' +
+      (a.oferta ? '' : ' is-empty') +
+      '">' +
+      e(a.oferta || '—') +
+      '</td><td class="num cp-c-meta' +
+      (a.precio ? '' : ' is-empty') +
+      '">' +
+      (a.precio ? e(U.money(a.precio)) : '—') +
+      '</td><td class="cp-c-hook"><span class="cp-hook">“' +
+      e(a.gancho) +
+      '”</span>' +
+      (a.nota ? '<span class="cp-hook-note">' + e(a.nota) + '</span>' : '') +
+      '</td><td class="cp-c-acts"><div class="cp-acts">' +
+      (a.idBiblioteca
+        ? '<a class="btn link sm" href="' + e(R.adUrl(a.idBiblioteca)) + '" target="_blank" rel="noopener" aria-label="Ver en la Biblioteca el anuncio de ' + e(a.anunciante || '') + '">Ver' + icon('external') + '</a>'
+        : '') +
+      '<button type="button" class="btn link sm cp-del" data-act="borrar" data-id="' +
+      e(a.id) +
+      '" aria-label="Borrar anuncio de ' +
+      e(a.anunciante || '') +
+      '" title="Borrar">' +
+      icon('trash') +
+      '</button></div></td></tr>'
+    );
   }
 
   function renderIdeas() {
-    const box = $('#cp-ideas', el);
-    if (!box || box.hidden) return;
+    const box = el && $('#cp-ideas', el);
+    if (!box) return;
     const I = state.ideas;
+    const igual = !!(I.text && ultimo && ultimo.resumen && I.text.trim() === String(ultimo.resumen).trim());
+    const act = $('#cp-ideas-act', el);
+    if (act)
+      act.innerHTML = AI.sample
+        ? I.running
+          ? '<button type="button" class="btn ghost sm" data-act="ideas-stop">' + icon('stop') + 'Detener</button>'
+          : '<button type="button" class="btn soft sm" data-act="ideas">' + icon('sparkles') + (I.text && !igual ? 'Nuevas ideas' : 'Ideas con Claude') + '</button>'
+        : '';
+    if (box.hidden) return;
+    // Si las ideas son el mismo texto de "Qué encontré", no se repiten
+    if (!(I.text || I.running || I.error) || (igual && !I.running && !I.error)) {
+      box.innerHTML = '';
+      return;
+    }
     box.innerHTML =
-      '<div class="panel-head"><h3>Qué aprender y qué probar</h3>' +
-      (AI.sample
-        ? '<div class="row-actions">' +
-          (I.running ? '<button class="btn ghost" data-act="ideas-stop">Detener</button>' : '<button class="btn" data-act="ideas">' + (I.text ? 'Actualizar' : 'Pedir resumen e ideas') + '</button>') +
-          (I.text && !I.running ? '<button class="btn ghost" data-act="ideas-copiar">Copiar</button>' : '') +
-          '</div>'
-        : '') +
+      '<div class="cp-ideas"><div class="cp-ideas-head"><span class="cp-ideas-title">' +
+      icon('sparkles') +
+      'Ideas para ViaCare</span><span class="muted small">' +
+      (I.running ? 'Pensando…' : I.fecha ? e(U.timeAgo(I.fecha)) : '') +
+      '</span>' +
+      (I.text && !I.running ? '<button type="button" class="btn link sm" data-act="ideas-copiar">' + icon('copy') + 'Copiar</button>' : '') +
+      '</div><div class="cp-ideas-out">' +
+      (I.text && !igual ? prosa(I.text, 'ideas') : I.running ? '<p class="muted small">Comparando los anuncios guardados…</p>' : '') +
       '</div>' +
-      (I.text || I.running
-        ? '<div class="ia-out' + (I.running && !I.text ? ' is-thinking' : '') + '">' + (I.text ? e(I.text) : 'Pensando…') + '</div>' + (I.fecha && !I.running ? '<p class="muted small">Generado ' + e(U.timeAgo(I.fecha)) + '</p>' : '')
-        : '<p class="muted">' + (AI.sample ? 'Claude compara los anuncios guardados y te propone 5 creativos para ViaCare.' : 'Abrí el panel desde claude.ai para pedir el resumen.') + '</p>') +
-      (I.error ? '<p class="error-text">' + e(I.error) + '</p>' : '');
+      (I.error ? '<p class="error-text">' + e(I.error) + '</p>' : '') +
+      '</div>';
   }
 
   async function extraer() {
@@ -518,7 +699,7 @@
       if (state.imagenes.length) opts.images = state.imagenes;
       const data = await AI.sample.json(CP.extractPrompt(texto, state.imagenes.length, U.todayKeyAR()), opts);
       const ads = CP.sanitizeAds(data);
-      if (!ads.length) state.error = 'No encontramos anuncios en lo que pegaste. Copiá la página de resultados completa o subí capturas.';
+      if (!ads.length) state.error = 'No encontramos anuncios en lo que pegaste. Copiá la página completa o subí capturas.';
       else {
         const existentes = adsList().map((a) => (a.anunciante + '|' + a.gancho).toLowerCase());
         let nuevos = 0;
@@ -530,7 +711,7 @@
           nuevos++;
           await Store.set('competencia/' + id, a).catch(storeFail);
         }
-        toast(nuevos + ' anuncio(s) nuevo(s) guardado(s).', 'good');
+        toast(nuevos ? plural(nuevos, 'anuncio nuevo guardado', 'anuncios nuevos guardados') + '.' : 'Ya tenías esos anuncios guardados.', 'good');
         state.texto = '';
         state.imagenes = [];
       }
@@ -546,6 +727,7 @@
   async function ideas() {
     ctl = new AbortController();
     state.ideas = { text: '', fecha: null, running: true, error: '' };
+    state.abierto.ideas = false;
     renderIdeas();
     try {
       const s = CP.summarize(adsList());
@@ -554,11 +736,8 @@
         cache: false,
         onText: ({ text }) => {
           state.ideas.text = text;
-          const out = el.querySelector('#cp-ideas .ia-out');
-          if (out) {
-            out.classList.remove('is-thinking');
-            out.textContent = text;
-          }
+          const out = el.querySelector('#cp-ideas .cp-ideas-out');
+          if (out) out.innerHTML = prosa(text, 'ideas');
         },
       });
       state.ideas.text = res.text;
@@ -621,6 +800,10 @@
     toast('Anuncio guardado.', 'good');
   }
 
+  function copiar(text) {
+    copyText(text).then((ok) => ok && toast('Copiado.', 'good'));
+  }
+
   function onClick(ev) {
     const t = ev.target.closest('[data-act]');
     if (!t || !el.contains(t)) return;
@@ -640,8 +823,21 @@
         A.setCfg('competencia', { busquedas: CP.BUSQUEDAS.slice() });
         break;
       case 'found-copiar':
-        if (ultimo && ultimo.resumen) copyText(ultimo.resumen, t);
+        if (ultimo && ultimo.resumen) copiar(ultimo.resumen);
         break;
+      case 'plegar':
+        state.abierto[t.dataset.k] = !state.abierto[t.dataset.k];
+        if (t.dataset.k === 'found') renderFound();
+        else renderIdeas();
+        break;
+      case 'abrir-manual': {
+        const d = $('#cp-manual', el);
+        if (d) {
+          d.open = true;
+          if (d.scrollIntoView) d.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+        }
+        break;
+      }
       case 'extraer':
         extraer();
         break;
@@ -657,7 +853,11 @@
         ideas();
         break;
       case 'ideas-copiar':
-        copyText(state.ideas.text, t);
+        copiar(state.ideas.text);
+        break;
+      case 'ver-todos':
+        state.verTodos = !state.verTodos;
+        renderData();
         break;
       case 'borrar':
         state.ads.delete(t.dataset.id);
@@ -667,9 +867,11 @@
       case 'borrar-todo':
         if (t.dataset.confirm !== '1') {
           t.dataset.confirm = '1';
+          t.classList.add('is-confirm');
           t.textContent = 'Tocá de nuevo para borrar todo';
           setTimeout(() => {
             t.dataset.confirm = '';
+            t.classList.remove('is-confirm');
             t.textContent = 'Borrar todos';
           }, 4000);
           return;
