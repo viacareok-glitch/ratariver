@@ -208,7 +208,8 @@
     const wasOpen = box.open;
     const f = state.cfg;
     const rates = O.historicalRates(Shop.orders);
-    const ev = OF.evaluate({ unidades: 1, precio: Number(f.precioOferta) || 0 }, App.cfg, Object.assign({}, rates, { confirmacion: 1 }), 0, 0);
+    // Un cliente que responde la oferta ya confirmó: tasa de confirmación 100%
+    const ev = OF.evaluate({ unidades: 1, precio: Number(f.precioOferta) || 0 }, Object.assign({}, App.cfg, { tasaConfirmacion: 100 }), rates, 0, 0);
     const deja = VC.profit.costsReady(App.cfg) ? 'Con tus costos, cada segunda unidad a ' + U.money(f.precioOferta) + ' te deja ' + U.money(ev.esperado) + ' en promedio (sin publicidad).' : 'Cargá tus costos en Ajustes para ver cuánto te deja cada oferta.';
     box.innerHTML =
       '<summary>Ofertas y mensajes</summary><div class="form-grid">' +
