@@ -6,12 +6,17 @@
   const { App, DEFAULT_MSGS, $, $$, e, prefGet, prefSet } = VC.ui;
 
   const TABS = [
-    { id: 'confirmar', label: 'Confirmar pedidos' },
-    { id: 'ganancia', label: 'Ganancia real' },
-    { id: 'creativos', label: 'Creativos' },
-    { id: 'resenas', label: 'Reseñas' },
-    { id: 'guiones', label: 'Guiones UGC' },
-    { id: 'ajustes', label: 'Ajustes' },
+    { id: 'confirmar', label: 'Confirmar', grupo: 'pedidos' },
+    { id: 'ganancia', label: 'Ganancia', grupo: 'pedidos' },
+    { id: 'resenas', label: 'Reseñas', grupo: 'pedidos' },
+    { id: 'clientes', label: 'Clientes', grupo: 'pedidos' },
+    { id: 'creativos', label: 'Creativos', grupo: 'anuncios' },
+    { id: 'competencia', label: 'Competencia', grupo: 'anuncios' },
+    { id: 'comentarios', label: 'Comentarios', grupo: 'anuncios' },
+    { id: 'guiones', label: 'Guiones', grupo: 'anuncios' },
+    { id: 'ofertas', label: 'Ofertas', grupo: 'negocio' },
+    { id: 'productos', label: 'Productos', grupo: 'negocio' },
+    { id: 'ajustes', label: 'Ajustes', grupo: 'ajustes' },
   ];
   const mounted = new Set();
   let ready = false;
@@ -26,7 +31,8 @@
 
   function renderNav() {
     $('#tabs').innerHTML = TABS.map(
-      (t) =>
+      (t, i) =>
+        (i && TABS[i - 1].grupo !== t.grupo ? '<span class="tab-sep" aria-hidden="true"></span>' : '') +
         '<button type="button" role="tab" id="tab-' +
         t.id +
         '" aria-controls="panel-' +
@@ -99,9 +105,10 @@
     await Promise.all([Store.init(), Shop.init(), AI.init()]);
     renderConn();
 
-    const [cfg, msgs, ultimo] = await Promise.all([Store.get('config/negocio'), Store.get('config/mensajes'), Store.get('creativos/ultimo')]);
+    const [cfg, msgs, ultimo, tienda] = await Promise.all([Store.get('config/negocio'), Store.get('config/mensajes'), Store.get('creativos/ultimo'), Store.get('config/tienda')]);
     if (cfg) Object.assign(App.cfg, cfg);
     if (msgs) Object.assign(App.msgs, DEFAULT_MSGS, msgs);
+    if (tienda) Object.assign(App.tienda, tienda);
     if (ultimo) App.ultimoAnalisis = ultimo;
 
     Store.watch('confirmaciones', (m) => {

@@ -376,6 +376,18 @@
       return list;
     },
 
+    /* Crea un código de descuento porcentual para toda la tienda, activo desde ahora. */
+    async createDiscount({ code, percentage, title }) {
+      if (this.mode !== 'live') throw { code: 'not_granted' };
+      const payload = await this._call(
+        'create-discount',
+        { title: title || code, code, percentage, startsAt: new Date().toISOString(), customerEligibility: 'all_customers' },
+        { cache: false },
+        false
+      );
+      return typeof payload === 'string' ? payload : JSON.stringify(payload);
+    },
+
     async setTags(order, add, remove) {
       if (this.mode !== 'live' || !/^gid:/.test(order.id)) return { skipped: true };
       const payload = await this._call('graphql_mutation', { query: TAGS_MUTATION, variables: { id: order.id, add, remove } }, { cache: false }, false);

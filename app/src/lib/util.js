@@ -125,6 +125,16 @@
     return Number.isFinite(n) ? n : null;
   }
 
+  /* Montos en pesos tipeados a mano: el punto siempre es separador de miles ("12.000" → 12000, "1.500,5" → 1500.5). */
+  function parseMoney(raw) {
+    if (raw == null) return null;
+    if (typeof raw === 'number') return Number.isFinite(raw) ? raw : null;
+    const s = String(raw).replace(/[^\d.,\-−]/g, '').replace('−', '-').replace(/\./g, '').replace(',', '.');
+    if (!s || s === '-') return null;
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+  }
+
   function stripAccents(s) {
     return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '');
   }
@@ -289,6 +299,7 @@
     pct,
     int,
     parseNum,
+    parseMoney,
     stripAccents,
     escapeHtml,
     capitalizeName,

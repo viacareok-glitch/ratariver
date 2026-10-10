@@ -28,6 +28,15 @@
     ['resena', 'Pedir reseña'],
     ['resenaRecordatorio', 'Recordatorio de reseña'],
   ];
+  const TIENDA = [
+    ['precio1', 'Precio de 1 unidad', '68.990', true],
+    ['precio2', 'Precio llevando 2', '72.990', true],
+    ['envio', 'Envíos', 'Enviamos a todo el país', false],
+    ['pago', 'Forma de pago', 'pagás en efectivo cuando te llega', false],
+    ['demora', 'Cuánto tarda en llegar', 'Ej.: de 3 a 7 días hábiles', false],
+    ['talles', 'Talles', 'Ej.: Es regulable, va de S a XL', false],
+    ['garantia', 'Cambios o garantía', 'Ej.: Cambio dentro de los 10 días', false],
+  ];
   const VARS = ['nombre', 'pedido', 'cantidad', 'producto', 'total', 'direccion', 'ciudad', 'provincia', 'cp', 'extras', 'tienda', 'firma'];
 
   let el;
@@ -143,6 +152,31 @@
       '</div>' +
       (sample ? '<p class="muted small">Vista previa con el pedido ' + e(sample.name) + '.</p>' : '') +
       '</section>' +
+      '<section class="panel"><h3>Datos de la tienda</h3><p class="muted small">Los usan las respuestas a comentarios, el reactivador de clientes y la calculadora de ofertas. Poné solo lo que cumplís.</p><div class="form-grid">' +
+      TIENDA.map(([k, label, ph, unit]) => {
+        const v = App.tienda[k];
+        return (
+          '<label for="td-' +
+          k +
+          '">' +
+          e(label) +
+          (unit ? '<span class="input-unit"><span class="unit">$</span>' : '') +
+          '<input id="td-' +
+          k +
+          '" data-tienda="' +
+          k +
+          '"' +
+          (unit ? ' data-unit="$" inputmode="numeric"' : '') +
+          ' placeholder="' +
+          e(ph) +
+          '" value="' +
+          e(unit ? (v ? U.int(v) : '') : v || '') +
+          '">' +
+          (unit ? '</span>' : '') +
+          '</label>'
+        );
+      }).join('') +
+      '</div></section>' +
       '<div class="grid-2"><section class="panel"><h3>Producto para los guiones</h3><label for="msg-productoGuiones">Cómo se ve el corrector (la IA de video lo necesita para dibujarlo igual en cada clip)<textarea id="msg-productoGuiones" data-msg="productoGuiones" rows="3" placeholder="' +
       e(S.PRODUCTO_DEFAULT) +
       '">' +
@@ -183,9 +217,17 @@
 
   function onInput(ev) {
     const t = ev.target;
+    if (t.dataset.tienda) {
+      const k = t.dataset.tienda;
+      App.tienda[k] = t.dataset.unit === '$' ? U.parseMoney(t.value) || 0 : t.value;
+      App.saveTienda();
+      App.emit('tienda');
+      return;
+    }
     if (t.dataset.cfg) {
       const raw = t.value.trim();
-      const v = raw === '' ? (P.DEFAULT_CFG[t.dataset.cfg] === null ? null : 0) : U.parseNum(raw);
+      const parse = t.dataset.unit === '$' ? U.parseMoney : U.parseNum;
+      const v = raw === '' ? (P.DEFAULT_CFG[t.dataset.cfg] === null ? null : 0) : parse(raw);
       if (raw !== '' && v == null) return;
       App.cfg[t.dataset.cfg] = v;
       App.saveCfg();
@@ -200,7 +242,9 @@
 
   function onChange(ev) {
     const t = ev.target;
-    if (t.dataset.cfg) {
+    if (t.dataset.tienda && t.dataset.unit === '$') {
+      t.value = App.tienda[t.dataset.tienda] ? U.int(App.tienda[t.dataset.tienda]) : '';
+    } else if (t.dataset.cfg) {
       t.value = fmtVal(App.cfg[t.dataset.cfg], t.dataset.unit);
     } else if (t.dataset.msg && t.type === 'checkbox') {
       App.msgs[t.dataset.msg] = t.checked;

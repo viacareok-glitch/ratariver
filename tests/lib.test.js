@@ -235,3 +235,11 @@ test('CSV exportado de Shopify (una fila por ítem)', () => {
   assert.equal(a.day, '2026-10-09');
   assert.equal(b.estado, 'anulado');
 });
+
+test('montos tipeados en pesos', () => {
+  assert.equal(U.parseMoney('12.000'), 12000);
+  assert.equal(U.parseMoney('$ 1.500.000'), 1500000);
+  assert.equal(U.parseMoney('1.500,5'), 1500.5);
+  assert.equal(U.parseMoney('9500'), 9500);
+  assert.equal(U.parseMoney(''), null);
+});

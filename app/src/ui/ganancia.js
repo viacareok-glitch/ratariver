@@ -359,7 +359,7 @@
       const row = {};
       for (const k of ['tiktok', 'meta', 'otros']) {
         const inp = el.querySelector('#gasto-' + day + '-' + k);
-        row[k] = inp ? U.parseNum(inp.value) || 0 : 0;
+        row[k] = inp ? U.parseMoney(inp.value) || 0 : 0;
       }
       state.gastos[day] = row;
       Store.set('gastos/' + day, row).catch(storeFail);
@@ -385,7 +385,7 @@
         })
         .catch((err) => toast(err.message || 'No se pudo leer el archivo.', 'bad'));
     } else if (t.dataset.day) {
-      const v = U.parseNum(t.value);
+      const v = U.parseMoney(t.value);
       t.value = v ? U.int(v) : '';
     }
   }

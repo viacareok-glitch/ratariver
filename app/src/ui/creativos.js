@@ -395,7 +395,7 @@
     const t = ev.target;
     if (t.id === 'cr-file' && t.files && t.files[0]) loadFile(t.files[0]);
     else if (t.id === 'cr-cpa') {
-      const v = U.parseNum(t.value);
+      const v = U.parseMoney(t.value);
       state.cpaMax = v > 0 ? v : null;
       render();
       saveSummary();

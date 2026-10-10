@@ -342,7 +342,7 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
 .pill-radio.is-on { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
 .pill-radio:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
 .out-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
-#ugc-out, #cr-body, #gan-status, #conf-status, #res-status { display: grid; gap: 16px; }
+#ugc-out, #cr-body, #gan-status, #conf-status, #res-status, #cp-summary, #cli-status, #of-warn, #pr-warn, #cm-warn { display: grid; gap: 16px; }
 #ugc-out { gap: 14px; }
 .script { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: grid; gap: 14px; min-width: 0; }
 .script-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 10px; }
@@ -364,7 +364,8 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
 .setting { display: grid; grid-template-columns: 1fr minmax(120px, 160px); grid-template-areas: 'label input' 'help input'; gap: 2px 14px; align-items: center; }
 .setting-label { grid-area: label; font-weight: 600; font-size: 0.875rem; }
 .setting-help { grid-area: help; color: var(--muted); font-size: var(--step--1); }
-.input-unit { grid-area: input; display: flex; align-items: center; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); }
+.setting .input-unit { grid-area: input; }
+.input-unit { display: flex; align-items: center; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); }
 .input-unit .unit { padding-left: 9px; color: var(--muted); font-size: 0.8125rem; }
 .input-unit input { border: 0; width: 100%; text-align: right; font-family: var(--font-mono); font-size: 0.875rem; background: transparent; }
 .input-unit:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
@@ -375,6 +376,70 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
 .template > label { display: grid; gap: 4px; font-size: var(--step--1); color: var(--muted); font-weight: 600; }
 .tpl-foot { display: flex; justify-content: flex-end; }
 .preview { white-space: pre-wrap; font-size: 0.8125rem; background: var(--good-soft); padding: 10px 12px; border-radius: 10px 10px 10px 2px; overflow-wrap: anywhere; }
+
+/* Separador de grupos en las pestañas */
+.tab-sep { flex: 0 0 1px; align-self: center; height: 18px; background: var(--line); margin-inline: 6px; }
+
+/* Clientes */
+.msg-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.msg-row select { min-height: 30px; padding: 3px 6px; font-size: 0.8125rem; }
+.msg-preview > summary { cursor: pointer; color: var(--accent); font-size: var(--step--1); }
+.msg-preview .preview { margin-top: 6px; }
+.num-input.short { min-width: 0; width: 72px; }
+.code-row { padding-top: 4px; }
+details.panel[open] > summary { margin-bottom: 4px; }
+
+/* Competencia */
+.kv { display: grid; grid-template-columns: 90px 1fr; gap: 8px; align-items: center; }
+.comp .hook-cell { min-width: 240px; max-width: 420px; }
+.manual > summary { cursor: pointer; color: var(--accent); font-weight: 500; font-size: 0.875rem; }
+.manual[open] > summary { margin-bottom: 10px; }
+
+/* Comentarios */
+.comment-card textarea { font-size: 0.9rem; }
+.cm-q { font-size: 0.95rem; font-weight: 500; overflow-wrap: anywhere; }
+.cm-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.lib { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 14px; }
+.lib-group { display: grid; gap: 6px; align-content: start; }
+.lib-item { padding: 8px 10px; background: var(--surface-2); border-radius: var(--r-sm); display: grid; gap: 2px; font-size: 0.875rem; }
+
+/* Ofertas */
+.offers-edit input { width: 100%; min-width: 120px; }
+.offers-edit .num-input { min-width: 90px; }
+.offers-edit .num-input.short { width: 64px; min-width: 64px; }
+.input-unit.inline { display: inline-flex; width: auto; }
+.input-unit.inline .unit { padding: 0 8px 0 0; }
+.offer-bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.offer-bars li { display: grid; grid-template-columns: minmax(140px, 1.2fr) 2fr auto; gap: 10px; align-items: center; font-size: 0.875rem; }
+.offer-bars li.is-best .ob-name { font-weight: 600; }
+.table td.is-best-cell { background: var(--good-soft); font-weight: 600; }
+
+/* Productos */
+.ranking { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ranking li { display: grid; grid-template-columns: 22px minmax(150px, 1.4fr) 2fr 34px; gap: 10px; align-items: center; font-size: 0.875rem; }
+.rk-pos { color: var(--muted); }
+.product-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 14px; }
+.product-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.pc-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.pc-score { display: grid; justify-items: end; }
+.links { gap: 4px 12px; }
+.scales { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 8px; }
+.scales label { display: grid; gap: 3px; font-size: var(--step--1); color: var(--ink); font-weight: 500; }
+.scales select { min-height: 32px; }
+.pc-out { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px 12px; background: var(--surface-2); border-radius: var(--r-sm); }
+.pc-out > div { display: grid; gap: 2px; min-width: 0; }
+.pc-out .mono { font-size: 1rem; }
+.ia-sug { padding: 10px 12px; border: 1px dashed var(--accent); border-radius: var(--r-sm); display: grid; gap: 4px; justify-items: start; }
+.form-grid label .input-unit { margin-top: 0; }
+.form-grid label .input-unit input { min-height: 34px; }
+
+@media (max-width: 560px) {
+  .offer-bars li, .ranking li { grid-template-columns: 1fr auto; }
+  .offer-bars .wf-track, .ranking .wf-track { grid-column: 1 / -1; grid-row: 2; }
+  .ranking .rk-pos { display: none; }
+  .pc-out { grid-template-columns: 1fr 1fr; }
+  .kv { grid-template-columns: 1fr; }
+}
 
 @media (max-width: 560px) {
   h2 { font-size: var(--step-2); }
@@ -400,9 +465,14 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
   <main>
     <section id="panel-confirmar" role="tabpanel" aria-labelledby="tab-confirmar" class="tool"></section>
     <section id="panel-ganancia" role="tabpanel" aria-labelledby="tab-ganancia" class="tool" hidden></section>
-    <section id="panel-creativos" role="tabpanel" aria-labelledby="tab-creativos" class="tool" hidden></section>
     <section id="panel-resenas" role="tabpanel" aria-labelledby="tab-resenas" class="tool" hidden></section>
+    <section id="panel-clientes" role="tabpanel" aria-labelledby="tab-clientes" class="tool" hidden></section>
+    <section id="panel-creativos" role="tabpanel" aria-labelledby="tab-creativos" class="tool" hidden></section>
+    <section id="panel-competencia" role="tabpanel" aria-labelledby="tab-competencia" class="tool" hidden></section>
+    <section id="panel-comentarios" role="tabpanel" aria-labelledby="tab-comentarios" class="tool" hidden></section>
     <section id="panel-guiones" role="tabpanel" aria-labelledby="tab-guiones" class="tool" hidden></section>
+    <section id="panel-ofertas" role="tabpanel" aria-labelledby="tab-ofertas" class="tool" hidden></section>
+    <section id="panel-productos" role="tabpanel" aria-labelledby="tab-productos" class="tool" hidden></section>
     <section id="panel-ajustes" role="tabpanel" aria-labelledby="tab-ajustes" class="tool" hidden></section>
   </main>
 </div>
@@ -532,6 +602,16 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
     } else if (hasDot) {
       if (/^-?\d{1,3}(\.\d{3}){2,}$/.test(s)) s = s.replace(/\./g, '');
     }
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  /* Montos en pesos tipeados a mano: el punto siempre es separador de miles ("12.000" → 12000, "1.500,5" → 1500.5). */
+  function parseMoney(raw) {
+    if (raw == null) return null;
+    if (typeof raw === 'number') return Number.isFinite(raw) ? raw : null;
+    const s = String(raw).replace(/[^\d.,\-−]/g, '').replace('−', '-').replace(/\./g, '').replace(',', '.');
+    if (!s || s === '-') return null;
     const n = Number(s);
     return Number.isFinite(n) ? n : null;
   }
@@ -700,6 +780,7 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
     pct,
     int,
     parseNum,
+    parseMoney,
     stripAccents,
     escapeHtml,
     capitalizeName,
@@ -1725,6 +1806,612 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
 <script>
+/* lib/offers.js */
+/* Calculadora de ofertas: cuánto deja cada promo (1 unidad, 2x1, 3x2, regalo) contra entrega y con publicidad. */
+(function (root) {
+  'use strict';
+  const isNode = typeof module === 'object' && module.exports;
+  const P = isNode ? require('./profit.js') : root.VC.profit;
+
+  const DEFAULT_OFERTAS = [
+    { id: 'uno', nombre: '1 unidad', unidades: 1, precio: 68990, extra: 0, lift: 0 },
+    { id: 'dos', nombre: '2 unidades (oferta actual)', unidades: 2, precio: 72990, extra: 0, lift: 0 },
+    { id: '2x1', nombre: '2x1', unidades: 2, precio: 68990, extra: 0, lift: 0 },
+    { id: '3x2', nombre: '3x2', unidades: 3, precio: 137980, extra: 0, lift: 0 },
+    { id: 'regalo', nombre: '1 unidad + regalo', unidades: 1, precio: 68990, extra: 3000, lift: 0 },
+  ];
+
+  /*
+   * Economía de una oferta por pedido que entra.
+   * margenEntrega: lo que deja un pedido entregado antes de anuncios.
+   * esperado: lo que deja en promedio cada pedido que entra (con anulados y devoluciones), antes de anuncios.
+   * ganancia: esperado − costo de publicidad por pedido.
+   */
+  function evaluate(oferta, cfg, rates, cpaBase, envioExtraUnidad) {
+    const c = P.normalizeCfg(cfg);
+    const r = P.effectiveRates(c, rates);
+    const u = Math.max(1, Number(oferta.unidades) || 1);
+    const precio = Number(oferta.precio) || 0;
+    const extra = Number(oferta.extra) || 0;
+    const lift = Number(oferta.lift) || 0;
+    const envExtra = (Number(envioExtraUnidad) || 0) * (u - 1);
+    const margenEntrega = precio * (1 - c.comisionCobro / 100) - u * c.costoUnidad - extra - c.costoEnvio - envExtra - c.otrosPorPedido;
+    const perdidaDevolucion = c.costoDevolucion + c.otrosPorPedido + envExtra;
+    const esperado = r.confirmacion * (r.entrega * margenEntrega - (1 - r.entrega) * perdidaDevolucion);
+    const cpa = (Number(cpaBase) || 0) / Math.max(0.05, 1 + lift / 100);
+    const ganancia = esperado - cpa;
+    return {
+      oferta,
+      unidades: u,
+      precio,
+      precioUnidad: precio / u,
+      margenEntrega,
+      perdidaDevolucion,
+      esperado,
+      cpa,
+      ganancia,
+      gananciaPorUnidad: ganancia / u,
+      cpaEquilibrio: esperado,
+      rates: r,
+    };
+  }
+
+  /*
+   * Cuánta conversión extra necesita una oferta para ganar lo mismo que la base.
+   * Devuelve la variación relativa (0,25 = necesita 25% más pedidos por peso invertido) o null si no alcanza nunca.
+   */
+  function liftNeeded(ev, base) {
+    const cpaNecesario = ev.esperado - base.ganancia;
+    if (cpaNecesario <= 0) return null;
+    if (!(base.cpa > 0)) return ev.ganancia >= base.ganancia ? -1 : null;
+    return base.cpa / cpaNecesario - 1;
+  }
+
+  function compare(ofertas, cfg, rates, cpaBase, envioExtraUnidad) {
+    const evs = ofertas.map((o) => evaluate(o, cfg, rates, cpaBase, envioExtraUnidad));
+    const base = evs[0];
+    const best = evs.reduce((a, b) => (b.ganancia > a.ganancia ? b : a), evs[0]);
+    for (const ev of evs) {
+      ev.vsBase = ev.ganancia - base.ganancia;
+      ev.liftNecesario = ev === base ? 0 : liftNeeded(ev, base);
+      ev.mejor = ev === best;
+    }
+    return { evs, base, best };
+  }
+
+  /* Mezcla real de tus pedidos entregados: qué parte lleva 1, 2 o 3+ unidades. */
+  function unitMix(orders) {
+    const del = orders.filter((o) => o.estado === 'entregado');
+    const mix = { 1: 0, 2: 0, 3: 0 };
+    for (const o of del) mix[Math.min(3, Math.max(1, o.units))]++;
+    const n = del.length;
+    return { n, uno: n ? mix[1] / n : null, dos: n ? mix[2] / n : null, tresOMas: n ? mix[3] / n : null };
+  }
+
+  const api = { DEFAULT_OFERTAS, evaluate, liftNeeded, compare, unitMix };
+  if (isNode) module.exports = api;
+  else (root.VC = root.VC || {}).offers = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>
+/* lib/customers.js */
+/* Reactivador: arma la lista de clientes que ya pagaron y elige la oferta para cada uno. */
+(function (root) {
+  'use strict';
+  const isNode = typeof module === 'object' && module.exports;
+  const U = isNode ? require('./util.js') : root.VC.util;
+
+  const OFERTAS = {
+    familia: {
+      label: 'Segunda unidad para tu familia',
+      corto: 'Familia',
+      mensaje:
+        '¡Hola {nombre}! Te escribimos de {tienda} 😊 ¿Cómo te viene yendo con el corrector?\n\nComo ya sos cliente, te guardamos una oferta: un segundo corrector para alguien de tu familia a {precio_oferta} (en vez de {precio}).{codigo_txt} Pagás cuando te llega, como la vez pasada.\n\n¿Te lo mandamos a la misma dirección?',
+    },
+    amigo: {
+      label: 'Traé un amigo',
+      corto: 'Amigo',
+      mensaje:
+        '¡Hola {nombre}! Te escribimos de {tienda} 😊 Gracias por confiar en nosotros.\n\nSi conocés a alguien que también termina el día con la espalda o el cuello cargados, pasale este mensaje: con tu nombre tiene {beneficio_amigo} en su corrector, y a vos te regalamos {premio}.{codigo_txt}\n\nCualquier cosa nos escribís por acá.',
+    },
+    recompra: {
+      label: 'Volvé a comprar',
+      corto: 'Recompra',
+      mensaje:
+        '¡Hola {nombre}! Somos {tienda} 😊 Hace un tiempo te llevaste tu corrector y queríamos saber cómo te fue.\n\nEsta semana tenemos una oferta solo para clientes: {oferta_libre}.{codigo_txt} Pagás al recibir. ¿Te interesa?',
+    },
+  };
+
+  const DEFAULT_CFG = {
+    minDias: 20, // días desde la compra para escribirle (que ya lo haya usado)
+    pausaDias: 30, // no volver a escribirle antes de esto
+    precioOferta: 45000,
+    beneficioAmigo: '10% de descuento',
+    premio: 'un 10% de descuento en tu próxima compra',
+    ofertaLibre: '2 correctores con 20% de descuento',
+    codigo: '',
+    mensajes: {},
+  };
+
+  function lastDate(o) {
+    return o.closedAt || o.deliveredAt || o.shippedAt || o.createdAt;
+  }
+
+  /*
+   * Agrupa pedidos por WhatsApp. Un cliente es reactivable si tiene al menos un pedido entregado,
+   * ningún pedido abierto y pasaron `minDias` desde su última compra.
+   */
+  function buildCustomers(orders, opts) {
+    const o = Object.assign({ minDias: 20, now: Date.now(), resenas: new Map() }, opts || {});
+    const by = new Map();
+    for (const ord of orders) {
+      const k = ord.phone && ord.phone.wa;
+      if (!k) continue;
+      if (!by.has(k)) by.set(k, []);
+      by.get(k).push(ord);
+    }
+    const out = [];
+    for (const [wa, list] of by) {
+      list.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+      const entregados = list.filter((x) => x.estado === 'entregado' || x.estado === 'pagado');
+      if (!entregados.length) continue;
+      const ultimo = entregados[0];
+      const abiertos = list.filter((x) => x.estado === 'pendiente' || x.estado === 'en_camino');
+      const resena = entregados.map((x) => o.resenas.get(x.key)).find((r) => r && r.estado === 'recibida') || null;
+      const dias = Math.floor(U.hoursSince(lastDate(ultimo), o.now) / 24);
+      out.push({
+        wa,
+        key: wa,
+        nombre: U.capitalizeName([ultimo.firstName, ultimo.lastName].filter(Boolean).join(' ')),
+        firstName: ultimo.firstName,
+        ciudad: ultimo.city,
+        provincia: ultimo.province,
+        direccion: [ultimo.address1, ultimo.city].filter(Boolean).join(', '),
+        phone: ultimo.phone,
+        pedidos: list.length,
+        compras: entregados.length,
+        unidades: U.sum(entregados, (x) => x.units),
+        gastado: U.sum(entregados, (x) => x.total),
+        ultimaCompra: lastDate(ultimo),
+        ultimoPedido: list[0].name,
+        ultimoPedidoAt: list[0].createdAt,
+        dias,
+        abierto: abiertos.length > 0,
+        resena,
+        listo: abiertos.length === 0 && dias >= o.minDias,
+        orders: list,
+      });
+    }
+    return out.sort((a, b) => b.gastado - a.gastado || (a.ultimaCompra < b.ultimaCompra ? 1 : -1));
+  }
+
+  /* Oferta sugerida: quien llevó 2+ o dejó buena reseña ya confía → referido; el resto → segunda unidad. */
+  function suggestOffer(c) {
+    if ((c.resena && Number(c.resena.estrellas) >= 4) || c.unidades >= 2 || c.compras >= 2) return 'amigo';
+    return 'familia';
+  }
+
+  /* ¿Volvió a comprar después de que le escribimos? (pedido nuevo no anulado con su WhatsApp) */
+  function reordered(c, contactoISO) {
+    if (!contactoISO) return null;
+    const hit = c.orders.find((x) => x.createdAt > contactoISO && x.estado !== 'anulado');
+    return hit || null;
+  }
+
+  function messageVars(c, cfg, msgs) {
+    const conf = Object.assign({}, DEFAULT_CFG, cfg || {});
+    const precio = (msgs && msgs.precio1) || 68990;
+    return {
+      nombre: U.firstName(c.firstName) || 'hola',
+      tienda: (msgs && msgs.tienda) || 'ViaCare',
+      precio: U.money(precio),
+      precio_oferta: U.money(conf.precioOferta),
+      beneficio_amigo: conf.beneficioAmigo,
+      premio: conf.premio,
+      oferta_libre: conf.ofertaLibre,
+      codigo: conf.codigo || '',
+      codigo_txt: conf.codigo ? ' Usá el código ' + conf.codigo + '.' : '',
+      ciudad: c.ciudad || '',
+    };
+  }
+
+  function message(c, ofertaId, cfg, msgs) {
+    const conf = Object.assign({}, DEFAULT_CFG, cfg || {});
+    const tpl = (conf.mensajes && conf.mensajes[ofertaId]) || OFERTAS[ofertaId].mensaje;
+    return U.fillTemplate(tpl, messageVars(c, conf, msgs));
+  }
+
+  const api = { OFERTAS, DEFAULT_CFG, buildCustomers, suggestOffer, reordered, message, messageVars };
+  if (isNode) module.exports = api;
+  else (root.VC = root.VC || {}).customers = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>
+/* lib/comments.js */
+/* Respuestas para comentarios de TikTok: clasifica el comentario y propone una respuesta corta con tu tono. */
+(function (root) {
+  'use strict';
+  const isNode = typeof module === 'object' && module.exports;
+  const U = isNode ? require('./util.js') : root.VC.util;
+
+  const MAX = 150; // largo máximo de un comentario en TikTok
+
+  // Orden = prioridad cuando un comentario encaja en varios tipos
+  const TIPOS = [
+    { id: 'reclamo', label: 'Reclamo', tone: 'bad', re: /(nunca (me )?lleg|no me lleg|no lleg[oó]|reclamo|me estafaron|no responden|no contestan|p[eé]simo|horrible|me lleg[oó] (roto|mal|fallado))/ },
+    { id: 'salud', label: 'Salud', tone: 'warn', re: /(escoliosis|hernia|embaraz|lesi[oó]n|operad|cirug|artrosis|lordosis|cifosis|disco|ci[aá]tic|traumat|kinesi|fractura|osteopor)/ },
+    { id: 'positivo', label: 'Positivo', tone: 'good', re: /(^|\s)(me lleg[oó]( ya)?( y| re| super| s[uú]per| excelente| genial| hermoso|!|$)|lo tengo|lo uso|lo compr[eé]|me sirvi[oó]|lo recomiendo|recomendad[oa])/ },
+    { id: 'compra', label: 'Quiere comprar', tone: 'good', re: /(c[oó]mo (lo )?(compro|pido|consigo|hago)|d[oó]nde (lo )?(compro|consigo|venden)|lo quiero|quiero (uno|dos|el|lo|comprar)|me interesa|link|pas[aá] (el )?link|info\b|informaci[oó]n|me lo mand)/ },
+    { id: 'envio', label: 'Envío', tone: 'info', re: /(env[ií]o|env[ií]an|mandan|hacen env|llega|llegan|tarda|demora|c[oó]rdoba|rosario|mendoza|tucum[aá]n|salta|neuqu[eé]n|mar del plata|la plata|santa fe|interior|provincia|patagonia|chaco|corrientes|misiones|jujuy|san juan|san luis|entre r[ií]os|bah[ií]a blanca|caba|capital)/ },
+    { id: 'pago', label: 'Pago', tone: 'info', re: /(contra ?entrega|pago|pagar|efectivo|tarjeta|cuotas|transferencia|mercado ?pago|al recibir)/ },
+    { id: 'precio', label: 'Precio', tone: 'info', re: /(precio|cu[aá]nto (sale|cuesta|vale|est[aá]|es)|\$|valor|caro|barato|cu[aá]nto)/ },
+    { id: 'talle', label: 'Talle', tone: 'info', re: /(talle|medida|talla|xl|xxl|gord|flac|panza|busto|peso|mido|kilos|grandote|petis|hombre|mujer|unisex)/ },
+    { id: 'comodidad', label: 'Comodidad', tone: 'info', re: /(inc[oó]modo|molesta|lastima|aprieta|calor|se nota|abajo de la ropa|debajo de la ropa|roza|pica|transpira|duele usarlo|c[oó]modo)/ },
+    { id: 'uso', label: 'Uso', tone: 'info', re: /(cu[aá]ntas horas|todo el d[ií]a|dormir|cu[aá]nto tiempo|se lava|lavar|para chicos|para nenes|ni[ñn]os|adolescente)/ },
+    { id: 'duda', label: 'Duda si sirve', tone: 'warn', re: /(sirve|funciona|de verdad|en serio|verso|chamuyo|estafa|trucho|mentira|curro|chino|temu|shein|aliexpress|m[aá]s barato|ia\b|inteligencia artificial|actriz|actor)/ },
+    { id: 'positivo', label: 'Positivo', tone: 'good', re: /(me encant|lo tengo|lo uso|me lleg[oó]|lo compr[eé]|excelente|re bueno|recomiendo|genial|me sirvi[oó]|buen[ií]simo|❤|😍|🔥|👏)/ },
+  ];
+  const OTRO = { id: 'otro', label: 'Otro', tone: 'neutral' };
+
+  function classify(text) {
+    const s = U.stripAccents(String(text || '')).toLowerCase();
+    const raw = String(text || '').toLowerCase();
+    const pregunta = /[?¿]/.test(raw);
+    for (const t of TIPOS) {
+      if (pregunta && t.id === 'positivo') continue; // "¿lo tengo que usar todo el día?" no es un elogio
+      if (t.re.test(s) || t.re.test(raw)) return t;
+    }
+    return OTRO;
+  }
+
+  function tipo(id) {
+    return TIPOS.find((t) => t.id === id) || OTRO;
+  }
+
+  // Lugar mencionado ("¿llega a Córdoba?") para personalizar la respuesta de envío
+  function lugar(text) {
+    const m = String(text || '').match(/\b(?:a|en|para|hasta)\s+((?:[A-ZÁÉÍÓÚÑ][\wáéíóúñ]+)(?:\s+(?:del|de|la)?\s*[A-ZÁÉÍÓÚÑ][\wáéíóúñ]+)*)/);
+    return m ? m[1] : '';
+  }
+
+  function fit(s) {
+    s = s.replace(/\s+/g, ' ').trim();
+    if (s.length <= MAX) return s;
+    const cut = s.slice(0, MAX - 1);
+    return cut.slice(0, cut.lastIndexOf(' ')) + '…';
+  }
+
+  /*
+   * Respuesta de plantilla según el tipo. `d` son los datos de la tienda (precio1, precio2, envio, pago, demora, talles).
+   * variant rota entre redacciones para no repetir la misma frase en todos los comentarios.
+   */
+  function templateReply(text, d, variant) {
+    const t = classify(text);
+    const v = Number(variant) || 0;
+    const p1 = d.precio1 ? U.money(d.precio1) : '';
+    const p2 = d.precio2 ? U.money(d.precio2) : '';
+    const precio = p1 ? p1 + (p2 ? ' y llevando 2 pagás ' + p2 : '') : '';
+    const envio = d.envio || 'Enviamos a todo el país';
+    const pago = d.pago || 'pagás cuando te llega';
+    const demora = d.demora ? ' Tarda ' + d.demora + '.' : '';
+    const donde = lugar(text);
+    const opts = {
+      reclamo: ['Uh, perdón por eso. Escribinos por WhatsApp con tu número de pedido y lo resolvemos hoy mismo 🙏', 'Lamentamos mucho la demora. Mandanos tu número de pedido por WhatsApp y lo vemos ya.'],
+      salud: ['Para casos como el tuyo lo mejor es consultarlo con tu médico o kinesiólogo antes de usarlo. Cualquier duda te ayudamos 🙌', 'Con esa condición, consultalo primero con tu profesional de confianza. Te pasamos toda la info si la necesitás.'],
+      compra: ['¡Genial! Lo pedís desde el link del perfil y ' + pago + ' 🙌', 'Está en el link de nuestro perfil. Completás tus datos y ' + pago + '.'],
+      envio: [(donde ? '¡Sí! Llegamos a ' + donde + '. ' : '') + envio + ' y ' + pago + '.' + demora, envio + (donde ? ', ' + donde + ' incluido' : '') + '. ' + cap(pago) + ' 📦' + demora],
+      pago: ['Sí, ' + pago + '. No tenés que adelantar nada 🙌', cap(pago) + ', sin pagar nada antes. Lo pedís desde el link del perfil.'],
+      precio: [precio ? 'Sale ' + precio + '. Y ' + pago + ' 🙌' : 'Te pasamos el precio por mensaje privado. ' + cap(pago) + '.', precio ? 'Está ' + precio + ', y ' + pago + '. Link en el perfil.' : 'Escribinos por privado y te pasamos el precio. ' + cap(pago) + '.'],
+      talle: [d.talles ? d.talles + '. Si tenés dudas con tu medida, escribinos y te asesoramos.' : 'Se regula con las tiras para que quede a tu medida. Si querés, escribinos y te asesoramos.', 'Se ajusta con las tiras. Pasanos tu talle de remera por privado y te decimos 👌'],
+      comodidad: ['Es liviano y se regula: lo podés usar debajo de la remera y no se nota. Arrancá con ratitos cortos 🙌', 'Se ajusta a tu cuerpo y va debajo de la ropa. Lo ideal es empezar con un rato por día e ir sumando.'],
+      uso: ['Te recomendamos empezar con 1 o 2 horas por día e ir sumando. No es para dormir 😉', 'Arrancá con ratitos de 1 hora y subí de a poco. Se usa de día, mientras trabajás o estás sentado/a.'],
+      duda: ['Te ayuda a recordar la postura: tira los hombros suavemente hacia atrás. Y como ' + pago + ', lo ves antes de pagar 🙌', 'Entendemos la duda. Por eso ' + pago + ': lo recibís, lo ves y recién ahí pagás.'],
+      positivo: ['¡Gracias! Nos alegra un montón que te sirva 🙌', '¡Qué lindo leer esto! Gracias por elegirnos 💙'],
+      otro: ['¡Gracias por comentar! Cualquier duda escribinos por privado 🙌', 'Gracias por escribir. Si tenés alguna pregunta, contestamos por acá o por privado.'],
+    }[t.id];
+    return { tipo: t, respuesta: fit(opts[v % opts.length]) };
+  }
+
+  function cap(s) {
+    return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+  }
+
+  /* Separa lo pegado en comentarios: uno por línea, ignorando líneas de interfaz de TikTok (fechas, "Responder", contadores). */
+  function splitComments(text) {
+    return String(text || '')
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter((l) => l.length >= 2)
+      .filter((l) => !/^(responder|reply|ver \d+ respuestas?|view \d+ repl(y|ies)|\d+[smhdw]|hace \d+|\d{1,2}-\d{1,2}|\d+(\.\d+)?k?|me gusta|like|creador|creator|autor)$/i.test(l));
+  }
+
+  function buildPrompt(comments, d, extra) {
+    const datos = [
+      d.precio1 ? 'Precio: ' + U.money(d.precio1) + (d.precio2 ? '; 2 unidades: ' + U.money(d.precio2) : '') : '',
+      'Envío: ' + (d.envio || 'a todo el país'),
+      'Pago: ' + (d.pago || 'al recibir (contra entrega)'),
+      d.demora ? 'Demora: ' + d.demora : '',
+      d.talles ? 'Talles: ' + d.talles : '',
+      d.garantia ? 'Cambios/garantía: ' + d.garantia : '',
+    ]
+      .filter(Boolean)
+      .join('\n');
+    return [
+      'Sos community manager de ' + (d.tienda || 'ViaCare') + ', una tienda argentina que vende un corrector de postura con pago contra entrega por anuncios de TikTok.',
+      'Escribí una respuesta para cada comentario.',
+      '',
+      'DATOS DE LA TIENDA (usá solo estos, no inventes plazos, talles ni garantías):',
+      datos,
+      extra ? 'TONO EXTRA: ' + extra : '',
+      '',
+      'REGLAS',
+      '- Español rioplatense con voseo, cálido y breve. Máximo ' + MAX + ' caracteres por respuesta. Como mucho un emoji.',
+      '- Nada de promesas de cura ni claims médicos. Si mencionan una condición de salud, sugerí consultarlo con su médico o kinesiólogo.',
+      '- Ante escepticismo, recordá que pagan al recibir, sin discutir.',
+      '- Reclamos: pedí disculpas y que escriban por WhatsApp con su número de pedido. Nunca discutas en público.',
+      '- Insultos o spam: respuesta vacía y "ocultar": true.',
+      '- "video": true si conviene responder con un video (una objeción que se repite y se explica mejor mostrando el producto).',
+      '',
+      'COMENTARIOS (uno por línea, numerados):',
+      comments.map((c, i) => i + 1 + '. ' + c).join('\n'),
+      '',
+      'Respondé SOLO con JSON: {"respuestas":[{"n":1,"tipo":"precio|envio|pago|compra|talle|comodidad|uso|duda|salud|reclamo|positivo|otro","respuesta":"…","video":false,"ocultar":false}]}',
+    ]
+      .filter((l) => l !== '')
+      .join('\n')
+      .replace(/\n(DATOS|REGLAS|COMENTARIOS|Respondé)/g, '\n\n$1');
+  }
+
+  const api = { MAX, TIPOS, OTRO, classify, tipo, templateReply, splitComments, buildPrompt, fit, lugar };
+  if (isNode) module.exports = api;
+  else (root.VC = root.VC || {}).comments = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>
+/* lib/competitors.js */
+/* Espía de anuncios: links a la Biblioteca de anuncios de Meta, fechas de circulación y resumen de ganchos/ángulos/ofertas. */
+(function (root) {
+  'use strict';
+  const isNode = typeof module === 'object' && module.exports;
+  const U = isNode ? require('./util.js') : root.VC.util;
+
+  const BUSQUEDAS = ['corrector postural', 'corrector de postura', 'corrector de espalda', 'faja postural', 'postura espalda', 'dolor de espalda'];
+  const GANADOR_DIAS = 21; // un anuncio que sigue activo después de 3 semanas probablemente vende
+
+  const ANGULOS = {
+    dolor: 'Dolor',
+    medico: 'Médico / experto',
+    estetica: 'Estética',
+    gym: 'Gym',
+    oficina: 'Home office',
+    regalo: 'Regalo',
+    otro: 'Otro',
+  };
+
+  function adLibraryUrl(q, country) {
+    return (
+      'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=' +
+      encodeURIComponent(country || 'AR') +
+      '&q=' +
+      encodeURIComponent(q) +
+      '&search_type=keyword_unordered&media_type=all'
+    );
+  }
+
+  function tiktokTopAdsUrl() {
+    return 'https://ads.tiktok.com/business/creativecenter/inspiration/topads/pc/es';
+  }
+
+  const MESES = { ene: 0, jan: 0, feb: 1, mar: 2, abr: 3, apr: 3, may: 4, jun: 5, jul: 6, ago: 7, aug: 7, sep: 8, set: 8, oct: 9, nov: 10, dic: 11, dec: 11 };
+
+  /* "12 ago 2026", "12 de agosto de 2026", "Aug 12, 2026", "2026-08-12", "12/08/2026" → AAAA-MM-DD */
+  function parseDate(str) {
+    if (!str) return null;
+    const s = U.stripAccents(String(str)).toLowerCase().trim();
+    let m = s.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return m[1] + '-' + m[2] + '-' + m[3];
+    m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (m) return m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0');
+    m = s.match(/(\d{1,2})\s+(?:de\s+)?([a-z]{3})[a-z]*\.?\s+(?:de\s+)?(\d{4})/);
+    if (m && m[2] in MESES) return m[3] + '-' + String(MESES[m[2]] + 1).padStart(2, '0') + '-' + m[1].padStart(2, '0');
+    m = s.match(/([a-z]{3})[a-z]*\.?\s+(\d{1,2}),?\s+(\d{4})/);
+    if (m && m[1] in MESES) return m[3] + '-' + String(MESES[m[1]] + 1).padStart(2, '0') + '-' + m[2].padStart(2, '0');
+    return null;
+  }
+
+  function daysActive(desde, today) {
+    const d = parseDate(desde);
+    if (!d) return null;
+    return Math.max(0, U.daysBetween(d, today || U.todayKeyAR()));
+  }
+
+  function summarize(ads, today) {
+    const withDays = ads.map((a) => Object.assign({}, a, { dias: a.dias != null ? a.dias : daysActive(a.desde, today) }));
+    const ganadores = withDays.filter((a) => a.dias != null && a.dias >= GANADOR_DIAS);
+    const count = (k) => {
+      const m = new Map();
+      for (const a of withDays) {
+        const v = (a[k] || '').trim();
+        if (v) m.set(v, (m.get(v) || 0) + 1);
+      }
+      return [...m.entries()].sort((x, y) => y[1] - x[1]);
+    };
+    return {
+      total: withDays.length,
+      ganadores: ganadores.length,
+      anunciantes: new Set(withDays.map((a) => (a.anunciante || '').toLowerCase()).filter(Boolean)).size,
+      angulos: count('angulo'),
+      ofertas: count('oferta'),
+      ads: withDays.sort((a, b) => (b.dias == null ? -1 : b.dias) - (a.dias == null ? -1 : a.dias)),
+    };
+  }
+
+  function extractPrompt(text, nImages, today) {
+    return [
+      'Te paso lo que copié o capturé de la Biblioteca de anuncios de Meta buscando correctores de postura en Argentina.',
+      nImages ? 'Hay ' + nImages + ' captura(s) de pantalla adjuntas.' : '',
+      text ? 'TEXTO COPIADO:\n' + text.slice(0, 60000) : '',
+      '',
+      'Hoy es ' + today + '. Extraé cada anuncio distinto que veas. Para cada uno:',
+      '- anunciante: nombre de la página',
+      '- desde: fecha en que empezó a circular, en formato AAAA-MM-DD (si dice "Comenzó a circular el…" o "Started running on…"); vacío si no está',
+      '- gancho: la primera frase del texto o del video, tal cual (máximo 20 palabras)',
+      '- angulo: uno de dolor | medico | estetica | gym | oficina | regalo | otro',
+      '- oferta: la promo en pocas palabras (ej.: "2x1", "envío gratis + pago al recibir", "40% off"); vacío si no hay',
+      '- precio: si aparece, el número en pesos sin símbolos; vacío si no',
+      '- formato: video | imagen | carrusel',
+      '- cta: el botón (Comprar, Más información, Enviar mensaje…)',
+      '- nota: qué hace bien o qué se puede aprender, en una oración',
+      'No inventes anuncios ni datos que no estén en el material. Si un anuncio aparece repetido (varias versiones), contalo una vez y decilo en la nota.',
+      '',
+      'Respondé SOLO con JSON: {"anuncios":[{"anunciante":"","desde":"","gancho":"","angulo":"","oferta":"","precio":"","formato":"","cta":"","nota":""}]}',
+    ]
+      .filter((l) => l !== '')
+      .join('\n');
+  }
+
+  function insightPrompt(ads, today, d) {
+    d = d || {};
+    const lines = ads
+      .slice(0, 120)
+      .map((a) => [a.anunciante, a.dias != null ? a.dias + ' días' : 's/f', a.angulo, a.oferta, a.precio, a.formato, '"' + (a.gancho || '') + '"'].join(' | '))
+      .join('\n');
+    return [
+      'Sos estratega de creativos para e-commerce en Argentina. Mi tienda, ViaCare, vende un corrector de postura con pago contra entrega por TikTok y Meta.',
+      'Estos son anuncios activos de la competencia (anunciante | días activo | ángulo | oferta | precio | formato | gancho). Los que llevan ' + GANADOR_DIAS + ' días o más probablemente funcionan. Hoy es ' + today + '.',
+      lines,
+      '',
+      'Respondé en español rioplatense, texto plano con guiones, breve:',
+      '1. Qué está funcionando: ganchos, ángulos y ofertas que se repiten en los anuncios con más días.',
+      '2. Huecos: ángulos u ofertas que nadie está usando y podrían diferenciarme.',
+      '3. Precios: cómo me ubico' + (d.precio1 ? ' (mi precio: 1 unidad ' + U.money(d.precio1) + (d.precio2 ? ', 2 unidades ' + U.money(d.precio2) : '') + ')' : '') + '.',
+      '4. Cinco ideas de creativos para ViaCare inspiradas en lo que funciona, sin copiar: gancho (primera frase), ángulo y qué se ve en los primeros 3 segundos.',
+      'Nada de claims médicos ni promesas de cura.',
+    ].join('\n');
+  }
+
+  function sanitizeAds(data) {
+    const list = Array.isArray(data) ? data : data && Array.isArray(data.anuncios) ? data.anuncios : [];
+    return list
+      .filter((a) => a && (a.gancho || a.anunciante))
+      .map((a) => ({
+        anunciante: String(a.anunciante || '').trim(),
+        desde: parseDate(a.desde) || '',
+        gancho: String(a.gancho || '').trim(),
+        angulo: ANGULOS[a.angulo] ? a.angulo : 'otro',
+        oferta: String(a.oferta || '').trim(),
+        precio: U.parseMoney(a.precio) || null,
+        formato: String(a.formato || '').trim().toLowerCase(),
+        cta: String(a.cta || '').trim(),
+        nota: String(a.nota || '').trim(),
+      }));
+  }
+
+  const api = { BUSQUEDAS, GANADOR_DIAS, ANGULOS, adLibraryUrl, tiktokTopAdsUrl, parseDate, daysActive, summarize, extractPrompt, insightPrompt, sanitizeAds };
+  if (isNode) module.exports = api;
+  else (root.VC = root.VC || {}).competitors = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>
+/* lib/products.js */
+/* Buscador del próximo producto: compara candidatos por margen, demanda, competencia y afinidad con el cliente del corrector. */
+(function (root) {
+  'use strict';
+  const isNode = typeof module === 'object' && module.exports;
+  const U = isNode ? require('./util.js') : root.VC.util;
+  const P = isNode ? require('./profit.js') : root.VC.profit;
+
+  /*
+   * Candidatos de partida. Precios de referencia: publicaciones de Mercado Libre Argentina relevadas por
+   * MejoresCompras en octubre de 2026 (cambian seguido). Los puntajes 1–5 son estimaciones para arrancar: ajustalos.
+   * demanda/afinidad/video: más es mejor · competencia/riesgo: más es peor.
+   */
+  const REF_FECHA = 'oct 2026';
+  const CANDIDATOS = [
+    { id: 'almohada', nombre: 'Almohada cervical viscoelástica', busqueda: 'almohada cervical viscoelastica', refMin: 16500, refMax: 78500, demanda: 4, competencia: 4, afinidad: 5, video: 4, riesgo: 2, envioExtra: 3000, nota: 'Mismo dolor (cuello) que el corrector. Voluminosa: el envío sale más caro.' },
+    { id: 'masajeador', nombre: 'Masajeador cervical eléctrico (shiatsu)', busqueda: 'masajeador cervical electrico shiatsu', refMin: 34000, refMax: 70000, demanda: 4, competencia: 3, afinidad: 5, video: 5, riesgo: 3, envioExtra: 0, nota: 'Muy demostrable en video y de ticket alto. Electrónico: más fallas y reclamos.' },
+    { id: 'pistola', nombre: 'Pistola de masaje muscular', busqueda: 'pistola masajeadora muscular', refMin: 28000, refMax: 76000, demanda: 4, competencia: 4, afinidad: 3, video: 5, riesgo: 3, envioExtra: 0, nota: 'Encaja con el ángulo gym. Muchos vendedores en Mercado Libre.' },
+    { id: 'lumbar', nombre: 'Almohadón lumbar para silla', busqueda: 'almohadon lumbar silla ergonomico', refMin: null, refMax: null, demanda: 3, competencia: 3, afinidad: 5, video: 3, riesgo: 2, envioExtra: 2000, nota: 'Para el mismo cliente de home office. Sin precios de referencia relevados.' },
+    { id: 'plantillas', nombre: 'Plantillas ortopédicas', busqueda: 'plantillas ortopedicas', refMin: 16000, refMax: 30000, demanda: 3, competencia: 3, afinidad: 3, video: 3, riesgo: 4, envioExtra: 0, nota: 'Livianas y baratas de enviar, pero con talles: más cambios.' },
+    { id: 'soporte', nombre: 'Soporte de notebook', busqueda: 'soporte notebook aluminio', refMin: 8000, refMax: 51000, demanda: 3, competencia: 5, afinidad: 4, video: 3, riesgo: 1, envioExtra: 0, nota: 'Postura frente a la compu, pero hay muchísima oferta barata.' },
+    { id: 'faja', nombre: 'Faja lumbar', busqueda: 'faja lumbar', refMin: null, refMax: null, demanda: 3, competencia: 4, afinidad: 4, video: 2, riesgo: 3, envioExtra: 0, nota: 'Mismo cliente con dolor lumbar. Talles y poca diferencia visual.' },
+  ];
+
+  const PESOS = { margen: 30, demanda: 20, competencia: 15, afinidad: 15, video: 10, riesgo: 10 };
+
+  function mlUrl(q) {
+    return 'https://listado.mercadolibre.com.ar/' + encodeURIComponent(U.stripAccents(q).toLowerCase().trim().replace(/\s+/g, '-'));
+  }
+  function trendsUrl(q) {
+    return 'https://trends.google.com/trends/explore?geo=AR&q=' + encodeURIComponent(q);
+  }
+
+  /*
+   * Economía de un candidato vendido por anuncios (con CPA) y a clientes actuales por WhatsApp (sin anuncios).
+   */
+  function economics(p, cfg, rates, cpa) {
+    const c = P.normalizeCfg(cfg);
+    const r = P.effectiveRates(c, rates);
+    const precio = Number(p.precio) || 0;
+    const costo = Number(p.costo) || 0;
+    if (!precio || !costo) return null;
+    const envio = c.costoEnvio + (Number(p.envioExtra) || 0);
+    const margenEntrega = precio * (1 - c.comisionCobro / 100) - costo - envio - c.otrosPorPedido;
+    const perdida = c.costoDevolucion + (Number(p.envioExtra) || 0) + c.otrosPorPedido;
+    const esperado = r.confirmacion * (r.entrega * margenEntrega - (1 - r.entrega) * perdida);
+    const conAnuncios = esperado - (Number(cpa) || 0);
+    // A un cliente que ya compró se le escribe por WhatsApp: no hay CPA y casi siempre confirma
+    const aCliente = r.entrega * margenEntrega - (1 - r.entrega) * perdida;
+    return { precio, costo, margenEntrega, esperado, conAnuncios, aCliente, markup: precio / costo };
+  }
+
+  function margenScore(conAnuncios) {
+    if (conAnuncios == null) return null;
+    return U.clamp(1 + (conAnuncios / 20000) * 4, 1, 5); // $0 → 1 · $20.000 o más por pedido → 5
+  }
+
+  function score(p, cfg, rates, cpa) {
+    const eco = economics(p, cfg, rates, cpa);
+    const parts = {
+      margen: eco ? margenScore(eco.conAnuncios) : null,
+      demanda: Number(p.demanda) || 3,
+      competencia: 6 - (Number(p.competencia) || 3),
+      afinidad: Number(p.afinidad) || 3,
+      video: Number(p.video) || 3,
+      riesgo: 6 - (Number(p.riesgo) || 3),
+    };
+    let total = 0;
+    let peso = 0;
+    for (const [k, w] of Object.entries(PESOS)) {
+      if (parts[k] == null) continue;
+      total += w * ((parts[k] - 1) / 4);
+      peso += w;
+    }
+    return { eco, parts, puntaje: peso ? Math.round((total / peso) * 100) : 0, completo: parts.margen != null };
+  }
+
+  function claudePrompt(list, d) {
+    const rows = list.map((p) => '- ' + p.nombre + (p.refMin ? ' (Mercado Libre: ' + U.money(p.refMin) + ' a ' + U.money(p.refMax) + ')' : '')).join('\n');
+    return [
+      'Tengo una tienda online en Argentina (ViaCare) que vende un corrector de postura a ' + U.money(d.precio1 || 68990) + ' con pago contra entrega, por anuncios de TikTok y Meta. Mis clientes: gente de 25 a 60 años con dolor de espalda o cuello por trabajar sentada o usar el celular.',
+      'Quiero sumar un segundo producto para venderle al mismo cliente y para anunciar.',
+      'Candidatos:',
+      rows,
+      '',
+      'Para cada uno estimá del 1 al 5: demanda en Argentina, competencia (5 = mucha), afinidad con mi cliente del corrector, qué tan bien se muestra en un video corto, y riesgo operativo (5 = muchas devoluciones, talles, fallas o envío caro).',
+      'Sugerí un precio de venta para contra entrega en Argentina (en pesos), el mejor ángulo de anuncio y un combo con el corrector.',
+      'No tenés acceso a internet: basate en lo que sabés y aclaralo en "dudas" cuando no estés seguro.',
+      '',
+      'Respondé SOLO con JSON: {"productos":[{"nombre":"(igual que en la lista)","demanda":3,"competencia":3,"afinidad":3,"video":3,"riesgo":3,"precio_sugerido":0,"angulo":"…","combo":"…","dudas":"…"}],"recomendacion":"2-3 oraciones"}',
+    ].join('\n');
+  }
+
+  const api = { REF_FECHA, CANDIDATOS, PESOS, mlUrl, trendsUrl, economics, score, margenScore, claudePrompt };
+  if (isNode) module.exports = api;
+  else (root.VC = root.VC || {}).products = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>
 /* runtime.js */
 /*
  * Conexiones del panel: datos guardados (db del artifact o, si no hay, este navegador),
@@ -2104,6 +2791,18 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
       return list;
     },
 
+    /* Crea un código de descuento porcentual para toda la tienda, activo desde ahora. */
+    async createDiscount({ code, percentage, title }) {
+      if (this.mode !== 'live') throw { code: 'not_granted' };
+      const payload = await this._call(
+        'create-discount',
+        { title: title || code, code, percentage, startsAt: new Date().toISOString(), customerEligibility: 'all_customers' },
+        { cache: false },
+        false
+      );
+      return typeof payload === 'string' ? payload : JSON.stringify(payload);
+    },
+
     async setTags(order, add, remove) {
       if (this.mode !== 'live' || !/^gid:/.test(order.id)) return { skipped: true };
       const payload = await this._call('graphql_mutation', { query: TAGS_MUTATION, variables: { id: order.id, add, remove } }, { cache: false }, false);
@@ -2200,9 +2899,21 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
     diasResena: 4,
   };
 
+  // Datos que usan las respuestas a comentarios, el reactivador y la calculadora de ofertas
+  const DEFAULT_TIENDA = {
+    precio1: 68990,
+    precio2: 72990,
+    envio: 'Enviamos a todo el país',
+    pago: 'pagás en efectivo cuando te llega',
+    demora: '',
+    talles: '',
+    garantia: '',
+  };
+
   const App = {
     cfg: Object.assign({}, VC.profit.DEFAULT_CFG),
     msgs: Object.assign({}, DEFAULT_MSGS),
+    tienda: Object.assign({}, DEFAULT_TIENDA),
     confirm: new Map(), // key pedido → {estado, ...}
     resenas: new Map(),
     ultimoAnalisis: null,
@@ -2226,6 +2937,13 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
     saveMsgs: debounce(function () {
       Store.set('config/mensajes', Object.assign({}, App.msgs)).catch(storeFail);
     }, 700),
+    saveTienda: debounce(function () {
+      Store.set('config/tienda', Object.assign({}, App.tienda)).catch(storeFail);
+    }, 700),
+    // Nombre de la tienda + datos de venta, para plantillas
+    datos() {
+      return Object.assign({ tienda: App.msgs.tienda }, App.tienda);
+    },
     confirmStates() {
       const m = new Map();
       for (const [k, v] of this.confirm) m.set(k, v.estado);
@@ -2404,7 +3122,7 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
     });
   }
 
-  VC.ui = { e, $, $$, App, DEFAULT_MSGS, toast, copyText, chip, banner, emptyState, waButton, WA_ICON, kpi, seg, shopStatusBanner, debounce, prefGet, prefSet, readFileText, storeFail };
+  VC.ui = { e, $, $$, App, DEFAULT_MSGS, DEFAULT_TIENDA, toast, copyText, chip, banner, emptyState, waButton, WA_ICON, kpi, seg, shopStatusBanner, debounce, prefGet, prefSet, readFileText, storeFail };
 })(window);
 </script>
 <script>
@@ -3095,7 +3813,7 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
       const row = {};
       for (const k of ['tiktok', 'meta', 'otros']) {
         const inp = el.querySelector('#gasto-' + day + '-' + k);
-        row[k] = inp ? U.parseNum(inp.value) || 0 : 0;
+        row[k] = inp ? U.parseMoney(inp.value) || 0 : 0;
       }
       state.gastos[day] = row;
       Store.set('gastos/' + day, row).catch(storeFail);
@@ -3121,7 +3839,7 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
         })
         .catch((err) => toast(err.message || 'No se pudo leer el archivo.', 'bad'));
     } else if (t.dataset.day) {
-      const v = U.parseNum(t.value);
+      const v = U.parseMoney(t.value);
       t.value = v ? U.int(v) : '';
     }
   }
@@ -3540,7 +4258,7 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
     const t = ev.target;
     if (t.id === 'cr-file' && t.files && t.files[0]) loadFile(t.files[0]);
     else if (t.id === 'cr-cpa') {
-      const v = U.parseNum(t.value);
+      const v = U.parseMoney(t.value);
       state.cpaMax = v > 0 ? v : null;
       render();
       saveSummary();
@@ -4236,6 +4954,1687 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
 })(window);
 </script>
 <script>
+/* ui/clientes.js */
+/* Reactivador de clientes que ya pagaron */
+(function (root) {
+  'use strict';
+  const VC = root.VC;
+  const U = VC.util;
+  const O = VC.orders;
+  const C = VC.customers;
+  const OF = VC.offers;
+  const { Store, Shop } = VC.runtime;
+  const { e, $, App, chip, waButton, seg, emptyState, shopStatusBanner, toast, prefGet, prefSet, storeFail } = VC.ui;
+
+  const R_ESTADOS = {
+    enviado: { label: 'Oferta enviada', tone: 'warn' },
+    respondio: { label: 'Respondió', tone: 'info' },
+    compro: { label: 'Compró', tone: 'good' },
+    no: { label: 'No le interesa', tone: 'neutral' },
+  };
+
+  const state = {
+    filtro: prefGet('cli-filtro', 'escribir'),
+    cfg: Object.assign({}, C.DEFAULT_CFG),
+    contactos: new Map(),
+    elegida: {}, // wa → oferta elegida a mano
+    loading: false,
+    error: null,
+    codigo: { pct: 15, running: false, msg: '' },
+  };
+  let el;
+
+  function mount(section) {
+    el = section;
+    el.innerHTML =
+      '<header class="tool-head"><div><h2>Clientes para reactivar</h2><p class="lede">Gente que ya te compró y pagó. Escribiles con una oferta: venderle de nuevo a alguien que confía en vos cuesta mucho menos que conseguir un cliente nuevo.</p></div>' +
+      '<div class="tool-actions"><button class="btn ghost" data-act="refrescar">Actualizar</button></div></header>' +
+      '<div id="cli-status"></div><div id="cli-summary"></div><details class="panel" id="cli-ofertas"></details><div id="cli-filters"></div><div id="cli-list" class="order-list"></div>';
+    el.addEventListener('click', onClick);
+    el.addEventListener('change', onChange);
+    el.addEventListener('input', onInput);
+    Shop.onChange(render);
+    App.on((w) => (w === 'resenas' || w === 'cfg' || w === 'msgs' || w === 'tienda') && render());
+    Store.get('config/reactivar').then((d) => {
+      if (d) state.cfg = Object.assign({}, C.DEFAULT_CFG, d, { mensajes: Object.assign({}, d.mensajes || {}) });
+      renderOfertas();
+      render();
+    });
+    Store.watch('reactivacion', (m) => {
+      state.contactos = m;
+      render();
+    });
+    renderOfertas();
+    load();
+  }
+
+  async function load(fresh) {
+    state.loading = true;
+    state.error = null;
+    render();
+    try {
+      await Shop.ensure(U.addDays(U.todayKeyAR(), -365), { fresh });
+    } catch (err) {
+      state.error = err;
+    }
+    state.loading = false;
+    render();
+  }
+
+  const saveCfg = VC.ui.debounce(() => Store.set('config/reactivar', JSON.parse(JSON.stringify(state.cfg))).catch(storeFail), 700);
+
+  function ofertaDe(c) {
+    const ct = state.contactos.get(c.wa);
+    return state.elegida[c.wa] || (ct && ct.oferta) || C.suggestOffer(c);
+  }
+
+  function lists() {
+    const all = C.buildCustomers(Shop.orders, { minDias: Number(state.cfg.minDias) || 20, resenas: App.resenas });
+    const now = Date.now();
+    const pausa = (Number(state.cfg.pausaDias) || 30) * 24;
+    for (const c of all) {
+      const ct = state.contactos.get(c.wa);
+      c.contacto = ct || null;
+      c.volvio = ct ? C.reordered(c, ct.enviadoEn) : null;
+      c.enPausa = ct && ct.enviadoEn && U.hoursSince(ct.enviadoEn, now) < pausa;
+    }
+    return {
+      all,
+      escribir: all.filter((c) => c.listo && !c.contacto),
+      escritos: all.filter((c) => c.contacto && !c.volvio && c.contacto.estado !== 'compro'),
+      volvieron: all.filter((c) => c.volvio || (c.contacto && c.contacto.estado === 'compro')),
+    };
+  }
+
+  function render() {
+    if (!el) return;
+    const st = $('#cli-status', el);
+    if (Shop.mode === 'none') st.innerHTML = shopStatusBanner({ message: 'Esta vista no puede conectarse a Shopify. Abrí el panel desde claude.ai o importá el CSV de pedidos.' });
+    else st.innerHTML = state.error ? shopStatusBanner(state.error) : '';
+
+    const L = lists();
+    const loadingFirst = (state.loading || Shop.mode === 'pending') && !Shop.loadedAt;
+    const recuperado = U.sum(L.volvieron, (c) => (c.volvio ? c.volvio.total : 0));
+    const respondieron = L.all.filter((c) => c.contacto && ['respondio', 'compro'].includes(c.contacto.estado)).length;
+    $('#cli-summary', el).innerHTML = loadingFirst
+      ? '<div class="summary-strip is-loading">Cargando clientes…</div>'
+      : '<div class="summary-strip">' +
+        stat(L.all.length, 'clientes que pagaron') +
+        stat(L.escribir.length, 'listos para escribir', L.escribir.length ? 'warn' : '') +
+        stat(L.escritos.length + L.volvieron.length, 'ya escritos') +
+        stat(respondieron, 'respondieron') +
+        stat(L.volvieron.length, 'volvieron a comprar', L.volvieron.length ? 'good' : '') +
+        stat(recuperado ? U.moneyShort(recuperado) : '—', 'vendido de nuevo') +
+        '</div>';
+
+    $('#cli-filters', el).innerHTML = seg(
+      'cli-filtro',
+      [
+        { value: 'escribir', label: 'Para escribir', count: L.escribir.length },
+        { value: 'escritos', label: 'Escritos', count: L.escritos.length },
+        { value: 'volvieron', label: 'Volvieron', count: L.volvieron.length },
+        { value: 'all', label: 'Todos', count: L.all.length },
+      ],
+      state.filtro
+    );
+
+    const list = L[state.filtro] || L.all;
+    const box = $('#cli-list', el);
+    if (loadingFirst) box.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div>';
+    else if (!list.length)
+      box.innerHTML = emptyState(
+        'Nada por acá',
+        e(
+          {
+            escribir: L.all.length ? 'Ya les escribiste a todos los clientes listos. Los que compraron hace menos de ' + state.cfg.minDias + ' días aparecen cuando pase ese tiempo.' : 'Todavía no hay clientes con pedidos entregados y cobrados.',
+            escritos: 'Todavía no le mandaste ninguna oferta a un cliente.',
+            volvieron: 'Cuando un cliente al que le escribiste haga un pedido nuevo, aparece acá solo.',
+            all: 'Todavía no hay clientes con pedidos entregados y cobrados.',
+          }[state.filtro]
+        )
+      );
+    else box.innerHTML = list.map(card).join('');
+  }
+
+  function stat(v, label, tone) {
+    return '<div class="stat' + (tone ? ' tone-' + tone : '') + '"><span class="stat-value">' + e(v) + '</span><span class="stat-label">' + e(label) + '</span></div>';
+  }
+
+  function card(c) {
+    const of = ofertaDe(c);
+    const ct = c.contacto;
+    const msg = C.message(c, of, state.cfg, App.datos());
+    const chips = [
+      c.volvio ? chip('Volvió a comprar: ' + c.volvio.name, 'good') : ct && R_ESTADOS[ct.estado] ? chip(R_ESTADOS[ct.estado].label, R_ESTADOS[ct.estado].tone) : c.listo ? chip('Listo para escribir', 'info') : '',
+      c.abierto ? chip('Tiene un pedido abierto', 'neutral') : '',
+      !c.listo && !c.abierto && !ct ? chip('Compró hace ' + c.dias + ' días', 'neutral') : '',
+      c.resena ? chip('Reseña ' + '★'.repeat(Number(c.resena.estrellas) || 5), 'good') : '',
+      c.compras > 1 ? chip(c.compras + ' compras', 'source') : '',
+    ].join('');
+    const ofSel =
+      '<label class="field-inline small" for="of-' +
+      e(c.wa) +
+      '">Oferta <select id="of-' +
+      e(c.wa) +
+      '" data-oferta="' +
+      e(c.wa) +
+      '">' +
+      Object.entries(C.OFERTAS)
+        .map(([k, o]) => '<option value="' + k + '"' + (k === of ? ' selected' : '') + '>' + e(o.label) + (k === C.suggestOffer(c) ? ' (sugerida)' : '') + '</option>')
+        .join('') +
+      '</select></label>';
+    return (
+      '<article class="order-card' +
+      (c.volvio ? ' is-good' : '') +
+      '"><div class="oc-top"><div class="oc-id"><strong>' +
+      e(c.nombre || 'Sin nombre') +
+      '</strong><span class="muted">' +
+      e([c.ciudad, c.provincia].filter(Boolean).join(', ')) +
+      '</span></div><div class="oc-total mono">' +
+      e(U.money(c.gastado)) +
+      '</div></div><div class="oc-addr">' +
+      e(c.unidades + (c.unidades === 1 ? ' unidad' : ' unidades') + ' · última compra ' + U.timeAgo(c.ultimaCompra) + ' · ' + c.ultimoPedido) +
+      (ct && ct.enviadoEn ? ' · oferta enviada ' + e(U.timeAgo(ct.enviadoEn)) : '') +
+      '</div><div class="oc-phone"><span class="mono selectable">' +
+      e(c.phone.display) +
+      '</span></div><div class="chips">' +
+      chips +
+      '</div>' +
+      (!c.volvio ? '<div class="msg-row">' + ofSel + '<details class="msg-preview"><summary>Ver mensaje</summary><p class="preview">' + e(msg) + '</p></details></div>' : '') +
+      (!c.volvio
+        ? '<div class="oc-actions"><div class="row-actions">' +
+          waButton(U.waLink(c.phone.wa, msg), ct ? 'Volver a escribir' : 'Enviar oferta', 'wa-oferta', c.wa, ct ? 'ghost' : 'wa') +
+          '</div><div class="row-actions decide">' +
+          (ct
+            ? decide('respondio', 'Respondió', c, 'warn') + decide('compro', 'Compró', c, 'good') + decide('no', 'No le interesa', c, 'bad') + '<button class="btn link" data-act="deshacer" data-key="' + e(c.wa) + '">Deshacer</button>'
+            : '') +
+          '</div></div>'
+        : '') +
+      '</article>'
+    );
+  }
+
+  function decide(v, label, c, tone) {
+    const on = c.contacto && c.contacto.estado === v;
+    return '<button class="btn decide-btn tone-' + tone + (on ? ' is-on' : '') + '" aria-pressed="' + !!on + '" data-act="marcar" data-estado="' + v + '" data-key="' + e(c.wa) + '">' + e(label) + '</button>';
+  }
+
+  function renderOfertas() {
+    const box = $('#cli-ofertas', el);
+    if (!box) return;
+    const wasOpen = box.open;
+    const f = state.cfg;
+    const rates = O.historicalRates(Shop.orders);
+    const ev = OF.evaluate({ unidades: 1, precio: Number(f.precioOferta) || 0 }, App.cfg, Object.assign({}, rates, { confirmacion: 1 }), 0, 0);
+    const deja = VC.profit.costsReady(App.cfg) ? 'Con tus costos, cada segunda unidad a ' + U.money(f.precioOferta) + ' te deja ' + U.money(ev.esperado) + ' en promedio (sin publicidad).' : 'Cargá tus costos en Ajustes para ver cuánto te deja cada oferta.';
+    box.innerHTML =
+      '<summary>Ofertas y mensajes</summary><div class="form-grid">' +
+      field('precioOferta', 'Precio de la segunda unidad (familia)', U.int(f.precioOferta), 'numeric') +
+      field('beneficioAmigo', 'Beneficio para el amigo', f.beneficioAmigo) +
+      field('premio', 'Premio para el cliente que recomienda', f.premio) +
+      field('ofertaLibre', 'Oferta de recompra', f.ofertaLibre) +
+      field('codigo', 'Código de descuento (opcional)', f.codigo) +
+      field('minDias', 'Escribir a partir de (días de la compra)', f.minDias, 'numeric') +
+      '</div><p class="muted small">' +
+      e(deja) +
+      '</p>' +
+      (Shop.mode === 'live'
+        ? '<div class="row-actions code-row"><label class="field-inline" for="cli-pct">Crear el código en Shopify con <input id="cli-pct" class="num-input short" inputmode="numeric" value="' +
+          e(state.codigo.pct) +
+          '"> % de descuento</label><button class="btn ghost" data-act="crear-codigo"' +
+          (state.codigo.running ? ' disabled' : '') +
+          '>' +
+          (state.codigo.running ? 'Creando…' : 'Crear código') +
+          '</button></div><p class="muted small">Revisá que tu formulario de pago contra entrega acepte cupones. Si no, aplicá el precio a mano cuando el cliente confirme.' +
+          (state.codigo.msg ? ' <strong>' + e(state.codigo.msg) + '</strong>' : '') +
+          '</p>'
+        : '') +
+      '<div class="templates">' +
+      Object.entries(C.OFERTAS)
+        .map(
+          ([k, o]) =>
+            '<div class="template"><label for="cli-msg-' +
+            k +
+            '">' +
+            e(o.label) +
+            '<textarea id="cli-msg-' +
+            k +
+            '" data-msg="' +
+            k +
+            '" rows="6">' +
+            e((f.mensajes && f.mensajes[k]) || o.mensaje) +
+            '</textarea></label></div>'
+        )
+        .join('') +
+      '</div><p class="muted small">Variables: <span class="mono">{nombre} {tienda} {precio} {precio_oferta} {beneficio_amigo} {premio} {oferta_libre} {codigo_txt}</span></p>';
+    box.open = wasOpen;
+  }
+
+  function field(k, label, v, mode) {
+    return '<label for="cli-' + k + '">' + e(label) + '<input id="cli-' + k + '" data-cfg="' + k + '"' + (mode ? ' inputmode="' + mode + '"' : '') + ' value="' + e(v == null ? '' : v) + '"></label>';
+  }
+
+  async function setC(wa, patch) {
+    const prev = state.contactos.get(wa) || {};
+    const next = Object.assign({}, prev, patch, { actualizado: new Date().toISOString() });
+    state.contactos.set(wa, next);
+    render();
+    try {
+      await Store.set('reactivacion/' + wa, next);
+    } catch (err) {
+      storeFail(err);
+    }
+  }
+
+  function onClick(ev) {
+    const t = ev.target.closest('[data-act], [data-seg]');
+    if (!t || !el.contains(t)) return;
+    if (t.dataset.seg === 'cli-filtro') {
+      state.filtro = t.dataset.value;
+      prefSet('cli-filtro', state.filtro);
+      render();
+      return;
+    }
+    const wa = t.dataset.key;
+    switch (t.dataset.act) {
+      case 'refrescar':
+      case 'reintentar':
+        load(true);
+        break;
+      case 'permisos':
+        VC.runtime.managePermissions();
+        break;
+      case 'wa-oferta': {
+        const c = lists().all.find((x) => x.wa === wa);
+        const of = c ? ofertaDe(c) : 'familia';
+        setTimeout(() => setC(wa, { estado: 'enviado', oferta: of, enviadoEn: new Date().toISOString(), nombre: c ? c.nombre : '' }), 60);
+        break;
+      }
+      case 'marcar':
+        setC(wa, { estado: t.dataset.estado });
+        break;
+      case 'deshacer':
+        state.contactos.delete(wa);
+        render();
+        Store.remove('reactivacion/' + wa).catch(storeFail);
+        break;
+      case 'crear-codigo':
+        crearCodigo();
+        break;
+    }
+  }
+
+  async function crearCodigo() {
+    const code = String(state.cfg.codigo || '').trim().toUpperCase();
+    const pct = Number(U.parseNum($('#cli-pct', el).value));
+    if (!code || !/^[A-Z0-9_-]{3,30}$/.test(code)) {
+      toast('Escribí un código de 3 a 30 letras o números, sin espacios (ej.: VUELVE15).', 'warn');
+      return;
+    }
+    if (!(pct >= 1 && pct <= 90)) {
+      toast('El descuento tiene que ser entre 1 y 90%.', 'warn');
+      return;
+    }
+    state.codigo = { pct, running: true, msg: '' };
+    renderOfertas();
+    try {
+      const res = await Shop.createDiscount({ code, percentage: pct, title: 'Reactivación clientes ' + code });
+      state.codigo.msg = /error|invalid|taken|ya existe|already/i.test(res) ? 'Shopify respondió: ' + res.slice(0, 160) : 'Código ' + code + ' creado (' + pct + '%).';
+      if (!/error|invalid|taken|already/i.test(res)) {
+        state.cfg.codigo = code;
+        saveCfg();
+      }
+    } catch (err) {
+      state.codigo.msg = err && err.code === 'approval_required' ? 'Shopify pidió tu aprobación. Aprobala y probá de nuevo.' : err && err.code === 'not_in_manifest' ? 'No diste permiso para crear descuentos desde esta página.' : 'No se pudo crear: ' + ((err && err.message) || 'error de Shopify');
+    }
+    state.codigo.running = false;
+    renderOfertas();
+  }
+
+  function onInput(ev) {
+    const t = ev.target;
+    if (t.dataset.cfg) {
+      const k = t.dataset.cfg;
+      state.cfg[k] = ['precioOferta', 'minDias'].includes(k) ? U.parseMoney(t.value) || 0 : t.value;
+      saveCfg();
+      render();
+    } else if (t.dataset.msg) {
+      state.cfg.mensajes = Object.assign({}, state.cfg.mensajes, { [t.dataset.msg]: t.value });
+      saveCfg();
+      render();
+    }
+  }
+
+  function onChange(ev) {
+    const t = ev.target;
+    if (t.dataset.oferta) {
+      state.elegida[t.dataset.oferta] = t.value;
+      render();
+    } else if (t.dataset.cfg === 'precioOferta') {
+      renderOfertas();
+    } else if (t.dataset.act === 'importar-csv' && t.files && t.files[0]) {
+      VC.ui
+        .readFileText(t.files[0])
+        .then((txt) => {
+          Shop.importCSV(txt);
+          state.error = null;
+          render();
+        })
+        .catch((err) => toast(err.message || 'No se pudo leer el archivo.', 'bad'));
+    }
+  }
+
+  VC.tools = VC.tools || {};
+  VC.tools.clientes = { mount, render: () => (renderOfertas(), render()), load };
+})(window);
+</script>
+<script>
+/* ui/competencia.js */
+/* Espía de anuncios de la competencia */
+(function (root) {
+  'use strict';
+  const VC = root.VC;
+  const U = VC.util;
+  const CP = VC.competitors;
+  const { Store, AI } = VC.runtime;
+  const { e, $, App, chip, emptyState, toast, copyText, storeFail } = VC.ui;
+
+  const state = {
+    ads: new Map(),
+    texto: '',
+    imagenes: [],
+    imgLimits: null,
+    running: false,
+    error: '',
+    ideas: { text: '', fecha: null, running: false, error: '' },
+  };
+  let el;
+  let ctl;
+
+  function mount(section) {
+    el = section;
+    el.innerHTML =
+      '<header class="tool-head"><div><h2>Anuncios de la competencia</h2><p class="lede">Buscá en la Biblioteca de anuncios de Meta los correctores que llevan semanas activos: si siguen pautando, les funciona. Pegá o capturá lo que ves y te resume ganchos, ángulos y ofertas.</p></div></header>' +
+      '<section class="panel" id="cp-links"></section><section class="panel" id="cp-input"></section><div id="cp-summary"></div><section class="panel" id="cp-ideas"></section><section class="panel" id="cp-table"></section>';
+    el.addEventListener('click', onClick);
+    el.addEventListener('change', onChange);
+    el.addEventListener('input', (ev) => {
+      if (ev.target.id === 'cp-texto') state.texto = ev.target.value;
+    });
+    el.addEventListener('submit', onSubmit);
+    el.addEventListener('paste', onPaste);
+    Store.watch('competencia', (m) => {
+      state.ads = m;
+      renderData();
+    });
+    Store.get('ideas/competencia').then((d) => {
+      if (d && d.text && !state.ideas.text) {
+        state.ideas.text = d.text;
+        state.ideas.fecha = d.fecha;
+        renderIdeas();
+      }
+    });
+    if (AI.sample && AI.sample.limits) AI.sample.limits().then((l) => ((state.imgLimits = l && l.images ? l.images : null), renderInput())).catch(() => {});
+    renderLinks();
+    renderInput();
+    renderData();
+  }
+
+  function render() {
+    renderInput();
+    renderData();
+  }
+
+  function renderLinks() {
+    $('#cp-links', el).innerHTML =
+      '<h3>1. Buscá en la Biblioteca de anuncios</h3><p class="muted small">Se abre filtrada por Argentina y anuncios activos. Mirá la fecha “Comenzó a circular el…”: los que llevan ' +
+      CP.GANADOR_DIAS +
+      ' días o más son los que les rinden.</p><div class="row-actions">' +
+      CP.BUSQUEDAS.map((q) => '<a class="btn ghost" href="' + e(CP.adLibraryUrl(q)) + '" target="_blank" rel="noopener">' + e(q) + '</a>').join('') +
+      '<a class="btn ghost" href="' +
+      e(CP.tiktokTopAdsUrl()) +
+      '" target="_blank" rel="noopener">TikTok Creative Center</a></div>';
+  }
+
+  function renderInput() {
+    const box = $('#cp-input', el);
+    if (!box) return;
+    const canImg = !!state.imgLimits;
+    box.innerHTML =
+      '<h3>2. Traé lo que encontraste</h3>' +
+      (AI.sample
+        ? '<p class="muted small">En la página de resultados seleccioná todo (Ctrl+A o Cmd+A), copiá y pegalo acá. ' +
+          (canImg ? 'También podés pegar o subir capturas de pantalla (hasta ' + state.imgLimits.maxCount + ').' : '') +
+          '</p><label for="cp-texto" class="sr-only">Texto copiado de la Biblioteca de anuncios</label><textarea id="cp-texto" rows="6" placeholder="Pegá acá el texto de la Biblioteca de anuncios…">' +
+          e(state.texto) +
+          '</textarea>' +
+          (canImg
+            ? '<div class="row-actions"><label class="btn ghost file-btn">Subir capturas<input type="file" id="cp-imgs" accept="' +
+              e(state.imgLimits.mediaTypes.join(',')) +
+              '" multiple hidden></label>' +
+              (state.imagenes.length ? '<span class="muted small">' + state.imagenes.length + ' captura(s) lista(s)</span><button class="btn link" data-act="quitar-imgs">Quitar</button>' : '') +
+              '</div>'
+            : '') +
+          '<div class="row-actions">' +
+          (state.running
+            ? '<button class="btn ghost" data-act="detener">Detener</button><span class="muted">Leyendo los anuncios… puede tardar un minuto.</span>'
+            : '<button class="btn" data-act="extraer">Extraer anuncios</button>') +
+          '</div>' +
+          (state.error ? '<p class="error-text">' + e(state.error) + '</p>' : '')
+        : '<p class="muted small">Abrí el panel desde claude.ai para que Claude lea el texto o las capturas. Mientras tanto, cargalos a mano.</p>') +
+      '<details class="manual"><summary>Cargar un anuncio a mano</summary><form id="cp-form" class="review-form"><div class="form-grid">' +
+      inp('anunciante', 'Anunciante') +
+      inp('desde', 'Activo desde', 'date') +
+      '<label for="cp-f-angulo">Ángulo<select id="cp-f-angulo" name="angulo">' +
+      Object.entries(CP.ANGULOS)
+        .map(([k, v]) => '<option value="' + k + '">' + e(v) + '</option>')
+        .join('') +
+      '</select></label>' +
+      inp('oferta', 'Oferta') +
+      inp('precio', 'Precio') +
+      '<label for="cp-f-formato">Formato<select id="cp-f-formato" name="formato"><option>video</option><option>imagen</option><option>carrusel</option></select></label></div>' +
+      '<label for="cp-f-gancho">Gancho (primera frase)<input id="cp-f-gancho" name="gancho" required></label><label for="cp-f-nota">Nota<input id="cp-f-nota" name="nota"></label><div class="row-actions"><button class="btn" type="submit">Guardar anuncio</button></div></form></details>';
+  }
+
+  function inp(k, label, type) {
+    return '<label for="cp-f-' + k + '">' + e(label) + '<input id="cp-f-' + k + '" name="' + k + '"' + (type ? ' type="' + type + '"' : '') + '></label>';
+  }
+
+  function adsList() {
+    return [...state.ads.entries()].map(([id, a]) => Object.assign({ id }, a));
+  }
+
+  function renderData() {
+    const s = CP.summarize(adsList());
+    const sum = $('#cp-summary', el);
+    const table = $('#cp-table', el);
+    if (!s.total) {
+      sum.innerHTML = '';
+      $('#cp-ideas', el).hidden = true;
+      table.innerHTML = '<h3>Anuncios guardados</h3>' + emptyState('Todavía no hay anuncios', 'Buscá en la Biblioteca, pegá lo que encontraste y tocá “Extraer anuncios”. Quedan guardados acá para comparar.');
+      return;
+    }
+    $('#cp-ideas', el).hidden = false;
+    const top = (arr) => arr.slice(0, 4).map(([k, n]) => chip((CP.ANGULOS[k] || k) + ' · ' + n, 'source')).join('');
+    sum.innerHTML =
+      '<div class="summary-strip">' +
+      stat(s.total, 'anuncios guardados') +
+      stat(s.anunciantes, 'anunciantes') +
+      stat(s.ganadores, 'activos hace ' + CP.GANADOR_DIAS + '+ días', s.ganadores ? 'good' : '') +
+      '</div><div class="panel"><div class="kv"><span class="eyebrow">Ángulos</span><div class="chips">' +
+      (top(s.angulos) || '<span class="muted small">—</span>') +
+      '</div></div><div class="kv"><span class="eyebrow">Ofertas</span><div class="chips">' +
+      (s.ofertas.length ? s.ofertas.slice(0, 6).map(([k, n]) => chip(k + ' · ' + n, 'neutral')).join('') : '<span class="muted small">—</span>') +
+      '</div></div></div>';
+    table.innerHTML =
+      '<div class="panel-head"><h3>Anuncios guardados</h3><button class="btn link" data-act="borrar-todo">Borrar todos</button></div><div class="table-wrap"><table class="table comp"><thead><tr><th>Anunciante</th><th class="num">Días</th><th>Ángulo</th><th>Oferta</th><th class="num">Precio</th><th>Gancho</th><th></th></tr></thead><tbody>' +
+      s.ads
+        .map(
+          (a) =>
+            '<tr><th scope="row">' +
+            e(a.anunciante || '—') +
+            '<div class="muted small">' +
+            e(a.formato || '') +
+            '</div></th><td class="num">' +
+            (a.dias != null ? chip(a.dias + ' d', a.dias >= CP.GANADOR_DIAS ? 'good' : 'neutral') : '—') +
+            '</td><td>' +
+            e(CP.ANGULOS[a.angulo] || a.angulo || '') +
+            '</td><td>' +
+            e(a.oferta || '—') +
+            '</td><td class="num">' +
+            (a.precio ? e(U.money(a.precio)) : '—') +
+            '</td><td class="hook-cell">“' +
+            e(a.gancho) +
+            '”' +
+            (a.nota ? '<div class="muted small">' + e(a.nota) + '</div>' : '') +
+            '</td><td><button class="btn link" data-act="borrar" data-id="' +
+            e(a.id) +
+            '" aria-label="Borrar anuncio de ' +
+            e(a.anunciante || '') +
+            '">Borrar</button></td></tr>'
+        )
+        .join('') +
+      '</tbody></table></div>';
+    renderIdeas();
+  }
+
+  function stat(v, label, tone) {
+    return '<div class="stat' + (tone ? ' tone-' + tone : '') + '"><span class="stat-value">' + e(v) + '</span><span class="stat-label">' + e(label) + '</span></div>';
+  }
+
+  function renderIdeas() {
+    const box = $('#cp-ideas', el);
+    if (!box || box.hidden) return;
+    const I = state.ideas;
+    box.innerHTML =
+      '<div class="panel-head"><h3>Qué aprender y qué probar</h3>' +
+      (AI.sample
+        ? '<div class="row-actions">' +
+          (I.running ? '<button class="btn ghost" data-act="ideas-stop">Detener</button>' : '<button class="btn" data-act="ideas">' + (I.text ? 'Actualizar' : 'Pedir resumen e ideas') + '</button>') +
+          (I.text && !I.running ? '<button class="btn ghost" data-act="ideas-copiar">Copiar</button>' : '') +
+          '</div>'
+        : '') +
+      '</div>' +
+      (I.text || I.running
+        ? '<div class="ia-out' + (I.running && !I.text ? ' is-thinking' : '') + '">' + (I.text ? e(I.text) : 'Pensando…') + '</div>' + (I.fecha && !I.running ? '<p class="muted small">Generado ' + e(U.timeAgo(I.fecha)) + '</p>' : '')
+        : '<p class="muted">' + (AI.sample ? 'Claude compara los anuncios guardados y te propone 5 creativos para ViaCare.' : 'Abrí el panel desde claude.ai para pedir el resumen.') + '</p>') +
+      (I.error ? '<p class="error-text">' + e(I.error) + '</p>' : '');
+  }
+
+  async function extraer() {
+    const texto = ($('#cp-texto', el) || {}).value || '';
+    if (!texto.trim() && !state.imagenes.length) {
+      toast('Pegá el texto de la Biblioteca o subí capturas.', 'warn');
+      return;
+    }
+    ctl = new AbortController();
+    state.running = true;
+    state.error = '';
+    renderInput();
+    try {
+      const opts = { signal: ctl.signal, cache: false };
+      if (state.imagenes.length) opts.images = state.imagenes;
+      const data = await AI.sample.json(CP.extractPrompt(texto, state.imagenes.length, U.todayKeyAR()), opts);
+      const ads = CP.sanitizeAds(data);
+      if (!ads.length) state.error = 'No encontramos anuncios en lo que pegaste. Copiá la página de resultados completa o subí capturas.';
+      else {
+        const existentes = adsList().map((a) => (a.anunciante + '|' + a.gancho).toLowerCase());
+        let nuevos = 0;
+        for (const a of ads) {
+          if (existentes.includes((a.anunciante + '|' + a.gancho).toLowerCase())) continue;
+          const id = 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+          a.cargado = new Date().toISOString();
+          state.ads.set(id, a);
+          nuevos++;
+          await Store.set('competencia/' + id, a).catch(storeFail);
+        }
+        toast(nuevos + ' anuncio(s) nuevo(s) guardado(s).', 'good');
+        state.texto = '';
+        state.imagenes = [];
+      }
+    } catch (err) {
+      if (err && err.code !== 'cancelled') state.error = err.code === 'images_unavailable' || err.code === 'image_rejected' ? 'No se pudieron enviar las capturas. Probá con otras o pegá el texto.' : AI.errorText(err);
+      if (AI.permanent(err)) AI.sample = null;
+    }
+    state.running = false;
+    renderInput();
+    renderData();
+  }
+
+  async function ideas() {
+    ctl = new AbortController();
+    state.ideas = { text: '', fecha: null, running: true, error: '' };
+    renderIdeas();
+    try {
+      const s = CP.summarize(adsList());
+      const res = await AI.sample(CP.insightPrompt(s.ads, U.todayKeyAR(), App.datos()), {
+        signal: ctl.signal,
+        cache: false,
+        onText: ({ text }) => {
+          state.ideas.text = text;
+          const out = el.querySelector('#cp-ideas .ia-out');
+          if (out) {
+            out.classList.remove('is-thinking');
+            out.textContent = text;
+          }
+        },
+      });
+      state.ideas.text = res.text;
+      state.ideas.fecha = new Date().toISOString();
+      Store.set('ideas/competencia', { text: res.text, fecha: state.ideas.fecha }).catch(storeFail);
+    } catch (err) {
+      state.ideas.text = err.text || '';
+      if (err.code !== 'cancelled') state.ideas.error = AI.errorText(err);
+    }
+    state.ideas.running = false;
+    renderIdeas();
+  }
+
+  function addImages(files) {
+    const lim = state.imgLimits;
+    if (!lim) return;
+    const ok = [...files].filter((f) => lim.mediaTypes.includes(f.type) && f.size <= lim.maxInputBytes);
+    state.imagenes = state.imagenes.concat(ok).slice(0, lim.maxCount);
+    if (ok.length < files.length) toast('Algunas imágenes no se pudieron usar (tipo o tamaño).', 'warn');
+    renderInput();
+  }
+
+  function onPaste(ev) {
+    if (!state.imgLimits || !ev.clipboardData) return;
+    const files = [...ev.clipboardData.files].filter((f) => f.type.startsWith('image/'));
+    if (files.length) {
+      ev.preventDefault();
+      addImages(files);
+    }
+  }
+
+  function onChange(ev) {
+    if (ev.target.id === 'cp-imgs' && ev.target.files) addImages(ev.target.files);
+  }
+
+  function onSubmit(ev) {
+    const f = ev.target.closest('#cp-form');
+    if (!f) return;
+    ev.preventDefault();
+    const fd = new FormData(f);
+    const a = CP.sanitizeAds([Object.fromEntries(fd.entries())])[0];
+    if (!a) {
+      toast('Escribí al menos el gancho.', 'warn');
+      return;
+    }
+    a.cargado = new Date().toISOString();
+    const id = 'a' + Date.now().toString(36);
+    state.ads.set(id, a);
+    Store.set('competencia/' + id, a).catch(storeFail);
+    f.reset();
+    renderData();
+    toast('Anuncio guardado.', 'good');
+  }
+
+  function onClick(ev) {
+    const t = ev.target.closest('[data-act]');
+    if (!t || !el.contains(t)) return;
+    switch (t.dataset.act) {
+      case 'extraer':
+        extraer();
+        break;
+      case 'detener':
+      case 'ideas-stop':
+        if (ctl) ctl.abort();
+        break;
+      case 'quitar-imgs':
+        state.imagenes = [];
+        renderInput();
+        break;
+      case 'ideas':
+        ideas();
+        break;
+      case 'ideas-copiar':
+        copyText(state.ideas.text, t);
+        break;
+      case 'borrar':
+        state.ads.delete(t.dataset.id);
+        Store.remove('competencia/' + t.dataset.id).catch(storeFail);
+        renderData();
+        break;
+      case 'borrar-todo':
+        if (t.dataset.confirm !== '1') {
+          t.dataset.confirm = '1';
+          t.textContent = 'Tocá de nuevo para borrar todo';
+          setTimeout(() => {
+            t.dataset.confirm = '';
+            t.textContent = 'Borrar todos';
+          }, 4000);
+          return;
+        }
+        for (const id of [...state.ads.keys()]) Store.remove('competencia/' + id).catch(storeFail);
+        state.ads = new Map();
+        renderData();
+        break;
+    }
+  }
+
+  VC.tools = VC.tools || {};
+  VC.tools.competencia = { mount, render };
+})(window);
+</script>
+<script>
+/* ui/comentarios.js */
+/* Respuestas para comentarios de TikTok */
+(function (root) {
+  'use strict';
+  const VC = root.VC;
+  const CM = VC.comments;
+  const { Store, AI } = VC.runtime;
+  const { e, $, App, chip, banner, toast, copyText, storeFail } = VC.ui;
+
+  const state = {
+    texto: '',
+    items: [], // {comentario, tipo, respuesta, variante, video, ocultar, origen}
+    running: false,
+    error: '',
+    biblioteca: new Map(),
+    tono: '',
+  };
+  let el;
+  let ctl;
+
+  function mount(section) {
+    el = section;
+    el.innerHTML =
+      '<header class="tool-head"><div><h2>Respuestas a comentarios</h2><p class="lede">Pegá los comentarios de tus anuncios de TikTok y te armo una respuesta corta para cada uno, con tu tono y tus datos reales. Responder rápido genera confianza y más alcance.</p></div></header>' +
+      '<div id="cm-warn"></div><section class="panel" id="cm-input"></section><div id="cm-summary"></div><div id="cm-list" class="order-list"></div><section class="panel" id="cm-lib"></section>';
+    el.addEventListener('click', onClick);
+    el.addEventListener('input', onInput);
+    App.on((w) => w === 'tienda' && renderWarn());
+    Store.watch('respuestas', (m) => {
+      state.biblioteca = m;
+      renderLib();
+    });
+    render();
+  }
+
+  function render() {
+    renderWarn();
+    renderInput();
+    renderList();
+    renderLib();
+  }
+
+  function renderWarn() {
+    const d = App.tienda;
+    const faltan = [!d.demora && 'cuánto tarda el envío', !d.talles && 'qué talles cubre'].filter(Boolean);
+    $('#cm-warn', el).innerHTML = faltan.length
+      ? banner('info', 'Para responder mejor, completá en Ajustes ' + e(faltan.join(' y ')) + '. Mientras tanto las respuestas no mencionan esos datos.', '<button class="btn ghost" data-goto="ajustes">Completar datos</button>')
+      : '';
+  }
+
+  function renderInput() {
+    $('#cm-input', el).innerHTML =
+      '<label for="cm-texto">Comentarios (uno por línea; podés pegar la lista tal como la copiás de TikTok)<textarea id="cm-texto" rows="6" placeholder="¿Es incómodo?&#10;¿Hacen envíos a Córdoba?&#10;¿Sirve de verdad?">' +
+      e(state.texto) +
+      '</textarea></label>' +
+      (AI.sample ? '<label for="cm-tono">Tono (opcional)<input id="cm-tono" placeholder="Ej.: más canchero, sin emojis, tuteo…" value="' + e(state.tono) + '"></label>' : '') +
+      '<div class="row-actions">' +
+      (state.running
+        ? '<button class="btn ghost" data-act="detener">Detener</button><span class="muted">Escribiendo respuestas…</span>'
+        : (AI.sample ? '<button class="btn" data-act="claude">Responder con Claude</button>' : '') + '<button class="btn ' + (AI.sample ? 'ghost' : '') + '" data-act="plantillas">Responder con plantillas</button>') +
+      '</div>' +
+      (state.error ? '<p class="error-text">' + e(state.error) + '</p>' : '');
+  }
+
+  function renderList() {
+    const box = $('#cm-list', el);
+    const sum = $('#cm-summary', el);
+    if (!state.items.length) {
+      sum.innerHTML = '';
+      box.innerHTML = '';
+      return;
+    }
+    const counts = new Map();
+    for (const it of state.items) counts.set(it.tipo, (counts.get(it.tipo) || 0) + 1);
+    const top = [...counts.entries()].filter(([k]) => !['positivo', 'otro'].includes(k)).sort((a, b) => b[1] - a[1]);
+    const videoTip = top.length && top[0][1] >= 2 ? '<p class="note">La duda que más se repite es <strong>' + e(CM.tipo(top[0][0]).label.toLowerCase()) + '</strong> (' + top[0][1] + ' comentarios). Respondela con un video: <button class="btn link" data-goto="guiones">armar guion</button></p>' : '';
+    sum.innerHTML = '<div class="chips">' + [...counts.entries()].map(([k, n]) => chip(CM.tipo(k).label + ' · ' + n, CM.tipo(k).tone)).join('') + '</div>' + videoTip;
+    box.innerHTML = state.items
+      .map((it, i) => {
+        const t = CM.tipo(it.tipo);
+        const len = it.respuesta.length;
+        return (
+          '<article class="order-card comment-card"><div class="cm-q">“' +
+          e(it.comentario) +
+          '”</div><div class="chips">' +
+          chip(t.label, t.tone) +
+          (it.video ? chip('Conviene responder con video', 'source') : '') +
+          (it.ocultar ? chip('Ocultar o ignorar', 'bad') : '') +
+          (it.origen === 'claude' ? chip('Claude', 'neutral') : '') +
+          '</div><label class="sr-only" for="cm-r-' +
+          i +
+          '">Respuesta</label><textarea id="cm-r-' +
+          i +
+          '" data-i="' +
+          i +
+          '" rows="2" maxlength="' +
+          CM.MAX +
+          '">' +
+          e(it.respuesta) +
+          '</textarea><div class="cm-foot"><span class="small ' +
+          (len > CM.MAX ? 'warn-text' : 'muted') +
+          '" id="cm-n-' +
+          i +
+          '">' +
+          len +
+          '/' +
+          CM.MAX +
+          '</span><div class="row-actions"><button class="btn" data-act="copiar" data-i="' +
+          i +
+          '">Copiar</button><button class="btn ghost" data-act="otra" data-i="' +
+          i +
+          '">Otra versión</button><button class="btn link" data-act="guardar" data-i="' +
+          i +
+          '">Guardar en biblioteca</button></div></div></article>'
+        );
+      })
+      .join('');
+  }
+
+  function renderLib() {
+    const box = $('#cm-lib', el);
+    if (!box) return;
+    const list = [...state.biblioteca.entries()].map(([id, r]) => Object.assign({ id }, r));
+    if (!list.length) {
+      box.innerHTML = '<h3>Biblioteca de respuestas</h3><p class="muted">Guardá las respuestas que más te gusten para reusarlas. Quedan ordenadas por tipo de comentario.</p>';
+      return;
+    }
+    const by = new Map();
+    for (const r of list) {
+      if (!by.has(r.tipo)) by.set(r.tipo, []);
+      by.get(r.tipo).push(r);
+    }
+    box.innerHTML =
+      '<h3>Biblioteca de respuestas (' +
+      list.length +
+      ')</h3><div class="lib">' +
+      [...by.entries()]
+        .map(
+          ([tipo, rs]) =>
+            '<div class="lib-group"><span class="eyebrow">' +
+            e(CM.tipo(tipo).label) +
+            '</span>' +
+            rs
+              .map(
+                (r) =>
+                  '<div class="lib-item"><p class="selectable">' +
+                  e(r.respuesta) +
+                  '</p><div class="row-actions"><button class="btn link" data-act="lib-copiar" data-id="' +
+                  e(r.id) +
+                  '">Copiar</button><button class="btn link" data-act="lib-borrar" data-id="' +
+                  e(r.id) +
+                  '">Borrar</button></div></div>'
+              )
+              .join('') +
+            '</div>'
+        )
+        .join('') +
+      '</div>';
+  }
+
+  function plantillas() {
+    const coms = CM.splitComments(($('#cm-texto', el) || {}).value || state.texto);
+    if (!coms.length) {
+      toast('Pegá al menos un comentario.', 'warn');
+      return;
+    }
+    const d = App.datos();
+    state.items = coms.slice(0, 80).map((c) => {
+      const r = CM.templateReply(c, d, 0);
+      return { comentario: c, tipo: r.tipo.id, respuesta: r.respuesta, variante: 0, video: false, ocultar: false, origen: 'plantilla' };
+    });
+    state.error = '';
+    renderInput();
+    renderList();
+  }
+
+  async function claude() {
+    const coms = CM.splitComments(($('#cm-texto', el) || {}).value || state.texto).slice(0, 60);
+    if (!coms.length) {
+      toast('Pegá al menos un comentario.', 'warn');
+      return;
+    }
+    ctl = new AbortController();
+    state.running = true;
+    state.error = '';
+    renderInput();
+    try {
+      const data = await AI.sample.json(CM.buildPrompt(coms, App.datos(), state.tono), { signal: ctl.signal, cache: false, modelTier: 'quick' });
+      const rs = (data && Array.isArray(data.respuestas) ? data.respuestas : []).filter((r) => r && r.n >= 1 && r.n <= coms.length);
+      const byN = new Map(rs.map((r) => [Number(r.n), r]));
+      const d = App.datos();
+      state.items = coms.map((c, i) => {
+        const r = byN.get(i + 1);
+        if (!r) {
+          const t = CM.templateReply(c, d, 0);
+          return { comentario: c, tipo: t.tipo.id, respuesta: t.respuesta, variante: 0, origen: 'plantilla' };
+        }
+        const tipo = CM.TIPOS.some((t) => t.id === r.tipo) ? r.tipo : CM.classify(c).id;
+        return { comentario: c, tipo, respuesta: CM.fit(String(r.respuesta || '')), variante: 0, video: !!r.video, ocultar: !!r.ocultar, origen: 'claude' };
+      });
+    } catch (err) {
+      if (err && err.code !== 'cancelled') state.error = AI.errorText(err);
+      if (AI.permanent(err)) AI.sample = null;
+    }
+    state.running = false;
+    renderInput();
+    renderList();
+  }
+
+  function onInput(ev) {
+    const t = ev.target;
+    if (t.id === 'cm-texto') state.texto = t.value;
+    else if (t.id === 'cm-tono') state.tono = t.value;
+    else if (t.dataset.i != null && t.tagName === 'TEXTAREA') {
+      const it = state.items[Number(t.dataset.i)];
+      it.respuesta = t.value;
+      const n = $('#cm-n-' + t.dataset.i, el);
+      if (n) {
+        n.textContent = t.value.length + '/' + CM.MAX;
+        n.className = 'small ' + (t.value.length > CM.MAX ? 'warn-text' : 'muted');
+      }
+    }
+  }
+
+  function onClick(ev) {
+    const t = ev.target.closest('[data-act]');
+    if (!t || !el.contains(t)) return;
+    const it = t.dataset.i != null ? state.items[Number(t.dataset.i)] : null;
+    switch (t.dataset.act) {
+      case 'plantillas':
+        plantillas();
+        break;
+      case 'claude':
+        claude();
+        break;
+      case 'detener':
+        if (ctl) ctl.abort();
+        break;
+      case 'copiar':
+        copyText(it.respuesta, t);
+        break;
+      case 'otra': {
+        it.variante = (it.variante || 0) + 1;
+        it.respuesta = CM.templateReply(it.comentario, App.datos(), it.variante).respuesta;
+        it.origen = 'plantilla';
+        renderList();
+        break;
+      }
+      case 'guardar': {
+        const id = 'r' + Date.now().toString(36);
+        const doc = { tipo: it.tipo, respuesta: it.respuesta, ejemplo: it.comentario, creada: new Date().toISOString() };
+        state.biblioteca.set(id, doc);
+        Store.set('respuestas/' + id, doc).catch(storeFail);
+        renderLib();
+        toast('Guardada en la biblioteca.', 'good');
+        break;
+      }
+      case 'lib-copiar':
+        copyText((state.biblioteca.get(t.dataset.id) || {}).respuesta || '', t);
+        break;
+      case 'lib-borrar':
+        state.biblioteca.delete(t.dataset.id);
+        Store.remove('respuestas/' + t.dataset.id).catch(storeFail);
+        renderLib();
+        break;
+    }
+  }
+
+  VC.tools = VC.tools || {};
+  VC.tools.comentarios = { mount, render };
+})(window);
+</script>
+<script>
+/* ui/ofertas.js */
+/* Calculadora de ofertas */
+(function (root) {
+  'use strict';
+  const VC = root.VC;
+  const U = VC.util;
+  const O = VC.orders;
+  const P = VC.profit;
+  const OF = VC.offers;
+  const { Store, Shop } = VC.runtime;
+  const { e, $, App, chip, banner, storeFail } = VC.ui;
+
+  const state = {
+    items: OF.DEFAULT_OFERTAS.map((o) => Object.assign({}, o)),
+    cpa: null, // null = usar el real de los últimos 7 días
+    envioExtra: 0,
+    gastos: {},
+  };
+  let el;
+
+  function mount(section) {
+    el = section;
+    el.innerHTML =
+      '<header class="tool-head"><div><h2>Calculadora de ofertas</h2><p class="lede">Compará cuánto te deja cada promo con tus costos reales, los pedidos que se anulan y lo que pagás por cada venta en publicidad.</p></div></header>' +
+      '<div id="of-warn"></div><section class="panel" id="of-params"></section><section class="panel" id="of-rows"></section><section class="panel" id="of-results"></section><section class="panel" id="of-sens"></section>';
+    el.addEventListener('input', onInput);
+    el.addEventListener('change', onChange);
+    el.addEventListener('click', onClick);
+    App.on((w) => (w === 'cfg' || w === 'tienda') && renderAll());
+    Shop.onChange(() => renderResults());
+    Store.watch('gastos', (m) => {
+      state.gastos = Object.fromEntries(m);
+      renderParams();
+      renderResults();
+    });
+    Store.get('config/ofertas').then((d) => {
+      if (d && Array.isArray(d.items) && d.items.length) {
+        state.items = d.items;
+        state.cpa = d.cpa == null ? null : d.cpa;
+        state.envioExtra = d.envioExtra || 0;
+      } else {
+        // Precios de la tienda como punto de partida
+        const p1 = Number(App.tienda.precio1) || 68990;
+        const p2 = Number(App.tienda.precio2) || 72990;
+        state.items = OF.DEFAULT_OFERTAS.map((o) => Object.assign({}, o, { precio: o.id === 'dos' ? p2 : o.id === '3x2' ? p1 * 2 : p1 }));
+      }
+      renderAll();
+    });
+    Shop.ensure(U.addDays(U.todayKeyAR(), -7)).catch(() => {});
+    renderAll();
+  }
+
+  const save = VC.ui.debounce(() => Store.set('config/ofertas', JSON.parse(JSON.stringify({ items: state.items, cpa: state.cpa, envioExtra: state.envioExtra }))).catch(storeFail), 800);
+
+  /* CPA real: gasto en anuncios de los últimos 7 días ÷ pedidos que entraron en esos días. */
+  function cpaReal() {
+    const hoy = U.todayKeyAR();
+    const desde = U.addDays(hoy, -6);
+    let ads = 0;
+    for (const d of U.dayRange(desde, hoy)) ads += P.spendOf(state.gastos[d]).total;
+    const pedidos = Shop.orders.filter((o) => o.day >= desde && o.day <= hoy).length;
+    return ads > 0 && pedidos ? { cpa: ads / pedidos, ads, pedidos } : null;
+  }
+
+  function cpaActual() {
+    if (state.cpa != null) return { valor: state.cpa, origen: 'manual' };
+    const r = cpaReal();
+    if (r) return { valor: r.cpa, origen: 'real', detalle: r };
+    return { valor: 15000, origen: 'supuesto' };
+  }
+
+  function renderAll() {
+    if (!el) return;
+    const warn = $('#of-warn', el);
+    warn.innerHTML = P.costsReady(App.cfg) ? '' : banner('warn', '<strong>Faltan tus costos.</strong> Sin el costo del corrector y del envío la comparación no sirve.', '<button class="btn" data-goto="ajustes">Cargar costos</button>');
+    renderParams();
+    renderRows();
+    renderResults();
+  }
+
+  function renderParams() {
+    const box = $('#of-params', el);
+    if (!box || box.contains(document.activeElement)) return;
+    const c = cpaActual();
+    const cfg = P.normalizeCfg(App.cfg);
+    const origen =
+      c.origen === 'real'
+        ? 'Real de los últimos 7 días: ' + U.money(c.detalle.ads) + ' en anuncios ÷ ' + c.detalle.pedidos + ' pedidos.'
+        : c.origen === 'manual'
+          ? 'Cargado a mano.'
+          : 'Supuesto: cargá el gasto diario en Ganancia o escribí tu costo por pedido.';
+    box.innerHTML =
+      '<div class="form-grid"><label for="of-cpa">Costo en publicidad por pedido<span class="input-unit"><span class="unit">$</span><input id="of-cpa" inputmode="numeric" value="' +
+      e(U.int(c.valor)) +
+      '"></span></label><label for="of-envio">Envío extra por cada unidad adicional<span class="input-unit"><span class="unit">$</span><input id="of-envio" inputmode="numeric" value="' +
+      e(state.envioExtra ? U.int(state.envioExtra) : '') +
+      '" placeholder="0"></span></label></div><p class="muted small">' +
+      e(origen) +
+      (c.origen === 'manual' ? ' <button class="btn link" data-act="cpa-real">Usar el real</button>' : '') +
+      '</p><p class="muted small">Costos de Ajustes: corrector ' +
+      e(U.money(cfg.costoUnidad)) +
+      ' · envío ' +
+      e(U.money(cfg.costoEnvio)) +
+      ' · devolución ' +
+      e(U.money(cfg.costoDevolucion)) +
+      (cfg.comisionCobro ? ' · comisión ' + e(String(cfg.comisionCobro).replace('.', ',')) + '%' : '') +
+      '.</p>';
+  }
+
+  function renderRows() {
+    const box = $('#of-rows', el);
+    box.innerHTML =
+      '<div class="panel-head"><h3>Ofertas a comparar</h3><button class="btn ghost" data-act="agregar">Agregar oferta</button></div><div class="table-wrap"><table class="table offers-edit"><thead><tr><th>Oferta</th><th class="num">Unidades</th><th class="num">Cobrás en total</th><th class="num">Regalo / extra</th><th class="num">Conversión vs. la 1ª</th><th></th></tr></thead><tbody>' +
+      state.items
+        .map(
+          (o, i) =>
+            '<tr><td><label class="sr-only" for="of-n-' +
+            i +
+            '">Nombre</label><input id="of-n-' +
+            i +
+            '" data-i="' +
+            i +
+            '" data-k="nombre" value="' +
+            e(o.nombre) +
+            '"></td><td><label class="sr-only" for="of-u-' +
+            i +
+            '">Unidades</label><input id="of-u-' +
+            i +
+            '" class="num-input short" data-i="' +
+            i +
+            '" data-k="unidades" inputmode="numeric" value="' +
+            e(o.unidades) +
+            '"></td><td><label class="sr-only" for="of-p-' +
+            i +
+            '">Precio</label><input id="of-p-' +
+            i +
+            '" class="num-input" data-i="' +
+            i +
+            '" data-k="precio" inputmode="numeric" value="' +
+            e(U.int(o.precio)) +
+            '"></td><td><label class="sr-only" for="of-x-' +
+            i +
+            '">Costo del regalo</label><input id="of-x-' +
+            i +
+            '" class="num-input" data-i="' +
+            i +
+            '" data-k="extra" inputmode="numeric" value="' +
+            e(o.extra ? U.int(o.extra) : '') +
+            '" placeholder="0"></td><td><label class="sr-only" for="of-l-' +
+            i +
+            '">Cambio de conversión</label><span class="input-unit inline"><input id="of-l-' +
+            i +
+            '" class="num-input short" data-i="' +
+            i +
+            '" data-k="lift" inputmode="decimal" value="' +
+            e(o.lift ? String(o.lift).replace('.', ',') : '') +
+            '" placeholder="0"' +
+            (i === 0 ? ' disabled' : '') +
+            '><span class="unit">%</span></span></td><td>' +
+            (state.items.length > 2 ? '<button class="btn link" data-act="quitar" data-i="' + i + '">Quitar</button>' : '') +
+            '</td></tr>'
+        )
+        .join('') +
+      '</tbody></table></div><p class="muted small">“Conversión vs. la 1ª”: si creés que la promo va a traer más pedidos por el mismo gasto (ej. +25%), cargalo y tu costo por pedido baja en esa proporción. La primera fila es la base de comparación.</p>';
+  }
+
+  function computed() {
+    const rates = O.historicalRates(Shop.orders);
+    return OF.compare(state.items, App.cfg, rates, cpaActual().valor, state.envioExtra);
+  }
+
+  function renderResults() {
+    const box = $('#of-results', el);
+    if (!box) return;
+    const { evs } = computed();
+    const max = Math.max(1, ...evs.map((x) => Math.abs(x.ganancia)));
+    const mix = OF.unitMix(Shop.orders);
+    const best = evs.find((x) => x.mejor);
+    box.innerHTML =
+      '<h3>Resultado</h3>' +
+      (best ? '<p><strong>' + e(best.oferta.nombre) + '</strong> es la que más deja por pedido: ' + e(U.money(best.ganancia)) + (best !== evs[0] ? ', ' + e(U.money(best.vsBase)) + ' más que ' + e(evs[0].oferta.nombre) + '.' : '.') + '</p>' : '') +
+      '<ul class="offer-bars">' +
+      evs
+        .map(
+          (x) =>
+            '<li' +
+            (x.mejor ? ' class="is-best"' : '') +
+            '><span class="ob-name">' +
+            e(x.oferta.nombre) +
+            (x.mejor ? ' ' + chip('Mejor', 'good') : '') +
+            '</span><span class="wf-track"><span class="wf-bar ' +
+            (x.ganancia >= 0 ? 'pos' : 'neg') +
+            '" style="width:' +
+            Math.max(1, (Math.abs(x.ganancia) / max) * 100).toFixed(1) +
+            '%"></span></span><span class="wf-val mono ' +
+            (x.ganancia >= 0 ? 'pos' : 'neg') +
+            '">' +
+            e(U.money(x.ganancia)) +
+            '</span></li>'
+        )
+        .join('') +
+      '</ul><p class="muted small">Ganancia promedio por cada pedido que entra, después de anuncios, anulados y devoluciones.</p>' +
+      '<div class="table-wrap"><table class="table"><thead><tr><th>Oferta</th><th class="num">Precio por unidad</th><th class="num">Deja si se entrega</th><th class="num">Por pedido que entra</th><th class="num">vs. ' +
+      e(evs[0].oferta.nombre) +
+      '</th><th>Para empatar necesita</th></tr></thead><tbody>' +
+      evs
+        .map(
+          (x, i) =>
+            '<tr' +
+            (x.mejor ? ' class="is-winner"' : '') +
+            '><th scope="row">' +
+            e(x.oferta.nombre) +
+            '</th><td class="num">' +
+            e(U.money(x.precioUnidad)) +
+            '</td><td class="num">' +
+            e(U.money(x.margenEntrega)) +
+            '</td><td class="num ' +
+            (x.ganancia >= 0 ? 'pos' : 'neg') +
+            '">' +
+            e(U.money(x.ganancia)) +
+            '</td><td class="num">' +
+            (i === 0 ? '—' : e((x.vsBase >= 0 ? '+' : '') + U.money(x.vsBase))) +
+            '</td><td class="small">' +
+            (i === 0 ? '<span class="muted">Base</span>' : liftText(x)) +
+            '</td></tr>'
+        )
+        .join('') +
+      '</tbody></table></div>' +
+      (mix.n ? '<p class="note">En tu historial, ' + U.pct(mix.dos) + ' de los pedidos entregados llevó 2 unidades' + (mix.tresOMas ? ' y ' + U.pct(mix.tresOMas) + ' llevó 3 o más' : '') + ' (' + mix.n + ' pedidos).</p>' : '');
+    renderSens();
+  }
+
+  function liftText(x) {
+    if (x.liftNecesario == null) return '<span class="neg">No empata ni con publicidad gratis</span>';
+    if (x.liftNecesario <= 0) return '<span class="pos">Gana aunque convierta ' + e(U.pct(-x.liftNecesario)) + ' menos</span>';
+    return e(U.pct(x.liftNecesario)) + ' más pedidos por el mismo gasto';
+  }
+
+  function renderSens() {
+    const box = $('#of-sens', el);
+    const base = cpaActual().valor;
+    const niveles = [0.5, 0.75, 1, 1.25, 1.5].map((f) => Math.round((base * f) / 500) * 500);
+    const rates = O.historicalRates(Shop.orders);
+    const filas = state.items.map((o) => niveles.map((cpa) => OF.evaluate(o, App.cfg, rates, cpa, state.envioExtra).ganancia));
+    const bestCol = niveles.map((_, j) => filas.reduce((bi, f, i) => (f[j] > filas[bi][j] ? i : bi), 0));
+    box.innerHTML =
+      '<h3>¿Y si la publicidad sube o baja?</h3><p class="muted small">Ganancia por pedido según lo que te cueste cada pedido en anuncios.</p><div class="table-wrap"><table class="table"><thead><tr><th>Oferta</th>' +
+      niveles.map((n) => '<th class="num">' + e(U.moneyShort(n)) + '</th>').join('') +
+      '</tr></thead><tbody>' +
+      filas
+        .map(
+          (f, i) =>
+            '<tr><th scope="row">' +
+            e(state.items[i].nombre) +
+            '</th>' +
+            f.map((v, j) => '<td class="num ' + (v >= 0 ? '' : 'neg') + (bestCol[j] === i ? ' is-best-cell' : '') + '">' + e(U.moneyShort(v)) + '</td>').join('') +
+            '</tr>'
+        )
+        .join('') +
+      '</tbody></table></div><p class="muted small">Resaltada: la mejor oferta para cada costo por pedido.</p>';
+  }
+
+  function onInput(ev) {
+    const t = ev.target;
+    if (t.id === 'of-cpa') {
+      const v = U.parseMoney(t.value);
+      state.cpa = v != null ? v : null;
+      save();
+      renderResults();
+    } else if (t.id === 'of-envio') {
+      state.envioExtra = U.parseMoney(t.value) || 0;
+      save();
+      renderResults();
+    } else if (t.dataset.i != null && t.dataset.k) {
+      const o = state.items[Number(t.dataset.i)];
+      const k = t.dataset.k;
+      o[k] = k === 'nombre' ? t.value : k === 'lift' ? U.parseNum(t.value) || 0 : k === 'unidades' ? Math.max(1, Math.round(U.parseMoney(t.value) || 1)) : U.parseMoney(t.value) || 0;
+      save();
+      renderResults();
+    }
+  }
+
+  function onChange(ev) {
+    const t = ev.target;
+    if (t.dataset.k === 'precio' || t.dataset.k === 'extra') {
+      const v = U.parseMoney(t.value);
+      t.value = v ? U.int(v) : '';
+    } else if (t.id === 'of-cpa') renderParams();
+  }
+
+  function onClick(ev) {
+    const t = ev.target.closest('[data-act]');
+    if (!t || !el.contains(t)) return;
+    if (t.dataset.act === 'agregar') {
+      state.items.push({ id: 'o' + Date.now().toString(36), nombre: 'Nueva oferta', unidades: 1, precio: Number(App.tienda.precio1) || 68990, extra: 0, lift: 0 });
+      save();
+      renderRows();
+      renderResults();
+    } else if (t.dataset.act === 'quitar') {
+      state.items.splice(Number(t.dataset.i), 1);
+      save();
+      renderRows();
+      renderResults();
+    } else if (t.dataset.act === 'cpa-real') {
+      state.cpa = null;
+      save();
+      renderParams();
+      renderResults();
+    }
+  }
+
+  VC.tools = VC.tools || {};
+  VC.tools.ofertas = { mount, render: renderAll };
+})(window);
+</script>
+<script>
+/* ui/productos.js */
+/* Buscador del próximo producto */
+(function (root) {
+  'use strict';
+  const VC = root.VC;
+  const U = VC.util;
+  const O = VC.orders;
+  const P = VC.profit;
+  const PR = VC.products;
+  const CP = VC.competitors;
+  const { Store, Shop, AI } = VC.runtime;
+  const { e, $, App, banner, toast, storeFail } = VC.ui;
+
+  const ESCALAS = [
+    ['demanda', 'Demanda', 'más es mejor'],
+    ['competencia', 'Competencia', '5 = mucha'],
+    ['afinidad', 'Afinidad con tu cliente', 'más es mejor'],
+    ['video', 'Se luce en video', 'más es mejor'],
+    ['riesgo', 'Riesgo (devoluciones, talles, fallas)', '5 = alto'],
+  ];
+
+  const state = {
+    items: PR.CANDIDATOS.map((c) => Object.assign({ precio: null, costo: null }, c)),
+    cpa: null,
+    ia: { running: false, data: null, error: '' },
+  };
+  let el;
+  let ctl;
+
+  function mount(section) {
+    el = section;
+    el.innerHTML =
+      '<header class="tool-head"><div><h2>Próximo producto</h2><p class="lede">Compará qué sumar al corrector. Cargá el precio al que lo venderías y lo que te cuesta: el panel calcula cuánto deja con tus tasas reales y lo puntúa por demanda, competencia y afinidad con tu cliente.</p></div>' +
+      '<div class="tool-actions"><button class="btn ghost" data-act="agregar">Agregar producto</button></div></header>' +
+      '<div id="pr-warn"></div><section class="panel" id="pr-params"></section><div id="pr-ranking"></div><section class="panel" id="pr-ia"></section><div id="pr-list" class="product-list"></div>';
+    el.addEventListener('input', onInput);
+    el.addEventListener('change', onChange);
+    el.addEventListener('click', onClick);
+    App.on((w) => w === 'cfg' && renderAll());
+    Store.get('productos/lista').then((d) => {
+      if (d && Array.isArray(d.items) && d.items.length) {
+        // Conserva lo que cargó el usuario y suma candidatos nuevos de la lista base
+        const byId = new Map(d.items.map((x) => [x.id, x]));
+        state.items = d.items.concat(PR.CANDIDATOS.filter((c) => !byId.has(c.id)).map((c) => Object.assign({ precio: null, costo: null }, c)));
+        state.cpa = d.cpa == null ? null : d.cpa;
+      }
+      renderAll();
+    });
+    renderAll();
+  }
+
+  const save = VC.ui.debounce(() => Store.set('productos/lista', JSON.parse(JSON.stringify({ items: state.items, cpa: state.cpa }))).catch(storeFail), 800);
+
+  function cpa() {
+    if (state.cpa != null) return state.cpa;
+    const manual = P.normalizeCfg(App.cfg).cpaMaxManual;
+    return manual > 0 ? Math.round(manual * 0.7) : 15000;
+  }
+
+  function rates() {
+    return O.historicalRates(Shop.orders);
+  }
+
+  function renderAll() {
+    if (!el) return;
+    $('#pr-warn', el).innerHTML = P.costsReady(App.cfg) ? '' : banner('warn', 'Cargá en Ajustes el costo de envío y de devolución: se usan para calcular el margen de cualquier producto.', '<button class="btn ghost" data-goto="ajustes">Ir a Ajustes</button>');
+    if (!$('#pr-params', el).contains(document.activeElement)) {
+      $('#pr-params', el).innerHTML =
+        '<div class="form-grid"><label for="pr-cpa">Costo en publicidad por pedido (estimado para el producto nuevo)<span class="input-unit"><span class="unit">$</span><input id="pr-cpa" inputmode="numeric" value="' +
+        e(U.int(cpa())) +
+        '"></span></label></div><p class="muted small">Precios de referencia: publicaciones de Mercado Libre Argentina (' +
+        PR.REF_FECHA +
+        '). Los puntajes vienen con una estimación inicial: ajustalos con lo que veas en Mercado Libre, Google Trends y la Biblioteca de anuncios.</p>';
+    }
+    renderRanking();
+    renderIA();
+    renderList();
+  }
+
+  function scored() {
+    return state.items.map((p) => Object.assign({ p }, PR.score(p, App.cfg, rates(), cpa())));
+  }
+
+  function renderRanking() {
+    const list = scored().sort((a, b) => b.completo - a.completo || b.puntaje - a.puntaje);
+    const box = $('#pr-ranking', el);
+    box.innerHTML =
+      '<section class="panel"><h3>Ranking</h3><ol class="ranking">' +
+      list
+        .map(
+          (s, i) =>
+            '<li><span class="rk-pos mono">' +
+            (i + 1) +
+            '</span><span class="rk-name">' +
+            e(s.p.nombre) +
+            (s.completo ? '' : ' <span class="muted small">(falta precio o costo)</span>') +
+            '</span><span class="wf-track"><span class="wf-bar ' +
+            (i === 0 && s.completo ? 'pos' : 'base') +
+            '" style="width:' +
+            Math.max(2, s.puntaje) +
+            '%"></span></span><span class="wf-val mono">' +
+            s.puntaje +
+            '</span></li>'
+        )
+        .join('') +
+      '</ol><p class="muted small">Puntaje de 0 a 100: margen ' +
+      PR.PESOS.margen +
+      '%, demanda ' +
+      PR.PESOS.demanda +
+      '%, competencia ' +
+      PR.PESOS.competencia +
+      '%, afinidad ' +
+      PR.PESOS.afinidad +
+      '%, video ' +
+      PR.PESOS.video +
+      '%, riesgo ' +
+      PR.PESOS.riesgo +
+      '%. Sin precio y costo, el margen no cuenta.</p></section>';
+  }
+
+  function renderList() {
+    const box = $('#pr-list', el);
+    if (box.contains(document.activeElement)) {
+      // Solo actualiza los números para no perder el foco mientras escribís
+      for (const s of scored()) updateNumbers(s);
+      return;
+    }
+    box.innerHTML = scored()
+      .map((s, i) => {
+        const p = s.p;
+        const sug = state.ia.data && state.ia.data.find((x) => norm(x.nombre) === norm(p.nombre));
+        return (
+          '<article class="product-card" id="pc-' +
+          e(p.id) +
+          '"><header class="pc-head"><div><h4>' +
+          e(p.nombre) +
+          '</h4><p class="muted small">' +
+          (p.refMin ? 'Mercado Libre: ' + e(U.money(p.refMin)) + ' a ' + e(U.money(p.refMax)) : 'Sin precio de referencia relevado') +
+          '</p></div><div class="pc-score"><span class="stat-value" data-out="puntaje">' +
+          s.puntaje +
+          '</span><span class="stat-label">puntaje</span></div></header>' +
+          (p.nota ? '<p class="small">' + e(p.nota) + '</p>' : '') +
+          '<div class="row-actions links"><a class="btn link" href="' +
+          e(PR.mlUrl(p.busqueda || p.nombre)) +
+          '" target="_blank" rel="noopener">Mercado Libre</a><a class="btn link" href="' +
+          e(PR.trendsUrl(p.busqueda || p.nombre)) +
+          '" target="_blank" rel="noopener">Google Trends</a><a class="btn link" href="' +
+          e(CP.adLibraryUrl(p.busqueda || p.nombre)) +
+          '" target="_blank" rel="noopener">Anuncios activos</a>' +
+          (p.custom ? '<button class="btn link" data-act="quitar" data-i="' + i + '">Quitar</button>' : '') +
+          '</div><div class="form-grid">' +
+          (p.custom ? money(i, 'nombre', 'Nombre', p.nombre, true) : '') +
+          money(i, 'precio', 'Precio de venta', p.precio) +
+          money(i, 'costo', 'Costo (proveedor)', p.costo) +
+          money(i, 'envioExtra', 'Envío extra vs. el corrector', p.envioExtra) +
+          '</div><div class="scales">' +
+          ESCALAS.map(
+            ([k, label, hint]) =>
+              '<label for="pr-' +
+              i +
+              '-' +
+              k +
+              '">' +
+              e(label) +
+              ' <span class="muted">(' +
+              e(hint) +
+              ')</span><select id="pr-' +
+              i +
+              '-' +
+              k +
+              '" data-i="' +
+              i +
+              '" data-k="' +
+              k +
+              '">' +
+              [1, 2, 3, 4, 5].map((n) => '<option' + (Number(p[k]) === n ? ' selected' : '') + '>' + n + '</option>').join('') +
+              '</select></label>'
+          ).join('') +
+          '</div><div class="pc-out"><div><span class="eyebrow">Por pedido con anuncios</span><span class="mono" data-out="anuncios">' +
+          (s.eco ? e(U.money(s.eco.conAnuncios)) : '—') +
+          '</span></div><div><span class="eyebrow">Venta a un cliente actual</span><span class="mono" data-out="cliente">' +
+          (s.eco ? e(U.money(s.eco.aCliente)) : '—') +
+          '</span></div><div><span class="eyebrow">Precio ÷ costo</span><span class="mono" data-out="markup">' +
+          (s.eco ? e(s.eco.markup.toFixed(1).replace('.', ',')) + '×' : '—') +
+          '</span></div></div>' +
+          (sug ? suggestion(sug, i) : '') +
+          '</article>'
+        );
+      })
+      .join('');
+  }
+
+  function updateNumbers(s) {
+    const card = el.querySelector('#pc-' + CSS.escape(s.p.id));
+    if (!card) return;
+    const set = (k, v) => {
+      const n = card.querySelector('[data-out="' + k + '"]');
+      if (n) n.textContent = v;
+    };
+    set('puntaje', s.puntaje);
+    set('anuncios', s.eco ? U.money(s.eco.conAnuncios) : '—');
+    set('cliente', s.eco ? U.money(s.eco.aCliente) : '—');
+    set('markup', s.eco ? s.eco.markup.toFixed(1).replace('.', ',') + '×' : '—');
+  }
+
+  function money(i, k, label, v, text) {
+    return (
+      '<label for="pr-' +
+      i +
+      '-' +
+      k +
+      '">' +
+      e(label) +
+      (text ? '' : '<span class="input-unit"><span class="unit">$</span>') +
+      '<input id="pr-' +
+      i +
+      '-' +
+      k +
+      '" data-i="' +
+      i +
+      '" data-k="' +
+      k +
+      '"' +
+      (text ? '' : ' inputmode="numeric" placeholder="0"') +
+      ' value="' +
+      e(text ? v || '' : v ? U.int(v) : '') +
+      '">' +
+      (text ? '' : '</span>') +
+      '</label>'
+    );
+  }
+
+  function suggestion(x, i) {
+    return (
+      '<div class="ia-sug"><span class="eyebrow">Claude sugiere</span><p class="small">Demanda ' +
+      x.demanda +
+      ' · competencia ' +
+      x.competencia +
+      ' · afinidad ' +
+      x.afinidad +
+      ' · video ' +
+      x.video +
+      ' · riesgo ' +
+      x.riesgo +
+      (x.precio_sugerido ? ' · precio ' + e(U.money(U.parseMoney(x.precio_sugerido))) : '') +
+      '</p>' +
+      (x.angulo ? '<p class="small"><strong>Ángulo:</strong> ' + e(x.angulo) + '</p>' : '') +
+      (x.combo ? '<p class="small"><strong>Combo:</strong> ' + e(x.combo) + '</p>' : '') +
+      (x.dudas ? '<p class="small muted">' + e(x.dudas) + '</p>' : '') +
+      '<button class="btn ghost" data-act="aplicar" data-i="' +
+      i +
+      '">Usar estos puntajes</button></div>'
+    );
+  }
+
+  function norm(s) {
+    return U.stripAccents(String(s || '')).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+
+  function renderIA() {
+    const box = $('#pr-ia', el);
+    const I = state.ia;
+    box.innerHTML =
+      '<div class="panel-head"><h3>Opinión de Claude</h3>' +
+      (AI.sample ? (I.running ? '<button class="btn ghost" data-act="ia-stop">Detener</button>' : '<button class="btn" data-act="ia">' + (I.data ? 'Volver a preguntar' : 'Pedir opinión') + '</button>') : '') +
+      '</div>' +
+      (AI.sample
+        ? I.running
+          ? '<p class="muted">Pensando… puede tardar un minuto.</p>'
+          : I.reco
+            ? '<p>' + e(I.reco) + '</p><p class="muted small">Estimaciones sin acceso a internet: confirmá precios y demanda en Mercado Libre antes de comprar stock.</p>'
+            : '<p class="muted">Claude estima demanda, competencia y afinidad de cada candidato y te sugiere precio, ángulo y combo. Son estimaciones sin acceso a internet.</p>'
+        : '<p class="muted">Abrí el panel desde claude.ai para pedir la opinión de Claude.</p>') +
+      (I.error ? '<p class="error-text">' + e(I.error) + '</p>' : '');
+  }
+
+  async function askIA() {
+    ctl = new AbortController();
+    state.ia = { running: true, data: state.ia.data, error: '' };
+    renderIA();
+    try {
+      const data = await AI.sample.json(PR.claudePrompt(state.items, App.tienda), { signal: ctl.signal, cache: false });
+      const list = data && Array.isArray(data.productos) ? data.productos : [];
+      const clamp = (n) => U.clamp(Math.round(Number(n) || 3), 1, 5);
+      state.ia.data = list.map((x) => ({ nombre: String(x.nombre || ''), demanda: clamp(x.demanda), competencia: clamp(x.competencia), afinidad: clamp(x.afinidad), video: clamp(x.video), riesgo: clamp(x.riesgo), precio_sugerido: x.precio_sugerido, angulo: String(x.angulo || ''), combo: String(x.combo || ''), dudas: String(x.dudas || '') }));
+      state.ia.reco = String((data && data.recomendacion) || '');
+      if (!state.ia.data.length) state.ia.error = 'La respuesta vino vacía. Probá de nuevo.';
+    } catch (err) {
+      if (err && err.code !== 'cancelled') state.ia.error = AI.errorText(err);
+      if (AI.permanent(err)) AI.sample = null;
+    }
+    state.ia.running = false;
+    renderIA();
+    renderList();
+  }
+
+  function onInput(ev) {
+    const t = ev.target;
+    if (t.id === 'pr-cpa') {
+      state.cpa = U.parseMoney(t.value);
+      save();
+      renderRanking();
+      for (const s of scored()) updateNumbers(s);
+      return;
+    }
+    if (t.dataset.i == null || !t.dataset.k) return;
+    const p = state.items[Number(t.dataset.i)];
+    const k = t.dataset.k;
+    p[k] = k === 'nombre' ? t.value : U.parseMoney(t.value);
+    save();
+    renderRanking();
+    for (const s of scored()) updateNumbers(s);
+  }
+
+  function onChange(ev) {
+    const t = ev.target;
+    if (t.tagName === 'SELECT' && t.dataset.k) {
+      state.items[Number(t.dataset.i)][t.dataset.k] = Number(t.value);
+      save();
+      renderRanking();
+      for (const s of scored()) updateNumbers(s);
+    } else if (t.dataset.k && t.dataset.k !== 'nombre') {
+      const v = U.parseMoney(t.value);
+      t.value = v ? U.int(v) : '';
+    }
+  }
+
+  function onClick(ev) {
+    const t = ev.target.closest('[data-act]');
+    if (!t || !el.contains(t)) return;
+    const i = Number(t.dataset.i);
+    switch (t.dataset.act) {
+      case 'agregar':
+        state.items.push({ id: 'p' + Date.now().toString(36), nombre: 'Producto nuevo', busqueda: '', custom: true, precio: null, costo: null, envioExtra: 0, demanda: 3, competencia: 3, afinidad: 3, video: 3, riesgo: 3, refMin: null, refMax: null, nota: '' });
+        save();
+        renderAll();
+        break;
+      case 'quitar':
+        state.items.splice(i, 1);
+        save();
+        renderAll();
+        break;
+      case 'ia':
+        askIA();
+        break;
+      case 'ia-stop':
+        if (ctl) ctl.abort();
+        break;
+      case 'aplicar': {
+        const p = state.items[i];
+        const x = state.ia.data.find((s) => norm(s.nombre) === norm(p.nombre));
+        if (!x) return;
+        for (const k of ['demanda', 'competencia', 'afinidad', 'video', 'riesgo']) p[k] = x[k];
+        if (!p.precio && x.precio_sugerido) p.precio = U.parseMoney(x.precio_sugerido);
+        save();
+        renderAll();
+        toast('Puntajes aplicados.', 'good');
+        break;
+      }
+    }
+  }
+
+  VC.tools = VC.tools || {};
+  VC.tools.productos = { mount, render: renderAll };
+})(window);
+</script>
+<script>
 /* ui/ajustes.js */
 /* Ajustes: costos del negocio, mensajes de WhatsApp, producto para guiones y conexión con Shopify. */
 (function (root) {
@@ -4266,6 +6665,15 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
     ['direccion', 'Pedir dirección completa'],
     ['resena', 'Pedir reseña'],
     ['resenaRecordatorio', 'Recordatorio de reseña'],
+  ];
+  const TIENDA = [
+    ['precio1', 'Precio de 1 unidad', '68.990', true],
+    ['precio2', 'Precio llevando 2', '72.990', true],
+    ['envio', 'Envíos', 'Enviamos a todo el país', false],
+    ['pago', 'Forma de pago', 'pagás en efectivo cuando te llega', false],
+    ['demora', 'Cuánto tarda en llegar', 'Ej.: de 3 a 7 días hábiles', false],
+    ['talles', 'Talles', 'Ej.: Es regulable, va de S a XL', false],
+    ['garantia', 'Cambios o garantía', 'Ej.: Cambio dentro de los 10 días', false],
   ];
   const VARS = ['nombre', 'pedido', 'cantidad', 'producto', 'total', 'direccion', 'ciudad', 'provincia', 'cp', 'extras', 'tienda', 'firma'];
 
@@ -4382,6 +6790,31 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
       '</div>' +
       (sample ? '<p class="muted small">Vista previa con el pedido ' + e(sample.name) + '.</p>' : '') +
       '</section>' +
+      '<section class="panel"><h3>Datos de la tienda</h3><p class="muted small">Los usan las respuestas a comentarios, el reactivador de clientes y la calculadora de ofertas. Poné solo lo que cumplís.</p><div class="form-grid">' +
+      TIENDA.map(([k, label, ph, unit]) => {
+        const v = App.tienda[k];
+        return (
+          '<label for="td-' +
+          k +
+          '">' +
+          e(label) +
+          (unit ? '<span class="input-unit"><span class="unit">$</span>' : '') +
+          '<input id="td-' +
+          k +
+          '" data-tienda="' +
+          k +
+          '"' +
+          (unit ? ' data-unit="$" inputmode="numeric"' : '') +
+          ' placeholder="' +
+          e(ph) +
+          '" value="' +
+          e(unit ? (v ? U.int(v) : '') : v || '') +
+          '">' +
+          (unit ? '</span>' : '') +
+          '</label>'
+        );
+      }).join('') +
+      '</div></section>' +
       '<div class="grid-2"><section class="panel"><h3>Producto para los guiones</h3><label for="msg-productoGuiones">Cómo se ve el corrector (la IA de video lo necesita para dibujarlo igual en cada clip)<textarea id="msg-productoGuiones" data-msg="productoGuiones" rows="3" placeholder="' +
       e(S.PRODUCTO_DEFAULT) +
       '">' +
@@ -4422,9 +6855,17 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
 
   function onInput(ev) {
     const t = ev.target;
+    if (t.dataset.tienda) {
+      const k = t.dataset.tienda;
+      App.tienda[k] = t.dataset.unit === '$' ? U.parseMoney(t.value) || 0 : t.value;
+      App.saveTienda();
+      App.emit('tienda');
+      return;
+    }
     if (t.dataset.cfg) {
       const raw = t.value.trim();
-      const v = raw === '' ? (P.DEFAULT_CFG[t.dataset.cfg] === null ? null : 0) : U.parseNum(raw);
+      const parse = t.dataset.unit === '$' ? U.parseMoney : U.parseNum;
+      const v = raw === '' ? (P.DEFAULT_CFG[t.dataset.cfg] === null ? null : 0) : parse(raw);
       if (raw !== '' && v == null) return;
       App.cfg[t.dataset.cfg] = v;
       App.saveCfg();
@@ -4439,7 +6880,9 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
 
   function onChange(ev) {
     const t = ev.target;
-    if (t.dataset.cfg) {
+    if (t.dataset.tienda && t.dataset.unit === '$') {
+      t.value = App.tienda[t.dataset.tienda] ? U.int(App.tienda[t.dataset.tienda]) : '';
+    } else if (t.dataset.cfg) {
       t.value = fmtVal(App.cfg[t.dataset.cfg], t.dataset.unit);
     } else if (t.dataset.msg && t.type === 'checkbox') {
       App.msgs[t.dataset.msg] = t.checked;
@@ -4492,12 +6935,17 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
   const { App, DEFAULT_MSGS, $, $$, e, prefGet, prefSet } = VC.ui;
 
   const TABS = [
-    { id: 'confirmar', label: 'Confirmar pedidos' },
-    { id: 'ganancia', label: 'Ganancia real' },
-    { id: 'creativos', label: 'Creativos' },
-    { id: 'resenas', label: 'Reseñas' },
-    { id: 'guiones', label: 'Guiones UGC' },
-    { id: 'ajustes', label: 'Ajustes' },
+    { id: 'confirmar', label: 'Confirmar', grupo: 'pedidos' },
+    { id: 'ganancia', label: 'Ganancia', grupo: 'pedidos' },
+    { id: 'resenas', label: 'Reseñas', grupo: 'pedidos' },
+    { id: 'clientes', label: 'Clientes', grupo: 'pedidos' },
+    { id: 'creativos', label: 'Creativos', grupo: 'anuncios' },
+    { id: 'competencia', label: 'Competencia', grupo: 'anuncios' },
+    { id: 'comentarios', label: 'Comentarios', grupo: 'anuncios' },
+    { id: 'guiones', label: 'Guiones', grupo: 'anuncios' },
+    { id: 'ofertas', label: 'Ofertas', grupo: 'negocio' },
+    { id: 'productos', label: 'Productos', grupo: 'negocio' },
+    { id: 'ajustes', label: 'Ajustes', grupo: 'ajustes' },
   ];
   const mounted = new Set();
   let ready = false;
@@ -4512,7 +6960,8 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
 
   function renderNav() {
     $('#tabs').innerHTML = TABS.map(
-      (t) =>
+      (t, i) =>
+        (i && TABS[i - 1].grupo !== t.grupo ? '<span class="tab-sep" aria-hidden="true"></span>' : '') +
         '<button type="button" role="tab" id="tab-' +
         t.id +
         '" aria-controls="panel-' +
@@ -4585,9 +7034,10 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
     await Promise.all([Store.init(), Shop.init(), AI.init()]);
     renderConn();
 
-    const [cfg, msgs, ultimo] = await Promise.all([Store.get('config/negocio'), Store.get('config/mensajes'), Store.get('creativos/ultimo')]);
+    const [cfg, msgs, ultimo, tienda] = await Promise.all([Store.get('config/negocio'), Store.get('config/mensajes'), Store.get('creativos/ultimo'), Store.get('config/tienda')]);
     if (cfg) Object.assign(App.cfg, cfg);
     if (msgs) Object.assign(App.msgs, DEFAULT_MSGS, msgs);
+    if (tienda) Object.assign(App.tienda, tienda);
     if (ultimo) App.ultimoAnalisis = ultimo;
 
     Store.watch('confirmaciones', (m) => {

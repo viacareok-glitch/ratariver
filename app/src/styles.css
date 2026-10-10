@@ -336,7 +336,7 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
 .pill-radio.is-on { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
 .pill-radio:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
 .out-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
-#ugc-out, #cr-body, #gan-status, #conf-status, #res-status { display: grid; gap: 16px; }
+#ugc-out, #cr-body, #gan-status, #conf-status, #res-status, #cp-summary, #cli-status, #of-warn, #pr-warn, #cm-warn { display: grid; gap: 16px; }
 #ugc-out { gap: 14px; }
 .script { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: grid; gap: 14px; min-width: 0; }
 .script-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 10px; }
@@ -358,7 +358,8 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
 .setting { display: grid; grid-template-columns: 1fr minmax(120px, 160px); grid-template-areas: 'label input' 'help input'; gap: 2px 14px; align-items: center; }
 .setting-label { grid-area: label; font-weight: 600; font-size: 0.875rem; }
 .setting-help { grid-area: help; color: var(--muted); font-size: var(--step--1); }
-.input-unit { grid-area: input; display: flex; align-items: center; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); }
+.setting .input-unit { grid-area: input; }
+.input-unit { display: flex; align-items: center; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); }
 .input-unit .unit { padding-left: 9px; color: var(--muted); font-size: 0.8125rem; }
 .input-unit input { border: 0; width: 100%; text-align: right; font-family: var(--font-mono); font-size: 0.875rem; background: transparent; }
 .input-unit:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
@@ -369,6 +370,70 @@ details.panel > summary { cursor: pointer; font-weight: 600; font-family: var(--
 .template > label { display: grid; gap: 4px; font-size: var(--step--1); color: var(--muted); font-weight: 600; }
 .tpl-foot { display: flex; justify-content: flex-end; }
 .preview { white-space: pre-wrap; font-size: 0.8125rem; background: var(--good-soft); padding: 10px 12px; border-radius: 10px 10px 10px 2px; overflow-wrap: anywhere; }
+
+/* Separador de grupos en las pestañas */
+.tab-sep { flex: 0 0 1px; align-self: center; height: 18px; background: var(--line); margin-inline: 6px; }
+
+/* Clientes */
+.msg-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.msg-row select { min-height: 30px; padding: 3px 6px; font-size: 0.8125rem; }
+.msg-preview > summary { cursor: pointer; color: var(--accent); font-size: var(--step--1); }
+.msg-preview .preview { margin-top: 6px; }
+.num-input.short { min-width: 0; width: 72px; }
+.code-row { padding-top: 4px; }
+details.panel[open] > summary { margin-bottom: 4px; }
+
+/* Competencia */
+.kv { display: grid; grid-template-columns: 90px 1fr; gap: 8px; align-items: center; }
+.comp .hook-cell { min-width: 240px; max-width: 420px; }
+.manual > summary { cursor: pointer; color: var(--accent); font-weight: 500; font-size: 0.875rem; }
+.manual[open] > summary { margin-bottom: 10px; }
+
+/* Comentarios */
+.comment-card textarea { font-size: 0.9rem; }
+.cm-q { font-size: 0.95rem; font-weight: 500; overflow-wrap: anywhere; }
+.cm-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.lib { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 14px; }
+.lib-group { display: grid; gap: 6px; align-content: start; }
+.lib-item { padding: 8px 10px; background: var(--surface-2); border-radius: var(--r-sm); display: grid; gap: 2px; font-size: 0.875rem; }
+
+/* Ofertas */
+.offers-edit input { width: 100%; min-width: 120px; }
+.offers-edit .num-input { min-width: 90px; }
+.offers-edit .num-input.short { width: 64px; min-width: 64px; }
+.input-unit.inline { display: inline-flex; width: auto; }
+.input-unit.inline .unit { padding: 0 8px 0 0; }
+.offer-bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.offer-bars li { display: grid; grid-template-columns: minmax(140px, 1.2fr) 2fr auto; gap: 10px; align-items: center; font-size: 0.875rem; }
+.offer-bars li.is-best .ob-name { font-weight: 600; }
+.table td.is-best-cell { background: var(--good-soft); font-weight: 600; }
+
+/* Productos */
+.ranking { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ranking li { display: grid; grid-template-columns: 22px minmax(150px, 1.4fr) 2fr 34px; gap: 10px; align-items: center; font-size: 0.875rem; }
+.rk-pos { color: var(--muted); }
+.product-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 14px; }
+.product-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.pc-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.pc-score { display: grid; justify-items: end; }
+.links { gap: 4px 12px; }
+.scales { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 8px; }
+.scales label { display: grid; gap: 3px; font-size: var(--step--1); color: var(--ink); font-weight: 500; }
+.scales select { min-height: 32px; }
+.pc-out { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px 12px; background: var(--surface-2); border-radius: var(--r-sm); }
+.pc-out > div { display: grid; gap: 2px; min-width: 0; }
+.pc-out .mono { font-size: 1rem; }
+.ia-sug { padding: 10px 12px; border: 1px dashed var(--accent); border-radius: var(--r-sm); display: grid; gap: 4px; justify-items: start; }
+.form-grid label .input-unit { margin-top: 0; }
+.form-grid label .input-unit input { min-height: 34px; }
+
+@media (max-width: 560px) {
+  .offer-bars li, .ranking li { grid-template-columns: 1fr auto; }
+  .offer-bars .wf-track, .ranking .wf-track { grid-column: 1 / -1; grid-row: 2; }
+  .ranking .rk-pos { display: none; }
+  .pc-out { grid-template-columns: 1fr 1fr; }
+  .kv { grid-template-columns: 1fr; }
+}
 
 @media (max-width: 560px) {
   h2 { font-size: var(--step-2); }

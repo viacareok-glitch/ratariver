@@ -28,9 +28,21 @@
     diasResena: 4,
   };
 
+  // Datos que usan las respuestas a comentarios, el reactivador y la calculadora de ofertas
+  const DEFAULT_TIENDA = {
+    precio1: 68990,
+    precio2: 72990,
+    envio: 'Enviamos a todo el país',
+    pago: 'pagás en efectivo cuando te llega',
+    demora: '',
+    talles: '',
+    garantia: '',
+  };
+
   const App = {
     cfg: Object.assign({}, VC.profit.DEFAULT_CFG),
     msgs: Object.assign({}, DEFAULT_MSGS),
+    tienda: Object.assign({}, DEFAULT_TIENDA),
     confirm: new Map(), // key pedido → {estado, ...}
     resenas: new Map(),
     ultimoAnalisis: null,
@@ -54,6 +66,13 @@
     saveMsgs: debounce(function () {
       Store.set('config/mensajes', Object.assign({}, App.msgs)).catch(storeFail);
     }, 700),
+    saveTienda: debounce(function () {
+      Store.set('config/tienda', Object.assign({}, App.tienda)).catch(storeFail);
+    }, 700),
+    // Nombre de la tienda + datos de venta, para plantillas
+    datos() {
+      return Object.assign({ tienda: App.msgs.tienda }, App.tienda);
+    },
     confirmStates() {
       const m = new Map();
       for (const [k, v] of this.confirm) m.set(k, v.estado);
@@ -232,5 +251,5 @@
     });
   }
 
-  VC.ui = { e, $, $$, App, DEFAULT_MSGS, toast, copyText, chip, banner, emptyState, waButton, WA_ICON, kpi, seg, shopStatusBanner, debounce, prefGet, prefSet, readFileText, storeFail };
+  VC.ui = { e, $, $$, App, DEFAULT_MSGS, DEFAULT_TIENDA, toast, copyText, chip, banner, emptyState, waButton, WA_ICON, kpi, seg, shopStatusBanner, debounce, prefGet, prefSet, readFileText, storeFail };
 })(window);
