@@ -1,0 +1,11 @@
+{
+  "name": "viacare-panel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Herramientas para ViaCare: confirmador de pedidos por WhatsApp, ganancia real, analizador de creativos, pedidor de reseñas y guiones UGC.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/*.test.js"
+  },
+  "license": "UNLICENSED"
+}
