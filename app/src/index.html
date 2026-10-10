@@ -1,7 +1,7 @@
 <title>Panel ViaCare</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
 /* @inline styles.css */
 /* @inline css/auto.css */
@@ -9,30 +9,39 @@
 /* @inline css/tiendas.css */
 /* @inline css/productos-auto.css */
 /* @inline css/guiones-auto.css */
+/* @inline css/pedidos.css */
+/* @inline css/anuncios.css */
+/* @inline css/negocio.css */
 </style>
 
-<div class="app">
-  <header class="top">
-    <div class="brand">
-      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M16 3v26" /><path d="M9 8c3 2 11 2 14 0M8 14c4 2 12 2 16 0M9 20c3 2 11 2 14 0" /></svg></span>
-      <span class="brand-name">ViaCare</span><span class="brand-sub">Panel de la tienda</span>
+<div class="shell">
+  <aside class="side" aria-label="Menú">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18" /><path d="M7 7.5c2.5 1.5 7.5 1.5 10 0M6.5 12.5c3 1.6 8 1.6 11 0M7 17.5c2.5 1.5 7.5 1.5 10 0" /></svg></span><span><span class="brand-name">ViaCare</span><span class="brand-sub">Panel de la tienda</span></span></div>
+    <nav class="nav" id="nav" role="tablist" aria-label="Herramientas" aria-orientation="vertical"></nav>
+    <div class="side-foot"><div class="conn-row" id="conn" aria-live="polite"></div></div>
+  </aside>
+  <div class="main-col">
+    <div class="app">
+      <header class="topbar"><div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18" /><path d="M7 7.5c2.5 1.5 7.5 1.5 10 0M6.5 12.5c3 1.6 8 1.6 11 0M7 17.5c2.5 1.5 7.5 1.5 10 0" /></svg></span><span class="brand-name">ViaCare</span></div><div class="conn-row" id="conn-m"></div></header>
+      <div id="auto-strip"></div>
+      <main id="main">
+      <section id="panel-inicio" role="tabpanel" aria-labelledby="nav-inicio" class="tool"></section>
+      <section id="panel-confirmar" role="tabpanel" aria-labelledby="nav-confirmar" class="tool" hidden></section>
+      <section id="panel-ganancia" role="tabpanel" aria-labelledby="nav-ganancia" class="tool" hidden></section>
+      <section id="panel-resenas" role="tabpanel" aria-labelledby="nav-resenas" class="tool" hidden></section>
+      <section id="panel-clientes" role="tabpanel" aria-labelledby="nav-clientes" class="tool" hidden></section>
+      <section id="panel-creativos" role="tabpanel" aria-labelledby="nav-creativos" class="tool" hidden></section>
+      <section id="panel-competencia" role="tabpanel" aria-labelledby="nav-competencia" class="tool" hidden></section>
+      <section id="panel-comentarios" role="tabpanel" aria-labelledby="nav-comentarios" class="tool" hidden></section>
+      <section id="panel-guiones" role="tabpanel" aria-labelledby="nav-guiones" class="tool" hidden></section>
+      <section id="panel-ofertas" role="tabpanel" aria-labelledby="nav-ofertas" class="tool" hidden></section>
+      <section id="panel-productos" role="tabpanel" aria-labelledby="nav-productos" class="tool" hidden></section>
+      <section id="panel-ajustes" role="tabpanel" aria-labelledby="nav-ajustes" class="tool" hidden></section>
+      </main>
     </div>
-    <div class="conn-row" id="conn" aria-live="polite"></div>
-  </header>
-  <nav class="tabs" id="tabs" role="tablist" aria-label="Herramientas"></nav>
-  <main>
-    <section id="panel-confirmar" role="tabpanel" aria-labelledby="tab-confirmar" class="tool"></section>
-    <section id="panel-ganancia" role="tabpanel" aria-labelledby="tab-ganancia" class="tool" hidden></section>
-    <section id="panel-resenas" role="tabpanel" aria-labelledby="tab-resenas" class="tool" hidden></section>
-    <section id="panel-clientes" role="tabpanel" aria-labelledby="tab-clientes" class="tool" hidden></section>
-    <section id="panel-creativos" role="tabpanel" aria-labelledby="tab-creativos" class="tool" hidden></section>
-    <section id="panel-competencia" role="tabpanel" aria-labelledby="tab-competencia" class="tool" hidden></section>
-    <section id="panel-comentarios" role="tabpanel" aria-labelledby="tab-comentarios" class="tool" hidden></section>
-    <section id="panel-guiones" role="tabpanel" aria-labelledby="tab-guiones" class="tool" hidden></section>
-    <section id="panel-ofertas" role="tabpanel" aria-labelledby="tab-ofertas" class="tool" hidden></section>
-    <section id="panel-productos" role="tabpanel" aria-labelledby="tab-productos" class="tool" hidden></section>
-    <section id="panel-ajustes" role="tabpanel" aria-labelledby="tab-ajustes" class="tool" hidden></section>
-  </main>
+  </div>
+  <nav class="bottom-nav" id="bottom-nav" aria-label="Menú principal"></nav>
+  <div class="sheet" id="sheet" hidden></div>
 </div>
 
 <script>
@@ -88,6 +97,9 @@
 </script>
 <script>
 /* @inline auto.js */
+</script>
+<script>
+/* @inline ui/inicio.js */
 </script>
 <script>
 /* @inline ui/confirmar.js */

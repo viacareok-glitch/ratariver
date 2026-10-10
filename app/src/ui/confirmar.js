@@ -5,7 +5,7 @@
   const U = VC.util;
   const O = VC.orders;
   const { Store, Shop } = VC.runtime;
-  const { e, $, App, chip, waButton, seg, emptyState, shopStatusBanner, toast, copyText, prefGet, prefSet, storeFail } = VC.ui;
+  const { e, $, App, chip, waButton, seg, emptyState, shopStatusBanner, toast, copyText, prefGet, prefSet, storeFail, icon, pageHead, info } = VC.ui;
 
   const WA_ESTADOS = {
     esperando: { label: 'Esperando respuesta', tone: 'warn' },
@@ -28,10 +28,15 @@
   function mount(section) {
     el = section;
     el.innerHTML =
-      '<header class="tool-head"><div><h2>Confirmar pedidos</h2><p class="lede">Escribile por WhatsApp a cada pedido nuevo antes de despacharlo. Marcá quién confirmó y despachá solo esos.</p></div>' +
-      '<div class="tool-actions"><label class="field-inline" for="conf-dias">Pedidos de los últimos <select id="conf-dias">' +
-      [3, 7, 14, 30].map((d) => '<option value="' + d + '"' + (d === state.dias ? ' selected' : '') + '>' + d + ' días</option>').join('') +
-      '</select></label><button class="btn ghost" data-act="refrescar">Actualizar</button></div></header>' +
+      pageHead(
+        'Confirmar pedidos',
+        'Escribí por WhatsApp y despachá solo los confirmados.',
+        '<label class="sr-only" for="conf-dias">Período</label><select id="conf-dias">' +
+          [3, 7, 14, 30].map((d) => '<option value="' + d + '"' + (d === state.dias ? ' selected' : '') + '>Últimos ' + d + ' días</option>').join('') +
+          '</select><button class="btn ghost icon-only" data-act="refrescar" aria-label="Actualizar pedidos" title="Actualizar">' +
+          icon('refresh') +
+          '</button>'
+      ) +
       '<div id="conf-status"></div><div id="conf-summary"></div><div id="conf-filters"></div><div id="conf-list" class="order-list"></div><div id="conf-dispatch"></div>';
     el.addEventListener('click', onClick);
     el.addEventListener('change', onChange);
@@ -76,11 +81,11 @@
     if (!el) return;
     const statusEl = $('#conf-status', el);
     if (Shop.mode === 'none') {
-      statusEl.innerHTML = shopStatusBanner({ message: 'Esta vista no puede conectarse a Shopify. Abrí el panel desde claude.ai o importá el CSV de pedidos (Shopify → Pedidos → Exportar).' });
+      statusEl.innerHTML = shopStatusBanner({ message: 'Abrí el panel desde claude.ai para ver tus pedidos, o importá el CSV de Shopify.' });
     } else if (state.error) {
       statusEl.innerHTML = shopStatusBanner(state.error);
     } else if (Shop.mode === 'csv') {
-      statusEl.innerHTML = '<p class="note">Mostrando pedidos del CSV importado. Para verlos en vivo, abrí el panel desde claude.ai con Shopify conectado.</p>';
+      statusEl.innerHTML = '<p class="note">Pedidos del CSV importado.</p>';
     } else statusEl.innerHTML = '';
 
     const L = lists();
@@ -92,14 +97,25 @@
     const tasaWA = decididos.length ? decididos.filter((o) => waState(o) === 'confirmado').length / decididos.length : null;
 
     $('#conf-summary', el).innerHTML = loadingFirst
-      ? '<div class="summary-strip is-loading">Cargando pedidos de Shopify…</div>'
+      ? '<div class="summary-strip is-loading">Cargando pedidos…</div>'
       : '<div class="summary-strip">' +
-        stat(hoyN, 'pedidos hoy') +
         stat(L.escribir.length, 'por escribir', L.escribir.length ? 'warn' : '') +
         stat(L.esperando.length, 'esperando respuesta') +
         stat(L.confirmados.length, 'listos para despachar', L.confirmados.length ? 'good' : '') +
-        stat(tasaWA == null ? '—' : U.pct(tasaWA), 'confirman por WhatsApp') +
-        stat(rates.confirmacion == null ? '—' : U.pct(rates.confirmacion), 'se despachaban antes', '', 'De ' + rates.muestraConfirmacion + ' pedidos resueltos en tu historial') +
+        stat(
+          tasaWA == null ? '—' : U.pct(tasaWA),
+          'confirman',
+          '',
+          info(
+            'De los pedidos que marcaste, cuántos confirmaron. Antes de usar el panel se despachaba el ' +
+              (rates.confirmacion == null ? '—' : U.pct(rates.confirmacion)) +
+              ' (' +
+              rates.muestraConfirmacion +
+              ' pedidos de tu historial). Hoy entraron ' +
+              hoyN +
+              '.'
+          )
+        ) +
         '</div>';
 
     $('#conf-filters', el).innerHTML = seg(
@@ -129,32 +145,37 @@
     if (L.confirmados.length && (state.filtro === 'confirmados' || state.filtro === 'escribir')) {
       const names = L.confirmados.map((o) => o.name).join(', ');
       disp.innerHTML =
-        '<div class="dispatch"><div><strong>Para despachar (' +
+        '<div class="dispatch"><div>' +
+        icon('truck') +
+        ' <strong>' +
         L.confirmados.length +
-        '):</strong> <span class="mono selectable">' +
+        ' para despachar:</strong> <span class="mono selectable">' +
         e(names) +
-        '</span></div><button class="btn ghost" data-act="copiar-despacho" data-text="' +
+        '</span></div><button class="btn ghost sm" data-act="copiar-despacho" data-text="' +
         e(names) +
-        '">Copiar lista</button></div>';
+        '">' +
+        icon('copy') +
+        'Copiar</button></div>';
     } else if (L.cancelados.length && state.filtro === 'cancelados') {
-      disp.innerHTML = '<p class="note">Estos pedidos siguen abiertos en Shopify. Anulalos ahí (Pedido → Más acciones → Cancelar pedido) para que Dropi no los despache.</p>';
+      disp.innerHTML = '<p class="note">' + icon('alert') + ' Anulalos también en Shopify para que Dropi no los despache.</p>';
     } else disp.innerHTML = '';
   }
 
-  function stat(value, label, tone, title) {
-    return '<div class="stat' + (tone ? ' tone-' + tone : '') + '"' + (title ? ' title="' + e(title) + '"' : '') + '><span class="stat-value">' + e(value) + '</span><span class="stat-label">' + e(label) + '</span></div>';
+  function stat(value, label, tone, extra) {
+    return '<div class="stat' + (tone ? ' tone-' + tone : '') + '"><span class="stat-value">' + e(value) + '</span><span class="stat-label">' + e(label) + (extra ? ' ' + extra : '') + '</span></div>';
   }
 
   function emptyText(L) {
-    if (!Shop.loadedAt) return emptyState('Sin pedidos para mostrar', 'Cuando Shopify responda vas a ver acá los pedidos nuevos.');
+    if (!Shop.loadedAt) return emptyState('Sin pedidos todavía', 'Cuando Shopify responda aparecen acá.', '', 'clock');
     const msgs = {
-      escribir: L.all.length ? 'No hay pedidos nuevos sin escribir. Buen trabajo.' : 'No entraron pedidos en estos días.',
-      esperando: 'Nadie quedó esperando respuesta.',
-      confirmados: 'Todavía no hay pedidos confirmados sin despachar.',
-      cancelados: 'Ningún cliente canceló por WhatsApp.',
-      all: 'No entraron pedidos en estos días.',
+      escribir: L.all.length ? ['Todo al día', 'No hay pedidos sin escribir.', 'check'] : ['Sin pedidos', 'No entraron pedidos en estos días.', 'box'],
+      esperando: ['Nadie esperando', 'Ningún cliente quedó sin responder.', 'check'],
+      confirmados: ['Nada para despachar', 'Cuando alguien confirme, aparece acá.', 'truck'],
+      cancelados: ['Sin cancelaciones', 'Ningún cliente canceló por WhatsApp.', 'check'],
+      all: ['Sin pedidos', 'No entraron pedidos en estos días.', 'box'],
     };
-    return emptyState('Nada por acá', e(msgs[state.filtro] || msgs.all));
+    const m = msgs[state.filtro] || msgs.all;
+    return emptyState(m[0], e(m[1]), '', m[2]);
   }
 
   function card(o, dups) {
@@ -168,57 +189,54 @@
     const open = o.estado === 'pendiente';
     const chips = [
       o.estado !== 'pendiente' ? chip(st.label, st.tone) : '',
-      ws ? chip(WA_ESTADOS[ws].label, WA_ESTADOS[ws].tone) : open ? chip('Sin escribir', 'neutral') : '',
+      ws ? chip(WA_ESTADOS[ws].label, WA_ESTADOS[ws].tone) : '',
       o.source !== 'organico' ? chip(O.SOURCES[o.source], 'source') : '',
       dups && dups.length ? chip('Repetido: ' + dups.join(', '), 'warn') : '',
-      o.tags.includes(TAG_OK) ? chip('Etiquetado en Shopify', 'neutral') : '',
+
     ].join('');
     const warn = o.warnings.length && open ? '<ul class="warnings">' + o.warnings.map((w) => '<li>' + e(w) + '</li>').join('') + '</ul>' : '';
-    const contacto = c.ultimoContacto ? '<span class="muted">WhatsApp abierto ' + e(U.timeAgo(c.ultimoContacto)) + (c.intentos > 1 ? ' · ' + c.intentos + ' intentos' : '') + '</span>' : '';
+    const contacto = c.ultimoContacto ? '<span class="muted small">' + icon('clock') + ' Escrito ' + e(U.timeAgo(c.ultimoContacto)) + (c.intentos > 1 ? ' · ' + c.intentos + ' veces' : '') + '</span>' : '';
     const showRec = ws === 'esperando' || ws === 'no_responde';
     return (
       '<article class="order-card' +
       (ws === 'confirmado' ? ' is-good' : ws === 'cancelado' ? ' is-bad' : '') +
       '">' +
-      '<div class="oc-top"><div class="oc-id"><span class="mono">' +
-      e(o.name) +
-      '</span><span class="muted">' +
-      e(U.fmtDateTimeAR(o.createdAt)) +
-      ' · ' +
-      e(U.timeAgo(o.createdAt)) +
-      '</span></div><div class="oc-total mono">' +
+      '<div class="oc-top"><div class="oc-who"><strong>' +
+      e(o.fullName || 'Sin nombre') +
+      '</strong></div><div class="oc-total">' +
       e(U.money(o.total)) +
       '</div></div>' +
-      '<div class="oc-who"><strong>' +
-      e(o.fullName || 'Sin nombre') +
-      '</strong> · ' +
+      '<div class="oc-meta muted small">' +
       e(vars.cantidad) +
       e(vars.extras) +
+      ' · <span class="mono">' +
+      e(o.name) +
+      '</span> · ' +
+      e(U.timeAgo(o.createdAt)) +
       '</div>' +
       '<div class="oc-addr">' +
+      icon('truck') +
+      '<span>' +
       e([vars.direccion, o.city, o.province].filter(Boolean).join(', ')) +
       (o.zip ? ' · CP ' + e(o.zip) : '') +
-      (o.courierNote && o.courierNote !== '-' ? '<br><span class="muted">Nota: ' + e(o.courierNote) + '</span>' : '') +
-      '</div>' +
+      (o.courierNote && o.courierNote !== '-' ? ' · ' + e(o.courierNote) : '') +
+      '</span></div>' +
       '<div class="oc-phone"><span class="mono selectable">' +
       e(o.phone.display || o.phoneRaw || 'Sin teléfono') +
       '</span>' +
       (o.phone.wa && !o.phone.ok ? chip('Revisá el número', 'warn') : '') +
       contacto +
       '</div>' +
-      '<div class="chips">' +
-      chips +
-      '</div>' +
+      (chips ? '<div class="chips">' + chips + '</div>' : '') +
       warn +
       (open
         ? '<div class="oc-actions"><div class="row-actions">' +
-          waButton(U.waLink(o.phone.wa, msg), 'Pedir confirmación', 'wa-confirmar', o.key) +
-          (showRec ? waButton(U.waLink(o.phone.wa, rec), 'Recordatorio', 'wa-recordatorio', o.key, 'ghost') : '') +
+          waButton(U.waLink(o.phone.wa, ws ? rec : msg), ws ? 'Recordatorio' : 'Pedir confirmación', ws ? 'wa-recordatorio' : 'wa-confirmar', o.key, ws ? 'ghost' : 'wa') +
           (o.warnings.length ? waButton(U.waLink(o.phone.wa, dir), 'Pedir dirección', 'wa-direccion', o.key, 'ghost') : '') +
-          '</div><div class="row-actions decide">' +
-          decideBtn('confirmado', 'Confirmó', o, ws, 'good') +
-          decideBtn('no_responde', 'No responde', o, ws, 'warn') +
-          decideBtn('cancelado', 'Canceló', o, ws, 'bad') +
+          '</div><div class="row-actions decide" role="group" aria-label="¿Qué respondió?">' +
+          decideBtn('confirmado', 'Confirmó', o, ws, 'good', 'check') +
+          decideBtn('no_responde', 'No responde', o, ws, 'warn', 'clock') +
+          decideBtn('cancelado', 'Canceló', o, ws, 'bad', 'x') +
           (ws ? '<button class="btn link" data-act="deshacer" data-key="' + e(o.key) + '">Deshacer</button>' : '') +
           '</div></div>'
         : '') +
@@ -226,8 +244,8 @@
     );
   }
 
-  function decideBtn(value, label, o, ws, tone) {
-    return '<button class="btn decide-btn tone-' + tone + (ws === value ? ' is-on' : '') + '" aria-pressed="' + (ws === value) + '" data-act="marcar" data-estado="' + value + '" data-key="' + e(o.key) + '">' + e(label) + '</button>';
+  function decideBtn(value, label, o, ws, tone, ic) {
+    return '<button class="btn sm decide-btn tone-' + tone + (ws === value ? ' is-on' : '') + '" aria-pressed="' + (ws === value) + '" data-act="marcar" data-estado="' + value + '" data-key="' + e(o.key) + '">' + icon(ic) + e(label) + '</button>';
   }
 
   function findOrder(key) {
