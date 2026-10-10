@@ -12,9 +12,10 @@
   --surface: #ffffff;
   --surface-2: #f1f4fa;
   --surface-3: #e8edf6;
+  --seg-on: #ffffff;
   --ink: #131a2b;
   --muted: #5f6b7d;
-  --faint: #8a95a7;
+  --faint: #6b778a; /* ≥ 4,5:1 sobre --surface: se usa en texto de 11px (encabezados de tabla, grupos del menú, barra inferior) */
   --line: #e2e7f0;
   --line-strong: #cfd7e4;
   --accent: #3157e8;
@@ -58,9 +59,10 @@
     --surface: #141a28;
     --surface-2: #1a2132;
     --surface-3: #222a3e;
+    --seg-on: #333d58;
     --ink: #edf1f8;
     --muted: #9aa5b8;
-    --faint: #6f7a8e;
+    --faint: #8792a6;
     --line: #242c40;
     --line-strong: #323c55;
     --accent: #7d97ff;
@@ -93,9 +95,10 @@
   --surface: #141a28;
   --surface-2: #1a2132;
   --surface-3: #222a3e;
+  --seg-on: #333d58;
   --ink: #edf1f8;
   --muted: #9aa5b8;
-  --faint: #6f7a8e;
+  --faint: #8792a6;
   --line: #242c40;
   --line-strong: #323c55;
   --accent: #7d97ff;
@@ -215,6 +218,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .sheet-item { display: grid; justify-items: center; gap: 6px; padding: 14px 6px; border-radius: var(--r); border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font-weight: 600; font-size: 0.8125rem; cursor: pointer; text-align: center; }
 .sheet-item .ico { width: 22px; height: 22px; color: var(--accent); }
 .sheet-item.is-on { border-color: var(--accent); background: var(--accent-soft); }
+/* El número va en la esquina, igual que en el menú y la barra, sin estirar la fila */
+.sheet-item { position: relative; align-content: center; }
+.sheet-item .tab-badge { position: absolute; top: 8px; right: 8px; min-width: 20px; line-height: 18px; padding: 0 6px; font-size: 0.6875rem; }
+.sheet-item .tab-badge.is-new { min-width: 10px; height: 10px; padding: 0; font-size: 0; } /* "nuevo" como punto, igual que en "Más" */
 
 /* ---------- Encabezado de cada herramienta ---------- */
 .tool { display: grid; gap: 18px; padding-top: 30px; }
@@ -304,7 +311,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: var(--surface-3); border-radius: 13px; max-width: 100%; }
 .seg-btn { border: 0; background: none; padding: 7px 13px; border-radius: 10px; cursor: pointer; color: var(--muted); font-weight: 600; font-size: 0.8125rem; display: inline-flex; align-items: center; gap: 6px; }
 .seg-btn:hover { color: var(--ink); }
-.seg-btn.is-on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
+/* La elegida, más clara que el riel en los dos temas (en oscuro --surface quedaba más oscuro y parecía hundida) */
+.seg-btn.is-on { background: var(--seg-on); color: var(--ink); box-shadow: var(--shadow-sm); }
 .seg-count { font-variant-numeric: tabular-nums; color: var(--faint); font-weight: 700; font-size: 0.75rem; background: var(--surface-2); border-radius: 999px; padding: 0 6px; }
 .seg-btn.is-on .seg-count { background: var(--accent-soft); color: var(--accent); }
 
@@ -546,6 +554,12 @@ details.panel[open] > summary { margin-bottom: 4px; }
   h2 { font-size: var(--step-2); }
   .oc-actions { flex-direction: column; align-items: stretch; }
   .oc-actions .row-actions .btn { flex: 1 1 auto; }
+  /* Filtros: los ceros ya están en el resumen de arriba; sin ellos entran más pastillas por fila */
+  .seg-count.is-zero { display: none; }
+  /* Las tres respuestas en una sola fila, con el ícono arriba del texto (antes quedaban 2 + 1) */
+  .oc-actions .decide:has(> .decide-btn) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 6px; }
+  .oc-actions .decide .decide-btn { flex-direction: column; gap: 3px; min-height: 54px; padding: 6px 4px; white-space: normal; line-height: 1.2; text-align: center; }
+  .oc-actions .decide:has(> .decide-btn) > .btn.link { grid-column: 1 / -1; justify-self: center; }
   .waterfall li { grid-template-columns: 1fr auto; }
   .waterfall .wf-track { grid-column: 1 / -1; grid-row: 2; }
   .clip { grid-template-columns: 1fr; gap: 4px; }
@@ -565,9 +579,9 @@ details.panel[open] > summary { margin-bottom: 4px; }
     margin: 0 -16px; padding: 14px 16px 10px; background: var(--bg);
   }
   .topbar .brand { padding: 0; }
-  .topbar .conn-row { display: flex; gap: 6px; }
-  .topbar .conn { font-size: 0; gap: 0; }
-  .topbar .conn .dot { width: 9px; height: 9px; }
+  .topbar .conn-row { display: flex; min-width: 0; }
+  .topbar .conn { gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-weight: 600; }
+  .topbar .conn-txt { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .bottom-nav {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
     display: grid; grid-template-columns: repeat(5, 1fr);
@@ -582,9 +596,8 @@ details.panel[open] > summary { margin-bottom: 4px; }
   h2 { font-size: 1.5rem; }
   .home-hello h2 { font-size: 1.625rem; }
   .panel { padding: 16px; border-radius: var(--r); }
-  .seg { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-  .seg::-webkit-scrollbar { display: none; }
-  .seg-btn { flex: none; }
+  /* Si no entran en una fila, las pastillas bajan a otra (nada queda escondido) y llenan el ancho */
+  .seg-btn { flex: 1 1 auto; justify-content: center; }
   .summary-strip, .decision-strip { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .stat, .dstat { padding: 12px 14px; }
   .stat-value { font-size: 1.375rem; }
@@ -1263,7 +1276,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
   #panel-ganancia .tool-actions { flex-wrap: nowrap; }
   #gan-range { flex: 1 1 auto; min-width: 0; }
   #gan-range .seg { display: flex; }
-  #gan-range .seg-btn { padding-inline: 10px; flex: 1 0 auto; justify-content: center; }
+  #gan-range .seg-btn { padding-inline: 8px; flex: 1 0 auto; justify-content: center; }
 }
 
 @media (max-width: 560px) {
@@ -1617,7 +1630,8 @@ details.panel[open] > summary { margin-bottom: 4px; }
 .aj-panel .panel-head { min-height: 34px; }
 .aj-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 14px; }
 .aj-fields.is-3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
-.aj-field { display: grid; gap: 5px; min-width: 0; align-content: start; }
+/* Campos pegados abajo: si una etiqueta ocupa dos renglones, los campos de la misma fila quedan a la misma altura */
+.aj-field { display: grid; gap: 5px; min-width: 0; align-content: end; }
 .aj-field input, .aj-field textarea { width: 100%; min-width: 0; }
 .aj-lbl { display: flex; align-items: center; gap: 2px; min-height: 22px; color: var(--muted); font-size: var(--step--1); font-weight: 600; }
 .aj-lbl label { color: inherit; }
@@ -1625,6 +1639,11 @@ details.panel[open] > summary { margin-bottom: 4px; }
 .aj-panel .more { padding-top: 14px; }
 .aj-more { display: grid; gap: 14px; }
 .aj-nw { white-space: nowrap; }
+/* Datos de la tienda: al lado de Costos el panel es angosto, así que los textos libres van a todo el ancho */
+#aj-tienda { container-type: inline-size; }
+@container (max-width: 600px) {
+  #aj-tienda .aj-field:has(#td-pago, #td-demora, #td-talles, #td-garantia) { grid-column: 1 / -1; }
+}
 .aj-tpls { display: grid; }
 .aj-tpls .more { padding-block: 12px; }
 .aj-tpls .more:last-child { padding-bottom: 0; }
@@ -1641,10 +1660,9 @@ details.panel[open] > summary { margin-bottom: 4px; }
 .aj-panel .note .info { margin-left: 2px; }
 .aj-panel .note .info > summary { width: 20px; height: 20px; vertical-align: -5px; }
 
-/* ---------- Celular ---------- */
-@media (max-width: 760px) {
-  .of-params-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .of-costos { grid-column: 1 / -1; padding: 12px 0 0; border-left: 0; border-top: 1px solid var(--line); }
+/* Ofertas: la tabla pasa a tarjetitas según su propio ancho (con el menú lateral, entre 900 y 1100 px no entraban las 6 columnas) */
+.of-table { container-type: inline-size; }
+@container (max-width: 719px) {
   .of-head { display: none; }
   .of-row {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 40px;
@@ -1655,6 +1673,12 @@ details.panel[open] > summary { margin-bottom: 4px; }
   .of-f:not(.of-f-n) .of-lbl { position: static; width: auto; height: auto; overflow: visible; clip: auto; color: var(--muted); font-size: 0.75rem; font-weight: 600; }
   .of-base { justify-content: flex-start; padding-left: 2px; }
   .of-del { align-self: end; }
+}
+
+/* ---------- Celular ---------- */
+@media (max-width: 760px) {
+  .of-params-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .of-costos { grid-column: 1 / -1; padding: 12px 0 0; border-left: 0; border-top: 1px solid var(--line); }
   .aj-tpl { grid-template-columns: 1fr; }
 }
 @media (max-width: 560px) {
@@ -6552,7 +6576,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
             e(o.value) +
             '">' +
             e(o.label) +
-            (o.count != null ? ' <span class="seg-count">' + e(o.count) + '</span>' : '') +
+            (o.count != null ? ' <span class="seg-count' + (Number(o.count) === 0 ? ' is-zero' : '') + '">' + e(o.count) + '</span>' : '') +
             '</button>'
         )
         .join('') +
@@ -14189,9 +14213,8 @@ details.panel[open] > summary { margin-bottom: 4px; }
       (enBarra ? '' : ' is-on') +
       '" data-act="mas" aria-haspopup="dialog">' +
       icon('grid') +
-      '<span>' +
-      e(enBarra ? 'Más' : (TABS.find((t) => t.id === current) || {}).label || 'Más') +
-      '</span>' +
+      // Siempre "Más": si la herramienta abierta no está en la barra, el botón queda marcado (el nombre ya está en el título)
+      '<span>Más</span>' +
       (TABS.some((t) => !BOTTOM.includes(t.id) && badges[t.id]) ? '<span class="tab-badge is-new">•</span>' : '') +
       '</button>';
   }
@@ -14202,7 +14225,7 @@ details.panel[open] > summary { margin-bottom: 4px; }
       '<div class="sheet-card" role="dialog" aria-modal="true" aria-label="Todas las herramientas"><div class="sheet-head"><h3>Herramientas</h3><button type="button" class="btn ghost icon-only" data-act="cerrar-mas" aria-label="Cerrar">' +
       icon('x') +
       '</button></div><div class="sheet-grid">' +
-      TABS.map((t) => '<button type="button" class="sheet-item' + (t.id === current ? ' is-on' : '') + '" data-tab="' + t.id + '">' + icon(t.icon) + e(t.label) + (badges[t.id] ? ' <span class="badge">' + e(badges[t.id]) + '</span>' : '') + '</button>').join('') +
+      TABS.map((t) => '<button type="button" class="sheet-item' + (t.id === current ? ' is-on' : '') + '" data-tab="' + t.id + '">' + icon(t.icon) + e(t.label) + (badges[t.id] ? '<span class="tab-badge' + (badges[t.id] === 'nuevo' ? ' is-new' : '') + '">' + e(badges[t.id]) + '</span>' : '') + '</button>').join('') +
       '</div></div>';
     sh.hidden = false;
   }
@@ -14251,7 +14274,11 @@ details.panel[open] > summary { margin-bottom: 4px; }
     else if (Store.mode === 'local') items.push(['Datos en este navegador', 'warn']);
     const html = items.map(([t, tone]) => '<span class="conn tone-' + tone + '" title="' + e(t) + '"><span class="dot"></span>' + e(t) + '</span>').join('');
     $('#conn').innerHTML = html;
-    $('#conn-m').innerHTML = html;
+    // En el celular, un solo estado con texto: lo que falla o avisa, y si no "Conectado" (tres puntos solos parecían un botón de menú)
+    const orden = { bad: 0, warn: 1, info: 2 };
+    const aviso = items.filter(([, tone]) => tone in orden).sort((a, b) => orden[a[1]] - orden[b[1]])[0];
+    const [txt, tono] = aviso || (shop[1] === 'neutral' ? shop : ['Conectado', 'good']);
+    $('#conn-m').innerHTML = '<span class="conn tone-' + tono + '" title="' + e(items.map((i) => i[0]).join(' · ')) + '"><span class="dot"></span><span class="conn-txt">' + e(txt) + '</span></span>';
 
     const A = VC.auto;
     $('#auto-strip').innerHTML =

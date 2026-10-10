@@ -323,7 +323,7 @@
             e(o.value) +
             '">' +
             e(o.label) +
-            (o.count != null ? ' <span class="seg-count">' + e(o.count) + '</span>' : '') +
+            (o.count != null ? ' <span class="seg-count' + (Number(o.count) === 0 ? ' is-zero' : '') + '">' + e(o.count) + '</span>' : '') +
             '</button>'
         )
         .join('') +

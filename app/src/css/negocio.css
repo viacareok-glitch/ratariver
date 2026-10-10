@@ -158,7 +158,8 @@
 .aj-panel .panel-head { min-height: 34px; }
 .aj-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 14px; }
 .aj-fields.is-3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
-.aj-field { display: grid; gap: 5px; min-width: 0; align-content: start; }
+/* Campos pegados abajo: si una etiqueta ocupa dos renglones, los campos de la misma fila quedan a la misma altura */
+.aj-field { display: grid; gap: 5px; min-width: 0; align-content: end; }
 .aj-field input, .aj-field textarea { width: 100%; min-width: 0; }
 .aj-lbl { display: flex; align-items: center; gap: 2px; min-height: 22px; color: var(--muted); font-size: var(--step--1); font-weight: 600; }
 .aj-lbl label { color: inherit; }
@@ -166,6 +167,11 @@
 .aj-panel .more { padding-top: 14px; }
 .aj-more { display: grid; gap: 14px; }
 .aj-nw { white-space: nowrap; }
+/* Datos de la tienda: al lado de Costos el panel es angosto, así que los textos libres van a todo el ancho */
+#aj-tienda { container-type: inline-size; }
+@container (max-width: 600px) {
+  #aj-tienda .aj-field:has(#td-pago, #td-demora, #td-talles, #td-garantia) { grid-column: 1 / -1; }
+}
 .aj-tpls { display: grid; }
 .aj-tpls .more { padding-block: 12px; }
 .aj-tpls .more:last-child { padding-bottom: 0; }
@@ -182,10 +188,9 @@
 .aj-panel .note .info { margin-left: 2px; }
 .aj-panel .note .info > summary { width: 20px; height: 20px; vertical-align: -5px; }
 
-/* ---------- Celular ---------- */
-@media (max-width: 760px) {
-  .of-params-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .of-costos { grid-column: 1 / -1; padding: 12px 0 0; border-left: 0; border-top: 1px solid var(--line); }
+/* Ofertas: la tabla pasa a tarjetitas según su propio ancho (con el menú lateral, entre 900 y 1100 px no entraban las 6 columnas) */
+.of-table { container-type: inline-size; }
+@container (max-width: 719px) {
   .of-head { display: none; }
   .of-row {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 40px;
@@ -196,6 +201,12 @@
   .of-f:not(.of-f-n) .of-lbl { position: static; width: auto; height: auto; overflow: visible; clip: auto; color: var(--muted); font-size: 0.75rem; font-weight: 600; }
   .of-base { justify-content: flex-start; padding-left: 2px; }
   .of-del { align-self: end; }
+}
+
+/* ---------- Celular ---------- */
+@media (max-width: 760px) {
+  .of-params-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .of-costos { grid-column: 1 / -1; padding: 12px 0 0; border-left: 0; border-top: 1px solid var(--line); }
   .aj-tpl { grid-template-columns: 1fr; }
 }
 @media (max-width: 560px) {

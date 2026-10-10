@@ -81,9 +81,8 @@
       (enBarra ? '' : ' is-on') +
       '" data-act="mas" aria-haspopup="dialog">' +
       icon('grid') +
-      '<span>' +
-      e(enBarra ? 'Más' : (TABS.find((t) => t.id === current) || {}).label || 'Más') +
-      '</span>' +
+      // Siempre "Más": si la herramienta abierta no está en la barra, el botón queda marcado (el nombre ya está en el título)
+      '<span>Más</span>' +
       (TABS.some((t) => !BOTTOM.includes(t.id) && badges[t.id]) ? '<span class="tab-badge is-new">•</span>' : '') +
       '</button>';
   }
@@ -94,7 +93,7 @@
       '<div class="sheet-card" role="dialog" aria-modal="true" aria-label="Todas las herramientas"><div class="sheet-head"><h3>Herramientas</h3><button type="button" class="btn ghost icon-only" data-act="cerrar-mas" aria-label="Cerrar">' +
       icon('x') +
       '</button></div><div class="sheet-grid">' +
-      TABS.map((t) => '<button type="button" class="sheet-item' + (t.id === current ? ' is-on' : '') + '" data-tab="' + t.id + '">' + icon(t.icon) + e(t.label) + (badges[t.id] ? ' <span class="badge">' + e(badges[t.id]) + '</span>' : '') + '</button>').join('') +
+      TABS.map((t) => '<button type="button" class="sheet-item' + (t.id === current ? ' is-on' : '') + '" data-tab="' + t.id + '">' + icon(t.icon) + e(t.label) + (badges[t.id] ? '<span class="tab-badge' + (badges[t.id] === 'nuevo' ? ' is-new' : '') + '">' + e(badges[t.id]) + '</span>' : '') + '</button>').join('') +
       '</div></div>';
     sh.hidden = false;
   }
@@ -143,7 +142,11 @@
     else if (Store.mode === 'local') items.push(['Datos en este navegador', 'warn']);
     const html = items.map(([t, tone]) => '<span class="conn tone-' + tone + '" title="' + e(t) + '"><span class="dot"></span>' + e(t) + '</span>').join('');
     $('#conn').innerHTML = html;
-    $('#conn-m').innerHTML = html;
+    // En el celular, un solo estado con texto: lo que falla o avisa, y si no "Conectado" (tres puntos solos parecían un botón de menú)
+    const orden = { bad: 0, warn: 1, info: 2 };
+    const aviso = items.filter(([, tone]) => tone in orden).sort((a, b) => orden[a[1]] - orden[b[1]])[0];
+    const [txt, tono] = aviso || (shop[1] === 'neutral' ? shop : ['Conectado', 'good']);
+    $('#conn-m').innerHTML = '<span class="conn tone-' + tono + '" title="' + e(items.map((i) => i[0]).join(' · ')) + '"><span class="dot"></span><span class="conn-txt">' + e(txt) + '</span></span>';
 
     const A = VC.auto;
     $('#auto-strip').innerHTML =

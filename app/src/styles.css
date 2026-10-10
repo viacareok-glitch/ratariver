@@ -6,9 +6,10 @@
   --surface: #ffffff;
   --surface-2: #f1f4fa;
   --surface-3: #e8edf6;
+  --seg-on: #ffffff;
   --ink: #131a2b;
   --muted: #5f6b7d;
-  --faint: #8a95a7;
+  --faint: #6b778a; /* ≥ 4,5:1 sobre --surface: se usa en texto de 11px (encabezados de tabla, grupos del menú, barra inferior) */
   --line: #e2e7f0;
   --line-strong: #cfd7e4;
   --accent: #3157e8;
@@ -52,9 +53,10 @@
     --surface: #141a28;
     --surface-2: #1a2132;
     --surface-3: #222a3e;
+    --seg-on: #333d58;
     --ink: #edf1f8;
     --muted: #9aa5b8;
-    --faint: #6f7a8e;
+    --faint: #8792a6;
     --line: #242c40;
     --line-strong: #323c55;
     --accent: #7d97ff;
@@ -87,9 +89,10 @@
   --surface: #141a28;
   --surface-2: #1a2132;
   --surface-3: #222a3e;
+  --seg-on: #333d58;
   --ink: #edf1f8;
   --muted: #9aa5b8;
-  --faint: #6f7a8e;
+  --faint: #8792a6;
   --line: #242c40;
   --line-strong: #323c55;
   --accent: #7d97ff;
@@ -209,6 +212,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .sheet-item { display: grid; justify-items: center; gap: 6px; padding: 14px 6px; border-radius: var(--r); border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font-weight: 600; font-size: 0.8125rem; cursor: pointer; text-align: center; }
 .sheet-item .ico { width: 22px; height: 22px; color: var(--accent); }
 .sheet-item.is-on { border-color: var(--accent); background: var(--accent-soft); }
+/* El número va en la esquina, igual que en el menú y la barra, sin estirar la fila */
+.sheet-item { position: relative; align-content: center; }
+.sheet-item .tab-badge { position: absolute; top: 8px; right: 8px; min-width: 20px; line-height: 18px; padding: 0 6px; font-size: 0.6875rem; }
+.sheet-item .tab-badge.is-new { min-width: 10px; height: 10px; padding: 0; font-size: 0; } /* "nuevo" como punto, igual que en "Más" */
 
 /* ---------- Encabezado de cada herramienta ---------- */
 .tool { display: grid; gap: 18px; padding-top: 30px; }
@@ -298,7 +305,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: var(--surface-3); border-radius: 13px; max-width: 100%; }
 .seg-btn { border: 0; background: none; padding: 7px 13px; border-radius: 10px; cursor: pointer; color: var(--muted); font-weight: 600; font-size: 0.8125rem; display: inline-flex; align-items: center; gap: 6px; }
 .seg-btn:hover { color: var(--ink); }
-.seg-btn.is-on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
+/* La elegida, más clara que el riel en los dos temas (en oscuro --surface quedaba más oscuro y parecía hundida) */
+.seg-btn.is-on { background: var(--seg-on); color: var(--ink); box-shadow: var(--shadow-sm); }
 .seg-count { font-variant-numeric: tabular-nums; color: var(--faint); font-weight: 700; font-size: 0.75rem; background: var(--surface-2); border-radius: 999px; padding: 0 6px; }
 .seg-btn.is-on .seg-count { background: var(--accent-soft); color: var(--accent); }
 
@@ -540,6 +548,12 @@ details.panel[open] > summary { margin-bottom: 4px; }
   h2 { font-size: var(--step-2); }
   .oc-actions { flex-direction: column; align-items: stretch; }
   .oc-actions .row-actions .btn { flex: 1 1 auto; }
+  /* Filtros: los ceros ya están en el resumen de arriba; sin ellos entran más pastillas por fila */
+  .seg-count.is-zero { display: none; }
+  /* Las tres respuestas en una sola fila, con el ícono arriba del texto (antes quedaban 2 + 1) */
+  .oc-actions .decide:has(> .decide-btn) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 6px; }
+  .oc-actions .decide .decide-btn { flex-direction: column; gap: 3px; min-height: 54px; padding: 6px 4px; white-space: normal; line-height: 1.2; text-align: center; }
+  .oc-actions .decide:has(> .decide-btn) > .btn.link { grid-column: 1 / -1; justify-self: center; }
   .waterfall li { grid-template-columns: 1fr auto; }
   .waterfall .wf-track { grid-column: 1 / -1; grid-row: 2; }
   .clip { grid-template-columns: 1fr; gap: 4px; }
@@ -559,9 +573,9 @@ details.panel[open] > summary { margin-bottom: 4px; }
     margin: 0 -16px; padding: 14px 16px 10px; background: var(--bg);
   }
   .topbar .brand { padding: 0; }
-  .topbar .conn-row { display: flex; gap: 6px; }
-  .topbar .conn { font-size: 0; gap: 0; }
-  .topbar .conn .dot { width: 9px; height: 9px; }
+  .topbar .conn-row { display: flex; min-width: 0; }
+  .topbar .conn { gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-weight: 600; }
+  .topbar .conn-txt { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .bottom-nav {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
     display: grid; grid-template-columns: repeat(5, 1fr);
@@ -576,9 +590,8 @@ details.panel[open] > summary { margin-bottom: 4px; }
   h2 { font-size: 1.5rem; }
   .home-hello h2 { font-size: 1.625rem; }
   .panel { padding: 16px; border-radius: var(--r); }
-  .seg { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-  .seg::-webkit-scrollbar { display: none; }
-  .seg-btn { flex: none; }
+  /* Si no entran en una fila, las pastillas bajan a otra (nada queda escondido) y llenan el ancho */
+  .seg-btn { flex: 1 1 auto; justify-content: center; }
   .summary-strip, .decision-strip { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .stat, .dstat { padding: 12px 14px; }
   .stat-value { font-size: 1.375rem; }
