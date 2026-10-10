@@ -1,1 +1,42 @@
-/* guiones-auto */
+/* Guiones: tanda automática y "Elegirlo yo" */
+#ugc-auto > div:empty { display: none; }
+#ugc-auto-head { display: grid; gap: 10px; }
+.ugc-auto-title { display: grid; gap: 4px; min-width: 0; }
+.ugc-auto-lede { color: var(--muted); font-size: var(--step--1); max-width: 72ch; }
+#ugc-auto .auto-progress li > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+#ugc-auto .auto-progress .st:not(.ok):not(.err) { color: var(--info); }
+.ugc-plan { display: grid; gap: 8px; padding: 12px 14px; border-radius: var(--r-sm); background: var(--surface-2); min-width: 0; }
+.ugc-razones { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 0.875rem; line-height: 1.5; overflow-wrap: anywhere; }
+.ugc-razones li::marker { color: var(--accent); }
+.ugc-auto-cfg { padding-top: 12px; border-top: 1px solid var(--line); }
+.ugc-auto-when { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+
+/* Tarjetas de la tanda automática, plegables */
+.ugc-tanda { min-width: 0; }
+.ugc-tanda > summary {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px;
+  padding: 6px 2px; cursor: pointer; list-style: none; border-radius: var(--r-sm);
+}
+.ugc-tanda > summary::-webkit-details-marker { display: none; }
+.ugc-tanda > summary::before {
+  content: ''; flex: 0 0 auto; width: 7px; height: 7px; margin-right: 2px; align-self: center;
+  border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted);
+  transform: rotate(-45deg); transition: transform 0.15s ease;
+}
+.ugc-tanda[open] > summary::before { transform: rotate(45deg); }
+.ugc-tanda > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ugc-tanda-title { font-family: var(--font-display); font-size: var(--step-1); font-weight: 600; color: var(--ink); }
+.ugc-tanda > summary .muted { overflow-wrap: anywhere; min-width: 0; }
+.ugc-tanda-body { display: grid; gap: 14px; margin-top: 10px; min-width: 0; }
+
+/* Formulario manual debajo de la tanda */
+.ugc-manual { display: grid; gap: 16px; min-width: 0; }
+.ugc-manual-head { display: grid; gap: 4px; padding-top: 18px; border-top: 1px solid var(--line); }
+
+@media (prefers-reduced-motion: reduce) { .ugc-tanda > summary::before { transition: none; } }
+@media (max-width: 560px) {
+  #ugc-auto .auto-head .row-actions, #ugc-auto .auto-head .row-actions .btn, .ugc-plan .row-actions .btn { width: 100%; }
+  .ugc-plan .btn { white-space: normal; }
+}
+/* Sin esto, .tool { display: grid } le gana al atributo hidden y la pestaña se ve debajo de otras */
+#panel-guiones[hidden] { display: none; }

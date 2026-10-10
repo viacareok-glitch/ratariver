@@ -99,7 +99,7 @@
   }
 
   // Pestaña donde se ven los resultados de cada tarea automática
-  const TAB_DE = { competencia: 'competencia', tiendas: 'competencia', productos: 'productos', guiones: 'guiones' };
+  const TAB_DE = { competencia: 'competencia', tiendas: 'competencia', productos: 'productos', descubrir: 'productos', guiones: 'guiones' };
 
   function markNew(tab) {
     if (tab === current) return;

@@ -828,7 +828,9 @@
     const ganadores = S.ganadores(vistos, hoy);
     const nombresNuevos = S.anunciantesNuevos(antes, nuevos);
     const tiendas = (A.cfg.tiendas && A.cfg.tiendas.dominios) || [];
-    const dom = S.dominiosNuevos(vistos, tiendas, S.MAX_DOMINIOS);
+    // Las tiendas que el usuario quitó no vuelven a sumarse solas
+    const quitadas = new Set((A.cfg.tiendas && A.cfg.tiendas.quitadas) || []);
+    const dom = S.dominiosNuevos(vistos.filter((a) => !quitadas.has(VC.research.normalizeDomain(a.dominio))), tiendas, S.MAX_DOMINIOS);
     if (dom.agregar.length) A.setCfg('tiendas', { dominios: dom.lista });
     const porBusqueda = S.porBusqueda(items);
     const base = { fecha: ahora, porBusqueda, nuevos: nuevos.length, total: vistos.length, ganadores: ganadores.length, nombresNuevos, dominiosNuevos: dom.agregar, aviso };
